@@ -6,16 +6,20 @@
 //
 
 import SwiftUI
+import OrgKit
 
 struct ContentView: View {
+    let doc = OrgParser().parse("* Hello Org Mode")
+    
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+            Text("Stickies.md")
+                .font(.caption)
+            Divider()
+            Text(doc.text)
+                .padding()
         }
-        .padding()
+        .frame(width: 300, height: 200)
     }
 }
 
