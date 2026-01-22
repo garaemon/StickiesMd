@@ -6,13 +6,30 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F17FCB782F21FCA50080A54B /* OrgKit in Frameworks */ = {isa = PBXBuildFile; productRef = F17FCB772F21FCA50080A54B /* OrgKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		F17FCB662F21FAC30080A54B /* StickiesMd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StickiesMd.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F17FCB752F21FC6C0080A54B /* Exceptions for "StickiesMd" folder in "StickiesMd" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				OrgKit,
+			);
+			target = F17FCB652F21FAC30080A54B /* StickiesMd */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F17FCB682F21FAC30080A54B /* StickiesMd */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F17FCB752F21FC6C0080A54B /* Exceptions for "StickiesMd" folder in "StickiesMd" target */,
+			);
 			path = StickiesMd;
 			sourceTree = "<group>";
 		};
@@ -23,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F17FCB782F21FCA50080A54B /* OrgKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +51,7 @@
 			isa = PBXGroup;
 			children = (
 				F17FCB682F21FAC30080A54B /* StickiesMd */,
+				F17FCB762F21FCA50080A54B /* Frameworks */,
 				F17FCB672F21FAC30080A54B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +62,13 @@
 				F17FCB662F21FAC30080A54B /* StickiesMd.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F17FCB762F21FCA50080A54B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -65,6 +91,7 @@
 			);
 			name = StickiesMd;
 			packageProductDependencies = (
+				F17FCB772F21FCA50080A54B /* OrgKit */,
 			);
 			productName = StickiesMd;
 			productReference = F17FCB662F21FAC30080A54B /* StickiesMd.app */;
@@ -325,6 +352,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F17FCB772F21FCA50080A54B /* OrgKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OrgKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F17FCB5E2F21FAC30080A54B /* Project object */;
 }
