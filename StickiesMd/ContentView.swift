@@ -7,6 +7,7 @@
 
 import SwiftUI
 import OrgKit
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @ObservedObject var viewModel: StickyNoteViewModel
@@ -18,29 +19,73 @@ struct ContentView: View {
                 .foregroundColor(.secondary)
             Divider()
             ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(0..<viewModel.document.children.count, id: \.self) { index in
-                        nodeView(viewModel.document.children[index])
-                    }
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
+                let renderer = OrgViewRenderer(baseURL: viewModel.note.fileURL)
+                renderer.render(viewModel.document)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
             }
         }
         .frame(minWidth: 200, minHeight: 150)
-    }
-    
-    @ViewBuilder
-    func nodeView(_ node: OrgNode) -> some View {
-        if let heading = node as? Heading {
-            Text(heading.text)
-                .font(.system(size: CGFloat(24 - heading.level * 2), weight: .bold))
-                .padding(.top, 4)
-        } else if let paragraph = node as? Paragraph {
-            Text(paragraph.text)
-                .font(.body)
-        } else {
-            EmptyView()
+        .onDrop(of: [.image], isTargeted: nil) { providers in
+            guard let provider = providers.first else { return false }
+            
+            provider.loadFileRepresentation(forTypeIdentifier: UTType.image.identifier) { url, error in
+                guard let url = url else { return }
+                // loadFileRepresentation gives a tmp url that might disappear.
+                // Move logic needs to happen carefully.
+                // We should copy it immediately.
+                
+                // Jump to main thread for ViewModel ops
+                DispatchQueue.main.async {
+                    // Create a temp copy because 'url' is only valid inside this block
+                    let tempCopy = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
+                    try? FileManager.default.removeItem(at: tempCopy)
+                    try? FileManager.default.copyItem(at: url, to: tempCopy)
+                    
+                    viewModel.appendImage(from: tempCopy)
+                }
+            }
+            return true
+        }
+        .contextMenu {
+            Menu("Color") {
+                ForEach(StickyNote.palette, id: \.self) { colorHex in
+                    Button {
+                        viewModel.updateColor(colorHex)
+                    } label: {
+                        HStack {
+                            if let nsColor = NSColor(hex: colorHex) {
+                                Image(systemName: "circle.fill")
+                                    .foregroundColor(Color(nsColor))
+                            }
+                            Text(colorHex) // Or usage name
+                        }
+                    }
+                }
+            }
+            
+            Menu("Opacity") {
+                Button("100%") { viewModel.updateOpacity(1.0) }
+                Button("80%") { viewModel.updateOpacity(0.8) }
+                Button("60%") { viewModel.updateOpacity(0.6) }
+                Button("40%") { viewModel.updateOpacity(0.4) }
+            }
+            
+            Button("Collapse/Expand") {
+                viewModel.toggleShade()
+            }
+            
+            Divider()
+            
+            Button("Close") {
+                // Find window and close?
+                // Or just delete note?
+                // Typically close window means close logic.
+                // For now, let's just implement close via window button or cmd+w.
+                // But this context menu is useful.
+                // We need a way to close the specific window from here if needed.
+                // Assuming standard window controls exist or keyboard shortcuts.
+            }
         }
     }
 }
