@@ -18,12 +18,30 @@ struct ContentView: View {
                 .foregroundColor(.secondary)
             Divider()
             ScrollView {
-                Text(viewModel.document.text)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(0..<viewModel.document.children.count, id: \.self) { index in
+                        nodeView(viewModel.document.children[index])
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(minWidth: 200, minHeight: 150)
+    }
+    
+    @ViewBuilder
+    func nodeView(_ node: OrgNode) -> some View {
+        if let heading = node as? Heading {
+            Text(heading.text)
+                .font(.system(size: CGFloat(24 - heading.level * 2), weight: .bold))
+                .padding(.top, 4)
+        } else if let paragraph = node as? Paragraph {
+            Text(paragraph.text)
+                .font(.body)
+        } else {
+            EmptyView()
+        }
     }
 }
 

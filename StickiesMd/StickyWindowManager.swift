@@ -26,6 +26,7 @@ class StickyWindowManager: NSObject, ObservableObject {
             backing: .buffered,
             defer: false
         )
+        window.setStickyColor(note.backgroundColor)
         
         window.onFrameChange = { newFrame in
             var updatedNote = note

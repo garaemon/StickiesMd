@@ -18,9 +18,14 @@ class StickyWindow: NSPanel, NSWindowDelegate {
         self.isMovableByWindowBackground = true
         self.titlebarAppearsTransparent = true
         self.titleVisibility = .hidden
-        self.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.8)
         self.isOpaque = false
         self.hasShadow = true
+    }
+    
+    func setStickyColor(_ hex: String) {
+        if let color = NSColor(hex: hex) {
+            self.backgroundColor = color.withAlphaComponent(0.8)
+        }
     }
     
     func windowDidMove(_ notification: Notification) {

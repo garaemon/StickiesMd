@@ -14,11 +14,18 @@ struct StickyNote: Identifiable, Codable {
 }
 
 extension StickyNote {
-    static let defaultColor = "#FFF9C4" // Classic Sticky Yellow
+    static let palette = [
+        "#FFF9C4", // Yellow
+        "#E1F5FE", // Blue
+        "#F1F8E9", // Green
+        "#FCE4EC", // Pink
+        "#F3E5F5", // Purple
+        "#F5F5F5"  // Gray
+    ]
     
     init(fileURL: URL) {
         self.fileURL = fileURL
-        self.backgroundColor = Self.defaultColor
+        self.backgroundColor = Self.palette.randomElement() ?? "#FFF9C4"
         self.opacity = 0.8
         self.frame = NSRect(x: 100, y: 100, width: 300, height: 200)
     }
