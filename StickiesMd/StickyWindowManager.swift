@@ -5,6 +5,24 @@ import Combine
 class StickyWindowManager: NSObject, ObservableObject {
     static let shared = StickyWindowManager()
     private var windows: [UUID: StickyWindow] = [:]
+    private var cancellables: Set<AnyCancellable> = []
+    
+    override init() {
+        super.init()
+        NotificationCenter.default.publisher(for: .stickyNoteAppearanceChanged)
+            .compactMap { $0.object as? StickyNote }
+            .sink { [weak self] note in
+                self?.updateWindowAppearance(for: note)
+            }
+            .store(in: &cancellables)
+            
+        NotificationCenter.default.publisher(for: .stickyNoteToggleShade)
+            .compactMap { $0.object as? StickyNote }
+            .sink { [weak self] note in
+                self?.windows[note.id]?.toggleShade()
+            }
+            .store(in: &cancellables)
+    }
     
     func restoreWindows() {
         for note in StickiesStore.shared.notes {
@@ -18,6 +36,12 @@ class StickyWindowManager: NSObject, ObservableObject {
         createWindow(for: note)
     }
     
+    func updateWindowAppearance(for note: StickyNote) {
+        guard let window = windows[note.id] else { return }
+        window.setStickyColor(note.backgroundColor)
+        window.alphaValue = CGFloat(note.opacity)
+    }
+    
     private func createWindow(for note: StickyNote) {
         let viewModel = StickyNoteViewModel(note: note)
         
@@ -27,6 +51,7 @@ class StickyWindowManager: NSObject, ObservableObject {
             defer: false
         )
         window.setStickyColor(note.backgroundColor)
+        window.alphaValue = CGFloat(note.opacity)
         
         window.onFrameChange = { newFrame in
             var updatedNote = note
