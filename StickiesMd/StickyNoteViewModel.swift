@@ -5,7 +5,7 @@ import OrgKit
 class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     @Published var note: StickyNote
     @Published var content: String = ""
-    @Published var document: OrgDocument = OrgDocument(text: "")
+    @Published var document: OrgDocument = OrgDocument(children: [])
     
     var presentedItemURL: URL? {
         return note.fileURL
