@@ -1,7 +1,9 @@
 import AppKit
 import SwiftUI
 
-class StickyWindow: NSPanel {
+class StickyWindow: NSPanel, NSWindowDelegate {
+    var onFrameChange: ((NSRect) -> Void)?
+    
     init(contentRect: NSRect, backing: NSWindow.BackingStoreType, defer flag: Bool) {
         super.init(
             contentRect: contentRect,
@@ -10,6 +12,7 @@ class StickyWindow: NSPanel {
             defer: flag
         )
         
+        self.delegate = self
         self.isFloatingPanel = true
         self.level = .floating
         self.isMovableByWindowBackground = true
@@ -18,5 +21,13 @@ class StickyWindow: NSPanel {
         self.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.8)
         self.isOpaque = false
         self.hasShadow = true
+    }
+    
+    func windowDidMove(_ notification: Notification) {
+        onFrameChange?(self.frame)
+    }
+    
+    func windowDidResize(_ notification: Notification) {
+        onFrameChange?(self.frame)
     }
 }

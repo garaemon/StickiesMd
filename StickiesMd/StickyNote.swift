@@ -1,0 +1,25 @@
+import Foundation
+import SwiftUI
+
+struct StickyNote: Identifiable, Codable {
+    var id: UUID = UUID()
+    var fileURL: URL
+    var backgroundColor: String // Hex string
+    var opacity: Double
+    var frame: NSRect
+    
+    enum CodingKeys: String, CodingKey {
+        case id, fileURL, backgroundColor, opacity, frame
+    }
+}
+
+extension StickyNote {
+    static let defaultColor = "#FFF9C4" // Classic Sticky Yellow
+    
+    init(fileURL: URL) {
+        self.fileURL = fileURL
+        self.backgroundColor = Self.defaultColor
+        self.opacity = 0.8
+        self.frame = NSRect(x: 100, y: 100, width: 300, height: 200)
+    }
+}

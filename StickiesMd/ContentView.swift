@@ -9,20 +9,24 @@ import SwiftUI
 import OrgKit
 
 struct ContentView: View {
-    let doc = OrgParser().parse("* Hello Org Mode")
+    @ObservedObject var viewModel: StickyNoteViewModel
     
     var body: some View {
         VStack {
-            Text("Stickies.md")
+            Text(viewModel.note.fileURL.lastPathComponent)
                 .font(.caption)
+                .foregroundColor(.secondary)
             Divider()
-            Text(doc.text)
-                .padding()
+            ScrollView {
+                Text(viewModel.document.text)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
-        .frame(width: 300, height: 200)
+        .frame(minWidth: 200, minHeight: 150)
     }
 }
 
 #Preview {
-    ContentView()
+    ContentView(viewModel: StickyNoteViewModel(note: StickyNote(fileURL: URL(fileURLWithPath: "/tmp/test.org"))))
 }
