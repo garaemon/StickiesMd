@@ -10,20 +10,20 @@ import XCTest
 final class StickiesMdUITests: XCTestCase {
 
     override func setUpWithError() throws {
-        // UIテストでは、失敗が発生した時点でテストを停止するのが一般的です
+        // In UI tests, it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
     }
 
     func testLaunch() throws {
-        // UIアプリケーションのインスタンスを作成
+        // Create an instance of the UI application
         let app = XCUIApplication()
-        // アプリ起動
+        // Launch the application
         app.launch()
         
-        // 起動確認：少なくとも1つのウィンドウが開いていること
-        XCTAssertTrue(app.windows.firstMatch.exists, "アプリ起動後にウィンドウが表示されるべきです")
+        // Launch verification: Check that at least one window is open
+        XCTAssertTrue(app.windows.firstMatch.exists, "A window should be displayed after launching the app")
         
-        // 追加の検証: スクリーンショットを撮るなど（必要に応じて）
+        // Additional verification: Take a screenshot if necessary
         // let attachment = XCTAttachment(screenshot: app.screenshot())
         // attachment.lifetime = .keepAlways
         // add(attachment)
