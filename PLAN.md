@@ -1,57 +1,57 @@
-# **Stickies.md プロジェクト仕様書**
+# **Stickies.md Project Specification**
 
-## **1. プロダクト概要**
+## **1. Product Overview**
 
-Stickies.mdは、macOS標準の「スティッキーズ」の軽快さと、MarkdownおよびOrg-modeによる高度な文書作成能力を組み合わせた、ファイル連動型の付箋アプリです。
+Stickies.md is a file-linked sticky note application that combines the lightness of macOS's standard "Stickies" with the advanced document creation capabilities of Markdown and Org-mode.
 
-### **ビジョン**
+### **Vision**
 
-「EmacsやVS Codeで編集した思考の断片を、デスクトップ上の美しい付箋として常に傍らに置く」
+"Keep fragments of thought edited in Emacs or VS Code always by your side as beautiful sticky notes on your desktop."
 
-## **2. 主要機能要件**
+## **2. Core Functional Requirements**
 
-1. **macOSネイティブ実装**: Swift/SwiftUIによる軽量で高速な動作。
-2. **スティッキーズUIとカスタマイズ**:
-   * **ミニマルなタイトルバー**: ウィンドウ操作のための最小限の領域を備え、ここから色や透明度の変更が可能。
-   * 常に最前面に表示（Floating Window）。
-   * **ウィンドウ単位の外観設定**: 各付箋ごとに背景色（テーマカラー）と透明度（Opacity）を個別に設定可能。
-     * **タイトルバーコントロール**: タイトルバー上のアイコンから色変更、およびボタンによる不透明度変更が可能。
-   * **初期値のランダム化**: 新しくファイルを開く際、クラシックなスティッキーズ・パレットからランダムに色を選択。
-   * **メニュー操作**: アプリケーションメニューから新しいファイルを開くことが可能。
-   * **マウス透過モード (Low Priority)**: オーバーレイ表示として、クリックを背後のウィンドウへ通す設定。
-3. **マルチフォーマット対応**: MarkdownおよびOrg-modeのパースとレンダリング。
-   * **直接編集機能**: 付箋上で直接テキストを編集し、Markdown/Orgファイルとして保存可能。
-4. **完全ファイル連動と設定の永続化**:
-   * ローカルの.mdまたは.orgファイルと1対1で対応。
-   * 外部エディタ（Emacs等）での変更を検知して即座に反映（Hot Reload）。
-   * **外観設定の保存**: ファイルパスと設定（色・透明度・ウィンドウ位置）を紐づけて保存し、次回起動時に同じ外観で復元。
-5. **リッチコンテンツと対話性**:
-   * インライン画像表示（[[path/to/img]] または ![]()）。
-   * **画像ドラッグ＆ドロップ (D&D)**: 付箋ウィンドウへの画像ドラッグ＆ドロップで、自動的にファイルを保存しリンクを挿入。
-   * **カスタマイズ可能な画像保存先**: 添付画像の保存ディレクトリを相対パスまたは絶対パスで設定可能。
-   * TODOステータスのハイライト。
+1. **Native macOS Implementation**: Lightweight and fast operation using Swift/SwiftUI.
+2. **Stickies UI and Customization**:
+   * **Minimal Title Bar**: Minimal area for window operations, allowing changes to color and transparency.
+   * Always on Top (Floating Window).
+   * **Per-Window Appearance Settings**: Background color (theme color) and opacity can be set individually for each sticky note.
+     * **Title Bar Controls**: Color can be changed via icons on the title bar, and opacity can be adjusted via buttons.
+   * **Initial Value Randomization**: When opening a new file, a color is randomly selected from a classic stickies palette.
+   * **Menu Operations**: New files can be opened from the application menu.
+   * **Mouse-through Mode (Low Priority)**: An overlay setting that allows clicks to pass through to windows behind.
+3. **Multi-format Support**: Parsing and rendering of Markdown and Org-mode.
+   * **Direct Editing**: Text can be edited directly on the sticky note and saved as a Markdown/Org file.
+4. **Full File Linking and Persistence**:
+   * One-to-one correspondence with local .md or .org files.
+   * Detect changes in external editors (Emacs, etc.) and reflect them immediately (Hot Reload).
+   * **Save Appearance Settings**: Save the association between file paths and settings (color, opacity, window frame) to restore the same appearance on the next launch.
+5. **Rich Content and Interactivity**:
+   * Inline image display ([[path/to/img]] or ![]()).
+   * **Image Drag & Drop (D&D)**: Automatically save files and insert links when images are dragged and dropped onto a sticky note window.
+   * **Customizable Image Storage**: Directory for saving attached images can be set via relative or absolute paths.
+   * Highlight TODO status.
 
-## **3. システムアーキテクチャ**
+## **3. System Architecture**
 
-プロジェクトはMonorepo形式を採用し、将来的なiOS展開を見据えた構成とする。
+The project adopts a Monorepo format, configured with future iOS expansion in mind.
 
-### **プロジェクト構造**
+### **Project Structure**
 
-* **StickiesMd (App)**: macOSアプリケーション層。ウィンドウ管理、ファイル監視、UI描画、ユーザーインターフェース（設定画面等）、**外観設定の永続化（Persistence）**を 担当。
-* **OrgKit (Swift Package)**: パースロジックを分離したコアライブラリ。
+* **StickiesMd (App)**: macOS application layer. Responsible for window management, file monitoring, UI rendering, user interface (settings screen, etc.), and **Persistence of appearance settings**.
+* **OrgKit (Swift Package)**: Core library with separated parsing logic.
 
-### **設定の永続化戦略**
+### **Persistence Strategy**
 
-* UserDefaults を利用し、ファイルURLの絶対パスをキーとした辞書形式で、以下の情報を格納した構造体（JSON）を保存する。
+* Use `UserDefaults` to store a dictionary where the key is the absolute path of the file URL, and the value is a struct (JSON) containing:
   * backgroundColor: Hex String
   * opacity: Double
   * windowFrame: NSRect (String representation)
 
-## **4. OrgKit 詳細仕様**
+## **4. OrgKit Detailed Specification**
 
-swiftlang/swift-markdownのAPI設計を参考に、シンプルかつ拡張性の高いインターフェースを構築する。
+Build a simple and highly extensible interface, referencing the API design of swiftlang/swift-markdown.
 
-### **API デザイン**
+### **API Design**
 
 ```swift
 // Usage example
@@ -73,84 +73,83 @@ var renderer = MyRenderer()
 renderer.visit(document)
 ```
 
-### **抽象構文木 (AST) 定義案**
+### **Abstract Syntax Tree (AST) Definition Proposal**
 
-OrgNode プロトコルを基本とし、Block要素とInline要素を階層的に保持する。
+Based on the `OrgNode` protocol, holding Block elements and Inline elements hierarchically.
 
 * **Block Nodes**: Document, Heading, Paragraph, List, CodeBlock, Drawer, HorizontalRule
 * **Inline Nodes**: Text, Strong, Emphasis, Link, Image
 
-## **5. 実装ロードマップ**
+## **5. Implementation Roadmap**
 
-### **Phase 1: 基盤構築 (Infrastructure)**
+### **Phase 1: Infrastructure**
 
-* [ ] **Window Customization**: NSPanel (NSWindowのサブクラス) を使用。タイトルバー非表示化と透明背景の実装。
-* [ ] **File Watcher**: NSFilePresenter を使用した特定ファイルの監視。
-* [ ] **Persistence**: StickiesStore クラスの実装。UserDefaults を介した設定のセーブ/ロード。
-* [ ] **Library Link**: Appターゲットから OrgKit を参照可能にする。
+* [ ] **Window Customization**: Use `NSPanel` (subclass of `NSWindow`). Implement title bar hiding and transparent backgrounds.
+* [ ] **File Watcher**: Monitor specific files using `NSFilePresenter`.
+* [ ] **Persistence**: Implement `StickiesStore` class. Save/load settings via `UserDefaults`.
+* [ ] **Library Link**: Make `OrgKit` accessible from the App target.
 
-### **Phase 2: OrgKit 開発 (Parser)**
+### **Phase 2: OrgKit Development (Parser)**
 
-* [ ] **Lexer/Scanner**: 行単位でのトークン分割。
-* [ ] **Node Types**: ASTを構成する各要素の定義。
-* [ ] **TDD Implementation**: Swift Testing によるインクリメンタルな実装。
+* [ ] **Lexer/Scanner**: Tokenize on a per-line basis.
+* [ ] **Node Types**: Define elements constituting the AST.
+* [ ] **TDD Implementation**: Incremental implementation using Swift Testing.
 
-### **Phase 3: レンダリングとインタラクション (Rendering & Interaction)**
+### **Phase 3: Rendering & Interaction**
 
-* [ ] **View Mapping**: 各 OrgNode に対応する SwiftUI コンポーネントの実装。
-* [ ] **Drag & Drop**: 画像受入と FileManager による保存処理。
-* [ ] **Menu Operations**: メニューバーからファイルを開く機能の実装。
-* [ ] **Appearance UI**: タイトルバー上のアイコンからの色変更および不透明度変更ボタンの実装。
-* [ ] **Rich Rendering**: MarkdownおよびOrg-modeの視認性を高めるためのリッチなレンダリング（シンタックスハイライト、スタイル適用）の実装。
+* [ ] **View Mapping**: Implement SwiftUI components corresponding to each `OrgNode`.
+* [ ] **Drag & Drop**: Handle image acceptance and saving via `FileManager`.
+* [ ] **Menu Operations**: Implement functionality to open files from the menu bar.
+* [ ] **Appearance UI**: Implement color change and opacity adjustment buttons on the title bar.
+* [ ] **Rich Rendering**: Implement rich rendering (syntax highlighting, styling) to improve visibility of Markdown and Org-mode.
 
-### **Phase 4: ユーザ体験の向上 (UX)**
+### **Phase 4: UX Enhancement**
 
-* [ ] **Mouse-through Mode**: 特定条件下（キー修飾等）でのクリック透過機能。
-* [ ] **App Sandbox & Security**: セキュリティ上の制限を考慮したファイルアクセス権のハンドリング。
+* [ ] **Mouse-through Mode**: Click-through functionality under specific conditions (modifier keys, etc.).
+* [ ] **App Sandbox & Security**: Handle file access rights considering security restrictions.
 
-### **Phase 5: ウィンドウ単位の外観設定**
+### **Phase 5: Per-Window Appearance Settings**
 
-* [x] **Window Configuration**: タイトルバーにwindowの設定画面を開くアイコンを設置し，色や透明度，ファイルを設定できるようにする
+* [x] **Window Configuration**: Add an icon to the title bar to open a window settings screen, allowing configuration of color, opacity, and file.
 
-### **Phase 6: 内容の編集**
+### **Phase 6: Content Editing**
 
-* [x] **Editing**: windowをフォーカスしたら実際に文章を打てるようにすること
+* [x] **Editing**: Enable actual text input when the window is focused.
 
+## **6. Technical Challenges and Investment Value**
 
-## **6. 技術的挑戦と投資価値**
+* **Org-mode implementation in Pure Swift**: Increase reusability within the Apple ecosystem.
+* **iOS Expansion**: Develop iOS apps/widgets at minimum cost using the same `OrgKit`.
 
-* **Pure SwiftによるOrg-mode実装**: Appleエコシステムにおける再利用性を高める。
-* **iOS展開**: 同じ OrgKit を使用して、iOSアプリ/ウィジェットを最小コストで開発可能。
-
-## **7. 実装・開発方針 (Implementation Policy)**
+## **7. Implementation and Development Policy**
 
 ### **7.1. Language Standard**
 
-* **Code & Documentation**: すべての識別子、コメント、ドキュメントは**英語**を使用する。
+* **Code & Documentation**: All identifiers, comments, and documentation must be in **English**.
 
 ### **7.2. Automated Testing (CI)**
 
-* **GitHub Actions**: Push/PR時にmacOSランナーで swift test を自動実行。
+* **GitHub Actions**: Automatically run `swift test` on macOS runners upon Push/PR.
 
 ### **7.3. Test-Driven Development (TDD)**
 
-* **Workflow**: テストを先に書き（Red）、実装を進める（Green）。
+* **Workflow**: Write tests first (Red), then proceed with implementation (Green).
 
-## **8. 技術的な詳細 (Technical Deep Dives)**
+## **8. Technical Deep Dives**
 
 ### **8.1. Window Behavior**
 
-* level = .floating: 常に最前面。
-* isMovableByWindowBackground = true: 背景ドラッグで移動。
-* styleMask.insert(.nonactivatingPanel): フォーカスを奪わずに操作可能。
+* level = .floating: Always on top.
+* isMovableByWindowBackground = true: Move by dragging the background.
+* styleMask.insert(.nonactivatingPanel): Operable without taking focus.
 
 ### **8.2. File Synchronization**
 
-NSFilePresenter を採用し、外部エディタとの競合を防ぎつつ変更を検知する。
+Adopt `NSFilePresenter` to detect changes while preventing conflicts with external editors.
 
 ### **8.3. Initial Color Palette (Sticky Classics)**
 
-以下の6色をデフォルトのランダム回転セットとして採用する：
+Adopt the following 6 colors as the default random rotation set:
 
 1. **Yellow**: #FFF9C4 (Classic Sticky Yellow)
 2. **Blue**: #E1F5FE
@@ -160,4 +159,4 @@ NSFilePresenter を採用し、外部エディタとの競合を防ぎつつ変�
 6. **Gray**: #F5F5F5
 
 ### **8.4. Initial Opacity**
-透明度の初期値は1, つまり非透明であるとする。
+The initial value for opacity is 1, meaning non-transparent.
