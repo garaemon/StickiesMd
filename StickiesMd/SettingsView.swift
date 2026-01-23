@@ -58,17 +58,16 @@ struct SettingsView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer()
-                    Button("Open") {
-                        NSWorkspace.shared.activateFileViewerSelecting([viewModel.note.fileURL])
-                    }
                 }
                 .padding(4)
                 .background(Color.secondary.opacity(0.1))
                 .cornerRadius(4)
                 
-                Button("Choose Another File...") {
+                Button("Open Another File...") {
                     let panel = NSOpenPanel()
-                    panel.allowedContentTypes = [.text, .plainText] // simplified for now
+                    let orgType = UTType(filenameExtension: "org") ?? .text
+                    let mdType = UTType(filenameExtension: "md") ?? .text
+                    panel.allowedContentTypes = [orgType, mdType, .text, .plainText]
                     panel.allowsMultipleSelection = false
                     panel.canChooseDirectories = false
                     
