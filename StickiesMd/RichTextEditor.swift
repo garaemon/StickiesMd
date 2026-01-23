@@ -29,6 +29,7 @@ struct RichTextEditor: NSViewRepresentable {
         textView.autoresizingMask = [.width]
         textView.textContainer?.widthTracksTextView = true
         textView.isHorizontallyResizable = false
+        textView.isVerticallyResizable = true
         
         return scrollView
     }
@@ -89,6 +90,12 @@ struct RichTextEditor: NSViewRepresentable {
             highlighter.visit(document)
             
             storage?.endEditing()
+            
+            // Force layout update and redraw to fix rendering issues when deleting text at the end
+            if let layoutManager = textView.layoutManager, let textContainer = textView.textContainer {
+                layoutManager.ensureLayout(for: textContainer)
+            }
+            textView.needsDisplay = true
         }
     }
 }
