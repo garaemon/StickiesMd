@@ -58,26 +58,17 @@ struct ContentView: View {
                     SettingsView(viewModel: viewModel)
                 }
             }
-            .padding(.leading, 68) // Space for traffic lights
-            .padding(.trailing, 8)
-            .padding(.top, 10)
-            .padding(.bottom, 4)
+            .padding(.leading, 110) // Further increased space
+            .padding(.trailing, 10)
+            .frame(height: 32) // Standard height
+            .padding(.top, 12) // Push down to align with traffic lights center
             
             // Divider() removed for integrated look
             
             Group {
-                if viewModel.isFocused {
-                    RichTextEditor(text: $viewModel.content, format: viewModel.fileFormat)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(4)
-                } else {
-                    ScrollView {
-                        let renderer = OrgViewRenderer(baseURL: viewModel.note.fileURL)
-                        renderer.render(viewModel.document)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                    }
-                }
+                RichTextEditor(text: $viewModel.content, format: viewModel.fileFormat, isEditable: viewModel.isFocused)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(4)
             }
         }
         .environment(\.colorScheme, .light)
@@ -126,10 +117,6 @@ struct ContentView: View {
                 Button("80%") { viewModel.updateOpacity(0.8) }
                 Button("60%") { viewModel.updateOpacity(0.6) }
                 Button("40%") { viewModel.updateOpacity(0.4) }
-            }
-            
-            Button("Collapse/Expand") {
-                viewModel.toggleShade()
             }
             
             Button("Enable Mouse-Through") {

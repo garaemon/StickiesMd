@@ -24,6 +24,12 @@ class StickyWindow: NSPanel, NSWindowDelegate {
         self.titleVisibility = .hidden
         self.isOpaque = false
         self.hasShadow = true
+        
+        // Add a toolbar to increase the titlebar height and better align traffic lights
+        let toolbar = NSToolbar()
+        toolbar.showsBaselineSeparator = false
+        self.toolbar = toolbar
+        self.toolbarStyle = .unified
     }
     
     func windowWillClose(_ notification: Notification) {
@@ -59,39 +65,12 @@ class StickyWindow: NSPanel, NSWindowDelegate {
     
     // Phase 4: Window Shading & Mouse-through
     
-    private var originalFrame: NSRect?
-    private var isShaded: Bool = false
-    
-    func toggleShade() {
-        if isShaded {
-            // Unshade
-            if let original = originalFrame {
-                self.setFrame(original, display: true, animate: true)
-                originalFrame = nil
-            }
-            isShaded = false
-        } else {
-            // Shade
-            originalFrame = self.frame
-            var newFrame = self.frame
-            newFrame.size.height = 22 // Small height
-            // Adjust origin y to keep top position
-            newFrame.origin.y = self.frame.maxY - 22
-            self.setFrame(newFrame, display: true, animate: true)
-            isShaded = true
-        }
-    }
-    
     override func cancelOperation(_ sender: Any?) {
         // Do nothing to prevent closing window on Esc
     }
     
     override func mouseDown(with event: NSEvent) {
-        if event.clickCount == 2 {
-            toggleShade()
-        } else {
-            super.mouseDown(with: event)
-        }
+        super.mouseDown(with: event)
     }
     
     func setMouseThrough(_ enabled: Bool) {

@@ -147,10 +147,6 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
         StickiesStore.shared.update(note: note)
     }
     
-    func toggleShade() {
-        NotificationCenter.default.post(name: .stickyNoteToggleShade, object: note)
-    }
-    
     func setMouseThrough(_ enabled: Bool) {
         NotificationCenter.default.post(name: .stickyNoteMouseThrough, object: note, userInfo: ["enabled": enabled])
     }
@@ -206,7 +202,6 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
 
 extension Notification.Name {
     static let stickyNoteAppearanceChanged = Notification.Name("stickyNoteAppearanceChanged")
-    static let stickyNoteToggleShade = Notification.Name("stickyNoteToggleShade")
     static let stickyNoteMouseThrough = Notification.Name("stickyNoteMouseThrough")
     static let stickyNoteAlwaysOnTopChanged = Notification.Name("stickyNoteAlwaysOnTopChanged")
 }

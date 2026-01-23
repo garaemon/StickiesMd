@@ -16,13 +16,6 @@ class StickyWindowManager: NSObject, ObservableObject {
             }
             .store(in: &cancellables)
             
-        NotificationCenter.default.publisher(for: .stickyNoteToggleShade)
-            .compactMap { $0.object as? StickyNote }
-            .sink { [weak self] note in
-                self?.windows[note.id]?.toggleShade()
-            }
-            .store(in: &cancellables)
-            
         NotificationCenter.default.publisher(for: .stickyNoteMouseThrough)
             .compactMap { notification -> (StickyNote, Bool)? in
                 guard let note = notification.object as? StickyNote,
@@ -119,7 +112,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let fileManager = FileManager.default
             let tempDir = fileManager.temporaryDirectory
             let sampleURL = tempDir.appendingPathComponent("sample.org")
-            let content = "* Welcome to Stickies.md\nThis is a sample org file."
+            let content = "* Welcome to Stickies.md\nThis is a sample org file.\nYou can use *bold* and /italic/ text.\n\n- Item 1\n- Item 2\n"
             
             try? content.write(to: sampleURL, atomically: true, encoding: .utf8)
             
