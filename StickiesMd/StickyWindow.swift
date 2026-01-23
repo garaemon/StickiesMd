@@ -3,6 +3,7 @@ import SwiftUI
 
 class StickyWindow: NSPanel, NSWindowDelegate {
     var onFrameChange: ((NSRect) -> Void)?
+    var onFocusChange: ((Bool) -> Void)?
     
     init(contentRect: NSRect, backing: NSWindow.BackingStoreType, defer flag: Bool) {
         super.init(
@@ -22,9 +23,17 @@ class StickyWindow: NSPanel, NSWindowDelegate {
         self.hasShadow = true
     }
     
+    func windowDidBecomeKey(_ notification: Notification) {
+        onFocusChange?(true)
+    }
+    
+    func windowDidResignKey(_ notification: Notification) {
+        onFocusChange?(false)
+    }
+    
     func setStickyColor(_ hex: String) {
         if let color = NSColor(hex: hex) {
-            self.backgroundColor = color.withAlphaComponent(0.8)
+            self.backgroundColor = color
         }
     }
     
@@ -53,6 +62,10 @@ class StickyWindow: NSPanel, NSWindowDelegate {
         }
     }
     
+    override func cancelOperation(_ sender: Any?) {
+        // Do nothing to prevent closing window on Esc
+    }
+    
     override func mouseDown(with event: NSEvent) {
         if event.clickCount == 2 {
             toggleShade()
@@ -75,7 +88,7 @@ class StickyWindow: NSPanel, NSWindowDelegate {
             self.alphaValue = 0.5 // Visual cue
         } else {
             self.level = .floating
-            self.alphaValue = 0.8
+            // Alpha will be restored by WindowManager
         }
     }
     

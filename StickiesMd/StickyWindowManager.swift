@@ -22,6 +22,22 @@ class StickyWindowManager: NSObject, ObservableObject {
                 self?.windows[note.id]?.toggleShade()
             }
             .store(in: &cancellables)
+            
+        NotificationCenter.default.publisher(for: .stickyNoteMouseThrough)
+            .compactMap { notification -> (StickyNote, Bool)? in
+                guard let note = notification.object as? StickyNote,
+                      let enabled = notification.userInfo?["enabled"] as? Bool else {
+                    return nil
+                }
+                return (note, enabled)
+            }
+            .sink { [weak self] (note, enabled) in
+                self?.windows[note.id]?.setMouseThrough(enabled)
+                if !enabled {
+                    self?.updateWindowAppearance(for: note)
+                }
+            }
+            .store(in: &cancellables)
     }
     
     func restoreWindows() {
@@ -42,6 +58,12 @@ class StickyWindowManager: NSObject, ObservableObject {
         window.alphaValue = CGFloat(note.opacity)
     }
     
+    func resetAllMouseThrough() {
+        for window in windows.values {
+            window.setMouseThrough(false)
+        }
+    }
+    
     private func createWindow(for note: StickyNote) {
         let viewModel = StickyNoteViewModel(note: note)
         
@@ -57,6 +79,12 @@ class StickyWindowManager: NSObject, ObservableObject {
             var updatedNote = note
             updatedNote.frame = newFrame
             StickiesStore.shared.update(note: updatedNote)
+        }
+        
+        window.onFocusChange = { [weak viewModel] isFocused in
+            DispatchQueue.main.async {
+                viewModel?.isFocused = isFocused
+            }
         }
         
         let contentView = ContentView(viewModel: viewModel)
