@@ -214,7 +214,7 @@ public class OrgParser {
             nsText.getLineStart(&lineStart, end: &lineEnd, contentsEnd: &contentsEnd, for: NSRange(location: lineStart, length: 0))
             let lineRange = NSRange(location: lineStart, length: contentsEnd - lineStart)
             let line = nsText.substring(with: lineRange)
-            let fullLineRange = NSRange(location: lineStart, length: lineEnd - lineStart)
+            // let fullLineRange = NSRange(location: lineStart, length: lineEnd - lineStart) // Unused
             
             // Skip empty lines (preserve in range if needed, but for AST usually skipped or spacer)
             if line.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -436,25 +436,49 @@ public class OrgParser {
     private func parseInlineStyles(_ text: String, offset: Int) -> [OrgNode] {
         var nodes: [OrgNode] = []
         let nsText = text as NSString
-        var scanner = Scanner(string: text)
-        scanner.charactersToBeSkipped = nil
         
-        // This scanner approach is hard to get ranges correct without careful tracking.
-        // Let's use a simpler regex approach for *bold* and /italic/
-        // BUT nested styles are hard.
-        // Let's stick to the previous logic but track start index.
+        // *bold* or /italic/
+        // Simple regex: (\*([^\*]+)\*)|(/([^/]+)/)
+        let pattern = "(\\*([^\\*]+)\\*)|(/([^/]+)/)"
+        let regex = try? NSRegularExpression(pattern: pattern)
         
-        // For 'text' we need to be careful. 'scanner.scanCharacter()' advances.
+        var lastIndex = 0
+        let fullRange = NSRange(location: 0, length: nsText.length)
         
-        // Let's just create one TextNode for now to avoid regression on complex parsing bugs
-        // and add highlighting for headings which is the main user request.
-        // Re-implementing full inline parsing with ranges correctly is non-trivial.
+        regex?.enumerateMatches(in: text, options: [], range: fullRange) { match, _, _ in
+            guard let match = match else { return }
+            
+            // Text before match
+            if match.range.location > lastIndex {
+                let range = NSRange(location: lastIndex, length: match.range.location - lastIndex)
+                let subText = nsText.substring(with: range)
+                nodes.append(TextNode(text: subText, range: NSRange(location: offset + range.location, length: range.length)))
+            }
+            
+            let globalRange = NSRange(location: offset + match.range.location, length: match.range.length)
+            
+            // Group 1: *bold*
+            if match.range(at: 1).location != NSNotFound {
+                let contentRange = match.range(at: 2)
+                let content = nsText.substring(with: contentRange)
+                nodes.append(StrongNode(text: content, range: globalRange))
+            } 
+            // Group 3: /italic/
+            else if match.range(at: 3).location != NSNotFound {
+                let contentRange = match.range(at: 4)
+                let content = nsText.substring(with: contentRange)
+                nodes.append(EmphasisNode(text: content, range: globalRange))
+            }
+            
+            lastIndex = match.range.location + match.range.length
+        }
         
-        // User asked: "WYSIWYG... Headings should be heading size".
-        // Implementing Bold/Italic is secondary?
-        // I will implement TextNode for the whole chunk.
-        
-        nodes.append(TextNode(text: text, range: NSRange(location: offset, length: nsText.length)))
+        // Remaining text
+        if lastIndex < nsText.length {
+            let range = NSRange(location: lastIndex, length: nsText.length - lastIndex)
+            let subText = nsText.substring(with: range)
+            nodes.append(TextNode(text: subText, range: NSRange(location: offset + range.location, length: range.length)))
+        }
         
         return nodes
     }
