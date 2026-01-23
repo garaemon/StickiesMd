@@ -10,6 +10,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     
     private var cancellables: Set<AnyCancellable> = []
     private var lastSavedContent: String = ""
+    private var isAccessingResource = false
     
     var presentedItemURL: URL? {
         return note.fileURL
@@ -22,6 +23,9 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     init(note: StickyNote) {
         self.note = note
         super.init()
+        
+        isAccessingResource = self.note.fileURL.startAccessingSecurityScopedResource()
+        
         loadContent()
         lastSavedContent = content
         NSFileCoordinator.addFilePresenter(self)
@@ -31,6 +35,9 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     
     deinit {
         NSFileCoordinator.removeFilePresenter(self)
+        if isAccessingResource {
+            note.fileURL.stopAccessingSecurityScopedResource()
+        }
     }
     
     private func setupAutoSave() {
@@ -120,7 +127,14 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     
     func updateFile(_ newURL: URL) {
         NSFileCoordinator.removeFilePresenter(self)
+        if isAccessingResource {
+            note.fileURL.stopAccessingSecurityScopedResource()
+        }
+        
         note.fileURL = newURL
+        isAccessingResource = note.fileURL.startAccessingSecurityScopedResource()
+        note.updateBookmark()
+        
         loadContent()
         NSFileCoordinator.addFilePresenter(self)
         StickiesStore.shared.update(note: note)
