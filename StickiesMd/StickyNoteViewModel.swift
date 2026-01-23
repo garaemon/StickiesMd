@@ -185,10 +185,21 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
             print("Failed to append text: \(error)")
         }
     }
+    
+    func toggleAlwaysOnTop() {
+        note.isAlwaysOnTop.toggle()
+        StickiesStore.shared.update(note: note)
+        NotificationCenter.default.post(name: .stickyNoteAlwaysOnTopChanged, object: note)
+    }
+    
+    func manualSave() {
+        saveContent(content)
+    }
 }
 
 extension Notification.Name {
     static let stickyNoteAppearanceChanged = Notification.Name("stickyNoteAppearanceChanged")
     static let stickyNoteToggleShade = Notification.Name("stickyNoteToggleShade")
     static let stickyNoteMouseThrough = Notification.Name("stickyNoteMouseThrough")
+    static let stickyNoteAlwaysOnTopChanged = Notification.Name("stickyNoteAlwaysOnTopChanged")
 }

@@ -5,6 +5,8 @@ class StickyWindow: NSPanel, NSWindowDelegate {
     var onFrameChange: ((NSRect) -> Void)?
     var onFocusChange: ((Bool) -> Void)?
     
+    private var isAlwaysOnTop: Bool = false
+    
     init(contentRect: NSRect, backing: NSWindow.BackingStoreType, defer flag: Bool) {
         super.init(
             contentRect: contentRect,
@@ -15,7 +17,7 @@ class StickyWindow: NSPanel, NSWindowDelegate {
         
         self.delegate = self
         self.isFloatingPanel = true
-        self.level = .floating
+        self.level = .normal
         self.isMovableByWindowBackground = true
         self.titlebarAppearsTransparent = true
         self.titleVisibility = .hidden
@@ -34,6 +36,19 @@ class StickyWindow: NSPanel, NSWindowDelegate {
     func setStickyColor(_ hex: String) {
         if let color = NSColor(hex: hex) {
             self.backgroundColor = color
+        }
+    }
+    
+    func setAlwaysOnTop(_ enabled: Bool) {
+        isAlwaysOnTop = enabled
+        updateLevel()
+    }
+    
+    private func updateLevel() {
+        if ignoresMouseEvents {
+            self.level = .floating
+        } else {
+            self.level = isAlwaysOnTop ? .floating : .normal
         }
     }
     
@@ -84,12 +99,11 @@ class StickyWindow: NSPanel, NSWindowDelegate {
         // A common trick is to monitor events globally or toggle transparent to clicks.
         
         if enabled {
-            self.level = .floating
             self.alphaValue = 0.5 // Visual cue
         } else {
-            self.level = .floating
             // Alpha will be restored by WindowManager
         }
+        updateLevel()
     }
     
     func windowDidMove(_ notification: Notification) {

@@ -26,6 +26,28 @@ struct ContentView: View {
                 Spacer()
                 
                 Button(action: {
+                    viewModel.manualSave()
+                }) {
+                    Image(systemName: "opticaldisc")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Save content")
+                .padding(.trailing, 4)
+                
+                Button(action: {
+                    viewModel.toggleAlwaysOnTop()
+                }) {
+                    Image(systemName: viewModel.note.isAlwaysOnTop ? "pin.fill" : "pin")
+                        .font(.caption)
+                        .foregroundColor(viewModel.note.isAlwaysOnTop ? .primary : .secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Toggle Always on Top")
+                .padding(.trailing, 4)
+                
+                Button(action: {
                     showSettings.toggle()
                 }) {
                     Image(systemName: "gearshape.fill")

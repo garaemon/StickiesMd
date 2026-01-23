@@ -38,6 +38,13 @@ class StickyWindowManager: NSObject, ObservableObject {
                 }
             }
             .store(in: &cancellables)
+            
+        NotificationCenter.default.publisher(for: .stickyNoteAlwaysOnTopChanged)
+            .compactMap { $0.object as? StickyNote }
+            .sink { [weak self] note in
+                self?.windows[note.id]?.setAlwaysOnTop(note.isAlwaysOnTop)
+            }
+            .store(in: &cancellables)
     }
     
     func restoreWindows() {
@@ -56,6 +63,7 @@ class StickyWindowManager: NSObject, ObservableObject {
         guard let window = windows[note.id] else { return }
         window.setStickyColor(note.backgroundColor)
         window.alphaValue = CGFloat(note.opacity)
+        window.setAlwaysOnTop(note.isAlwaysOnTop)
     }
     
     func resetAllMouseThrough() {
@@ -74,6 +82,7 @@ class StickyWindowManager: NSObject, ObservableObject {
         )
         window.setStickyColor(note.backgroundColor)
         window.alphaValue = CGFloat(note.opacity)
+        window.setAlwaysOnTop(note.isAlwaysOnTop)
         
         window.onFrameChange = { newFrame in
             var updatedNote = note
