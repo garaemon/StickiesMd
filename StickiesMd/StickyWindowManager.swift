@@ -96,6 +96,11 @@ class StickyWindowManager: NSObject, ObservableObject {
             }
         }
         
+        window.onClose = { [weak self] in
+            StickiesStore.shared.remove(note: note)
+            self?.windows.removeValue(forKey: note.id)
+        }
+        
         let contentView = ContentView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: contentView)
         window.contentView = hostingView
