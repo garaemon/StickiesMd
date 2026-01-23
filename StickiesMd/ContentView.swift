@@ -11,21 +11,67 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @ObservedObject var viewModel: StickyNoteViewModel
+    @State private var showSettings = false
+    @FocusState private var isEditorFocused: Bool
     
     var body: some View {
-        VStack {
-            Text(viewModel.note.fileURL.lastPathComponent)
-                .font(.caption)
-                .foregroundColor(.secondary)
+        VStack(spacing: 0) {
+            HStack {
+                Text(viewModel.note.fileURL.lastPathComponent)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                
+                Spacer()
+                
+                Button(action: {
+                    showSettings.toggle()
+                }) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showSettings) {
+                    SettingsView(viewModel: viewModel)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 4)
+            .padding(.bottom, 4)
+            
             Divider()
-            ScrollView {
-                let renderer = OrgViewRenderer(baseURL: viewModel.note.fileURL)
-                renderer.render(viewModel.document)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
+            
+            Group {
+                if viewModel.isFocused {
+                    TextEditor(text: $viewModel.content)
+                        .font(.system(.body, design: .monospaced))
+                        .scrollContentBackground(.hidden)
+                        .background(Color.clear)
+                        .focused($isEditorFocused)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(4)
+                } else {
+                    ScrollView {
+                        let renderer = OrgViewRenderer(baseURL: viewModel.note.fileURL)
+                        renderer.render(viewModel.document)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                    }
+                }
             }
         }
+        .environment(\.colorScheme, .light)
         .frame(minWidth: 200, minHeight: 150)
+        .onChange(of: viewModel.isFocused) { focused in
+            if focused {
+                // Delay slightly to ensure view is mounted
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isEditorFocused = true
+                }
+            }
+        }
         .onDrop(of: [.image], isTargeted: nil) { providers in
             guard let provider = providers.first else { return false }
             
@@ -73,6 +119,10 @@ struct ContentView: View {
             
             Button("Collapse/Expand") {
                 viewModel.toggleShade()
+            }
+            
+            Button("Enable Mouse-Through") {
+                viewModel.setMouseThrough(true)
             }
             
             Divider()

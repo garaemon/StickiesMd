@@ -26,7 +26,7 @@ extension StickyNote {
     init(fileURL: URL) {
         self.fileURL = fileURL
         self.backgroundColor = Self.palette.randomElement() ?? "#FFF9C4"
-        self.opacity = 0.8
+        self.opacity = 1.0
         self.frame = NSRect(x: 100, y: 100, width: 300, height: 200)
     }
 }

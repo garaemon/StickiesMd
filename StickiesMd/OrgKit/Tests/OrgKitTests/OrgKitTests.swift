@@ -85,4 +85,66 @@ import Testing
         #expect((paragraph.children[1] as? ImageNode)?.source == "img.png")
         #expect((paragraph.children[2] as? TextNode)?.text == " text after")
     }
+    
+    @Test func testCodeBlock() {
+        let parser = OrgParser()
+        let text = """
+        #+BEGIN_SRC swift
+        print(\"Hello\")
+        #+END_SRC
+        """
+        let doc = parser.parse(text)
+        
+        #expect(doc.children.count == 1)
+        guard let codeBlock = doc.children[0] as? CodeBlock else {
+            Issue.record("Expected CodeBlock")
+            return
+        }
+        
+        #expect(codeBlock.language == "swift")
+        #expect(codeBlock.content == "print(\"Hello\")")
+    }
+    
+    @Test func testHorizontalRule() {
+        let parser = OrgParser()
+        let doc = parser.parse("-----")
+        
+        #expect(doc.children.count == 1)
+        #expect(doc.children[0] is HorizontalRule)
+    }
+    
+    @Test func testList() {
+        let parser = OrgParser()
+        let text = """
+        - Item 1
+        - Item 2
+        """
+        let doc = parser.parse(text)
+        
+        #expect(doc.children.count == 1)
+        guard let list = doc.children[0] as? ListNode else {
+            Issue.record("Expected ListNode")
+            return
+        }
+        
+        #expect(list.items.count == 2)
+        #expect(list.items[0] == "Item 1")
+        #expect(list.items[1] == "Item 2")
+    }
+    
+    @Test func testInlineStyles() {
+        let parser = OrgParser()
+        let text = "Hello *bold* and /italic/ world"
+        let doc = parser.parse(text)
+        
+        guard let paragraph = doc.children[0] as? Paragraph else {
+            Issue.record("Expected Paragraph")
+            return
+        }
+        
+        // "Hello ", Strong("bold"), " and ", Emphasis("italic"), " world"
+        #expect(paragraph.children.count == 5)
+        #expect((paragraph.children[1] as? StrongNode)?.text == "bold")
+        #expect((paragraph.children[3] as? EmphasisNode)?.text == "italic")
+    }
 }

@@ -114,6 +114,48 @@ class OrgViewRenderer: OrgVisitor {
             }
         ))
     }
+    
+    func visitList(_ node: ListNode) {
+        views.append(AnyView(
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(Array(node.items.enumerated()), id: \.offset) { index, item in
+                    HStack(alignment: .top) {
+                        Text(node.ordered ? "\(index + 1)." : "•")
+                        Text(item)
+                    }
+                }
+            }
+        ))
+    }
+    
+    func visitCodeBlock(_ node: CodeBlock) {
+        views.append(AnyView(
+            VStack(alignment: .leading) {
+                if let lang = node.language {
+                    Text(lang)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Text(node.content)
+                    .font(.system(.body, design: .monospaced))
+                    .padding(8)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(4)
+            }
+        ))
+    }
+    
+    func visitHorizontalRule(_ node: HorizontalRule) {
+        views.append(AnyView(Divider()))
+    }
+    
+    func visitStrong(_ node: StrongNode) {
+        inlineViews.append(AnyView(Text(node.text).bold()))
+    }
+    
+    func visitEmphasis(_ node: EmphasisNode) {
+        inlineViews.append(AnyView(Text(node.text).italic()))
+    }
 }
 
 // Simple Layout for mixed content
