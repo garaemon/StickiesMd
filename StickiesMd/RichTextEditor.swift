@@ -24,6 +24,7 @@ struct RichTextEditor: NSViewRepresentable {
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.isEditable = isEditable
         textView.isSelectable = true
+        textView.setAccessibilityIdentifier("rich_text_editor_textview")
         
         // Ensure full width and word wrap
         textView.autoresizingMask = [.width]

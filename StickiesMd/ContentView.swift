@@ -34,6 +34,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Save content")
+                .accessibilityIdentifier("save_button")
                 .padding(.trailing, 4)
                 
                 Button(action: {
@@ -45,6 +46,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Toggle Always on Top")
+                .accessibilityIdentifier("pin_button")
                 .padding(.trailing, 4)
                 
                 Button(action: {
@@ -58,6 +60,7 @@ struct ContentView: View {
                 .popover(isPresented: $showSettings) {
                     SettingsView(viewModel: viewModel)
                 }
+                .accessibilityIdentifier("settings_button")
             }
             .padding(.leading, 110) // Further increased space
             .padding(.trailing, 10)
@@ -70,6 +73,7 @@ struct ContentView: View {
                 RichTextEditor(text: $viewModel.content, format: viewModel.fileFormat, isEditable: viewModel.isFocused)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(4)
+                    .accessibilityIdentifier("rich_text_editor")
             }
         }
         .environment(\.colorScheme, .light)
