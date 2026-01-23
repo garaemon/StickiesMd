@@ -105,7 +105,6 @@ OrgNode プロトコルを基本とし、Block要素とInline要素を階層的�
 
 ### **Phase 4: ユーザ体験の向上 (UX)**
 
-* [ ] **Window Shading**: ダブルクリック等でウィンドウを縮小。
 * [ ] **Mouse-through Mode**: 特定条件下（キー修飾等）でのクリック透過機能。
 * [ ] **App Sandbox & Security**: セキュリティ上の制限を考慮したファイルアクセス権のハンドリング。
 
