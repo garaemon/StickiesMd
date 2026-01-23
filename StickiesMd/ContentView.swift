@@ -58,9 +58,9 @@ struct ContentView: View {
                     SettingsView(viewModel: viewModel)
                 }
             }
-            .padding(.leading, 80) // Space for traffic lights
+            .padding(.leading, 68) // Space for traffic lights
             .padding(.trailing, 8)
-            .padding(.top, 10)
+            .padding(.top, 8)
             .padding(.bottom, 4)
             
             // Divider() removed for integrated look
