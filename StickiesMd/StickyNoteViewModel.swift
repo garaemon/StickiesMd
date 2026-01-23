@@ -20,6 +20,13 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
         return .main
     }
     
+    var fileFormat: FileFormat {
+        if note.fileURL.pathExtension.lowercased() == "md" {
+            return .markdown
+        }
+        return .org
+    }
+    
     init(note: StickyNote) {
         self.note = note
         super.init()
@@ -65,7 +72,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
                 self.lastSavedContent = text
                 // Also update the document model for rendering
                 DispatchQueue.main.async {
-                    self.document = OrgParser().parse(text)
+                    self.document = OrgParser().parse(text, format: self.fileFormat)
                 }
             } catch {
                 print("Failed to save content: \(error)")
@@ -95,7 +102,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
                         if text != self.content {
                             self.content = text
                             self.lastSavedContent = text
-                            self.document = OrgParser().parse(text)
+                            self.document = OrgParser().parse(text, format: self.fileFormat)
                         }
                     }
                 }
