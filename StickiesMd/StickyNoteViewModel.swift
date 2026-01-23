@@ -99,7 +99,10 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
                 if let text = String(data: data, encoding: .utf8) {
                     DispatchQueue.main.async {
                         // Only update if text is actually different to avoid cursor jumps or loops
-                        if text != self.content {
+                        // We check against lastSavedContent to distinguish between our own saves and external changes.
+                        // If text matches lastSavedContent, it means the file contains what we just saved,
+                        // so we shouldn't overwrite self.content (which might have newer, unsaved changes).
+                        if text != self.lastSavedContent {
                             self.content = text
                             self.lastSavedContent = text
                             self.document = OrgParser().parse(text, format: self.fileFormat)
