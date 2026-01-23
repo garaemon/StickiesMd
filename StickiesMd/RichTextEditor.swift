@@ -5,6 +5,7 @@ import OrgKit
 struct RichTextEditor: NSViewRepresentable {
     @Binding var text: String
     var format: FileFormat
+    var isEditable: Bool = true
     
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollableTextView()
@@ -21,15 +22,23 @@ struct RichTextEditor: NSViewRepresentable {
         textView.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
         textView.isAutomaticQuoteSubstitutionEnabled = false
         textView.isAutomaticDashSubstitutionEnabled = false
+        textView.isEditable = isEditable
+        textView.isSelectable = true
         
-        // Ensure full width
+        // Ensure full width and word wrap
         textView.autoresizingMask = [.width]
+        textView.textContainer?.widthTracksTextView = true
+        textView.isHorizontallyResizable = false
         
         return scrollView
     }
     
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? NSTextView else { return }
+        
+        if textView.isEditable != isEditable {
+            textView.isEditable = isEditable
+        }
         
         if textView.string != text {
             // Keep selection if possible? 
