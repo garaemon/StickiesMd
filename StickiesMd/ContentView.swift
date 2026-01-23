@@ -60,7 +60,7 @@ struct ContentView: View {
             }
             .padding(.leading, 68) // Space for traffic lights
             .padding(.trailing, 8)
-            .padding(.top, 8)
+            .padding(.top, 10)
             .padding(.bottom, 4)
             
             // Divider() removed for integrated look
@@ -82,6 +82,7 @@ struct ContentView: View {
         }
         .environment(\.colorScheme, .light)
         .frame(minWidth: 200, minHeight: 150)
+        .ignoresSafeArea(.container, edges: .top)
         .onDrop(of: [.image], isTargeted: nil) { providers in
             guard let provider = providers.first else { return false }
             
