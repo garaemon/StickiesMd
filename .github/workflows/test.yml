@@ -22,4 +22,4 @@ jobs:
         run: xcodebuild build -scheme StickiesMd -destination 'platform=macOS' -quiet
 
       - name: Test OrgKit
-        run: xcodebuild test -scheme OrgKit -destination 'platform=macOS'
+        run: cd StickiesMd/OrgKit && swift test
