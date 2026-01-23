@@ -12,7 +12,6 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @ObservedObject var viewModel: StickyNoteViewModel
     @State private var showSettings = false
-    @FocusState private var isEditorFocused: Bool
     
     var body: some View {
         VStack(spacing: 0) {
@@ -68,11 +67,7 @@ struct ContentView: View {
             
             Group {
                 if viewModel.isFocused {
-                    TextEditor(text: $viewModel.content)
-                        .font(.system(.body, design: .monospaced))
-                        .scrollContentBackground(.hidden)
-                        .background(Color.clear)
-                        .focused($isEditorFocused)
+                    RichTextEditor(text: $viewModel.content, format: viewModel.fileFormat)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(4)
                 } else {
@@ -87,14 +82,6 @@ struct ContentView: View {
         }
         .environment(\.colorScheme, .light)
         .frame(minWidth: 200, minHeight: 150)
-        .onChange(of: viewModel.isFocused) { focused in
-            if focused {
-                // Delay slightly to ensure view is mounted
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    isEditorFocused = true
-                }
-            }
-        }
         .onDrop(of: [.image], isTargeted: nil) { providers in
             guard let provider = providers.first else { return false }
             
