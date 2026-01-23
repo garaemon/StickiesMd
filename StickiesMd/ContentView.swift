@@ -21,6 +21,7 @@ struct ContentView: View {
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                    .help(viewModel.note.fileURL.path)
                 
                 Spacer()
                 
