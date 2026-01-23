@@ -8,9 +8,10 @@ struct StickyNote: Identifiable, Codable {
     var opacity: Double
     var frame: NSRect
     var bookmarkData: Data?
+    var isAlwaysOnTop: Bool
     
     enum CodingKeys: String, CodingKey {
-        case id, fileURL, backgroundColor, opacity, frame, bookmarkData
+        case id, fileURL, backgroundColor, opacity, frame, bookmarkData, isAlwaysOnTop
     }
     
     init(fileURL: URL) {
@@ -18,6 +19,7 @@ struct StickyNote: Identifiable, Codable {
         self.backgroundColor = Self.palette.randomElement() ?? "#FFF9C4"
         self.opacity = 1.0
         self.frame = NSRect(x: 100, y: 100, width: 300, height: 200)
+        self.isAlwaysOnTop = false
         updateBookmark()
     }
     
@@ -39,6 +41,7 @@ struct StickyNote: Identifiable, Codable {
         opacity = try container.decode(Double.self, forKey: .opacity)
         frame = try container.decode(NSRect.self, forKey: .frame)
         bookmarkData = try container.decodeIfPresent(Data.self, forKey: .bookmarkData)
+        isAlwaysOnTop = try container.decodeIfPresent(Bool.self, forKey: .isAlwaysOnTop) ?? false
         
         let storedURL = try container.decode(URL.self, forKey: .fileURL)
         
@@ -70,6 +73,7 @@ struct StickyNote: Identifiable, Codable {
         try container.encode(opacity, forKey: .opacity)
         try container.encode(frame, forKey: .frame)
         try container.encodeIfPresent(bookmarkData, forKey: .bookmarkData)
+        try container.encode(isAlwaysOnTop, forKey: .isAlwaysOnTop)
     }
 }
 
