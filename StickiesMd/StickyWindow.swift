@@ -4,6 +4,7 @@ import SwiftUI
 class StickyWindow: NSPanel, NSWindowDelegate {
     var onFrameChange: ((NSRect) -> Void)?
     var onFocusChange: ((Bool) -> Void)?
+    var onClose: (() -> Void)?
     
     private var isAlwaysOnTop: Bool = false
     
@@ -23,6 +24,10 @@ class StickyWindow: NSPanel, NSWindowDelegate {
         self.titleVisibility = .hidden
         self.isOpaque = false
         self.hasShadow = true
+    }
+    
+    func windowWillClose(_ notification: Notification) {
+        onClose?()
     }
     
     func windowDidBecomeKey(_ notification: Notification) {

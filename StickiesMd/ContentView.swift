@@ -59,11 +59,12 @@ struct ContentView: View {
                     SettingsView(viewModel: viewModel)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.top, 4)
+            .padding(.leading, 80) // Space for traffic lights
+            .padding(.trailing, 8)
+            .padding(.top, 10)
             .padding(.bottom, 4)
             
-            Divider()
+            // Divider() removed for integrated look
             
             Group {
                 if viewModel.isFocused {
