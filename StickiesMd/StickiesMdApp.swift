@@ -39,8 +39,7 @@ struct StickiesMdApp: App {
     
     func createNewSticky() {
         let fileManager = FileManager.default
-        guard let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-        let folder = documents.appendingPathComponent("StickiesMd")
+        let folder = StickiesStore.shared.storageDirectory
         try? fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
         
         let formatter = DateFormatter()

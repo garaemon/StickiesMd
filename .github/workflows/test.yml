@@ -9,17 +9,23 @@ on:
 jobs:
   test:
     name: Build and Test
-    runs-on: macos-latest
+    runs-on: macos-15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app
+
       - name: Show Xcode Version
         run: xcodebuild -version
 
       - name: Build StickiesMd
-        run: xcodebuild build -scheme StickiesMd -destination 'platform=macOS' -quiet
+        run: xcodebuild build -project StickiesMd.xcodeproj -scheme StickiesMd -destination 'platform=macOS' -quiet
+
+      - name: Run UI Tests
+        run: xcodebuild test -project StickiesMd.xcodeproj -scheme StickiesMd -destination 'platform=macOS' -quiet
 
       - name: Test OrgKit
         run: cd StickiesMd/OrgKit && swift test

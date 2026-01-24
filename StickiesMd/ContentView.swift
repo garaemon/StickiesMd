@@ -34,6 +34,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Save content")
+                .accessibilityIdentifier("saveButton")
                 .padding(.trailing, 4)
                 
                 Button(action: {
@@ -45,6 +46,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Toggle Always on Top")
+                .accessibilityIdentifier("pinButton")
                 .padding(.trailing, 4)
                 
                 Button(action: {
@@ -55,6 +57,7 @@ struct ContentView: View {
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("settingsButton")
                 .popover(isPresented: $showSettings) {
                     SettingsView(viewModel: viewModel)
                 }

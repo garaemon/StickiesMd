@@ -73,6 +73,8 @@ class StickyWindowManager: NSObject, ObservableObject {
             backing: .buffered,
             defer: false
         )
+        window.identifier = NSUserInterfaceItemIdentifier("StickyWindow")
+        window.setAccessibilityIdentifier("StickyWindow")
         window.setStickyColor(note.backgroundColor)
         window.alphaValue = CGFloat(note.opacity)
         window.setAlwaysOnTop(note.isAlwaysOnTop)
@@ -105,6 +107,21 @@ class StickyWindowManager: NSObject, ObservableObject {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if ProcessInfo.processInfo.arguments.contains("--reset-state") {
+            // Isolate for testing
+            let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("StickiesMdUITests")
+            let testDefaults = UserDefaults(suiteName: "StickiesMdUITests") ?? .standard
+            
+            // Clean up previous test run if needed (though reset() does it too)
+            testDefaults.removePersistentDomain(forName: "StickiesMdUITests")
+            
+            StickiesStore.shared.configure(defaults: testDefaults, storageDirectory: tempDir)
+            StickiesStore.shared.reset()
+        } else {
+            // Normal launch - ensure initial load happens if not already
+            StickiesStore.shared.load()
+        }
+        
         StickyWindowManager.shared.restoreWindows()
         
         if StickiesStore.shared.notes.isEmpty {
