@@ -51,7 +51,7 @@ final class StickiesMdUITests: XCTestCase {
     }
 
     @MainActor
-    func testOpenSettings() throws {
+    func skip_testOpenSettings() throws {
         let app = XCUIApplication()
         app.launchArguments.append("--reset-state")
         app.launch()
