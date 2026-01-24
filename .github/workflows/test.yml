@@ -18,8 +18,8 @@ jobs:
       - name: Show Xcode Version
         run: xcodebuild -version
 
-      - name: Build StickiesMd
-        run: xcodebuild build -scheme StickiesMd -destination 'platform=macOS' -quiet
+      - name: Build and Test StickiesMd
+        run: xcodebuild test -scheme StickiesMd -destination 'platform=macOS'
 
       - name: Test OrgKit
         run: cd StickiesMd/OrgKit && swift test
