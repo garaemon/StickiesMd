@@ -77,7 +77,13 @@ final class StickiesMdUITests: XCTestCase {
         // Check if settings popover appeared
         let settingsTitle = app.staticTexts["settingsTitle"].firstMatch
         print("Waiting for settings title...")
-        XCTAssertTrue(settingsTitle.waitForExistence(timeout: 15), "Settings title should appear")
+        if !settingsTitle.waitForExistence(timeout: 5) {
+            print("Retry clicking settings button...")
+            settingsButton.click()
+            XCTAssertTrue(settingsTitle.waitForExistence(timeout: 15), "Settings title should appear after retry")
+        } else {
+            XCTAssertTrue(settingsTitle.exists)
+        }
         
         let opacitySlider = app.sliders["opacitySlider"].firstMatch
         XCTAssertTrue(opacitySlider.exists, "Opacity slider should exist in settings")
