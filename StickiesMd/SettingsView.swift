@@ -9,6 +9,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Settings")
                 .font(.headline)
+                .accessibilityIdentifier("settingsTitle")
             
             // Color Palette
             VStack(alignment: .leading) {
@@ -45,6 +46,7 @@ struct SettingsView: View {
                     get: { viewModel.note.opacity },
                     set: { viewModel.updateOpacity($0) }
                 ), in: 0.1...1.0)
+                .accessibilityIdentifier("opacitySlider")
             }
             
             // File
