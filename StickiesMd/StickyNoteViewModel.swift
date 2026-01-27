@@ -1,10 +1,25 @@
 import Foundation
 import Combine
 import OrgKit
+import AppKit
 
 class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     @Published var note: StickyNote
-    @Published var content: String = ""
+    @Published var content: String = "" {
+        didSet {
+            // Sync content to textStorage if they differ
+            if textStorage.string != content {
+                textStorage.beginEditing()
+                let range = NSRange(location: 0, length: textStorage.length)
+                textStorage.replaceCharacters(in: range, with: content)
+                textStorage.endEditing()
+            }
+        }
+    }
+    // Version counter to force view refresh when content is loaded from disk
+    @Published var version: Int = 0
+    
+    let textStorage = NSTextStorage()
     @Published var document: OrgDocument = OrgDocument(children: [])
     @Published var isFocused: Bool = false
     
@@ -35,6 +50,13 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
         
         loadContent()
         lastSavedContent = content
+        
+        // Ensure textStorage has initial content
+        if textStorage.string != content {
+            textStorage.replaceCharacters(in: NSRange(location: 0, length: textStorage.length), with: content)
+        }
+        textStorage.delegate = self
+        
         NSFileCoordinator.addFilePresenter(self)
         
         setupAutoSave()
@@ -105,6 +127,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
                         if text != self.lastSavedContent {
                             self.content = text
                             self.lastSavedContent = text
+                            self.version += 1
                             self.document = OrgParser().parse(text, format: self.fileFormat)
                         }
                     }
@@ -200,6 +223,18 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     
     func manualSave() {
         saveContent(content)
+    }
+}
+
+extension StickyNoteViewModel: NSTextStorageDelegate {
+    func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
+        // Sync textStorage changes back to content
+        // This will trigger @Published content, which triggers save debounce
+        DispatchQueue.main.async {
+            if self.content != textStorage.string {
+                self.content = textStorage.string
+            }
+        }
     }
 }
 

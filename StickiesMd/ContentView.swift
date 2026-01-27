@@ -70,7 +70,8 @@ struct ContentView: View {
             // Divider() removed for integrated look
             
             Group {
-                RichTextEditor(text: $viewModel.content, format: viewModel.fileFormat, isEditable: viewModel.isFocused)
+                RichTextEditor(textStorage: viewModel.textStorage, format: viewModel.fileFormat, isEditable: viewModel.isFocused)
+                    .id(viewModel.version) // Force recreate editor when content is reloaded
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(4)
             }

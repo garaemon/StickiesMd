@@ -1,4 +1,6 @@
 import Foundation
+@_exported import CodeEditSourceEditor
+@_exported import CodeEditLanguages
 
 public protocol OrgNode {
     var range: NSRange { get }

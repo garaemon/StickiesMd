@@ -33,4 +33,8 @@ extension NSColor {
 
         self.init(red: r, green: g, blue: b, alpha: a)
     }
+    
+    var toSRGB: NSColor {
+        return self.usingColorSpace(.sRGB) ?? self
+    }
 }
