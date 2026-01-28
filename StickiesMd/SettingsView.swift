@@ -48,6 +48,77 @@ struct SettingsView: View {
                 ), in: 0.1...1.0)
                 .accessibilityIdentifier("opacitySlider")
             }
+
+            // Editor Settings
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Editor")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                // Font Color
+                VStack(alignment: .leading) {
+                    Text("Font Color")
+                    
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 24))], spacing: 8) {
+                        // Preset Colors
+                        let presets = ["#000000", "#333333", "#808080", "#FF0000", "#0000FF", "#008000"]
+                        ForEach(presets, id: \.self) { colorHex in
+                            Circle()
+                                .fill(Color(nsColor: NSColor(hex: colorHex) ?? .black))
+                                .frame(width: 24, height: 24)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.primary.opacity(0.2), lineWidth: 1)
+                                )
+                                .overlay(
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor((NSColor(hex: colorHex) ?? .black).brightnessComponent > 0.5 ? .black : .white)
+                                        .opacity(viewModel.note.fontColor.uppercased() == colorHex ? 1 : 0)
+                                )
+                                .onTapGesture {
+                                    viewModel.updateFontColor(colorHex)
+                                }
+                                .help(colorHex)
+                        }
+                        
+                        // Custom Color Picker
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    AngularGradient(gradient: Gradient(colors: [.red, .yellow, .green, .blue, .purple, .red]), center: .center)
+                                )
+                                .frame(width: 24, height: 24)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.primary.opacity(0.2), lineWidth: 1)
+                                )
+                            
+                            ColorPicker("", selection: Binding(
+                                get: { Color(nsColor: NSColor(hex: viewModel.note.fontColor) ?? .black) },
+                                set: { newColor in
+                                    if let hex = NSColor(newColor).toHex() {
+                                        viewModel.updateFontColor(hex)
+                                    }
+                                }
+                            ))
+                            .labelsHidden()
+                            .scaleEffect(4.0) // Scale up to cover the entire area
+                            .frame(width: 24, height: 24) // Keep container size
+                            .opacity(0.011) // Make invisible but interactive
+                            .contentShape(Rectangle()) // Ensure hit testing works on the whole frame
+                            .clipped() // Clip overlapping parts
+                        }
+                        .help("Custom Color")
+                    }
+                }
+
+                // Line Numbers
+                Toggle("Show Line Numbers", isOn: Binding(
+                    get: { viewModel.note.showLineNumbers },
+                    set: { _ in viewModel.toggleLineNumbers() }
+                ))
+            }
             
             // File
             VStack(alignment: .leading) {

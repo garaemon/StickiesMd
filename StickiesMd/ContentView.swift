@@ -70,7 +70,7 @@ struct ContentView: View {
             // Divider() removed for integrated look
             
             Group {
-                RichTextEditor(textStorage: viewModel.textStorage, format: viewModel.fileFormat, isEditable: viewModel.isFocused)
+                RichTextEditor(textStorage: viewModel.textStorage, format: viewModel.fileFormat, isEditable: viewModel.isFocused, fontColor: viewModel.note.fontColor, showLineNumbers: viewModel.note.showLineNumbers)
                     .id(viewModel.version) // Force recreate editor when content is reloaded
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(4)
@@ -101,7 +101,7 @@ struct ContentView: View {
             return true
         }
         .contextMenu {
-            Menu("Color") {
+            Menu("Background Color") {
                 ForEach(StickyNote.palette, id: \.self) { colorHex in
                     Button {
                         viewModel.updateColor(colorHex)
@@ -117,11 +117,23 @@ struct ContentView: View {
                 }
             }
             
+            Menu("Font Color") {
+                Button { viewModel.updateFontColor("#000000") } label: { Label("Black", systemImage: "circle.fill").foregroundColor(.black) }
+                Button { viewModel.updateFontColor("#333333") } label: { Label("Dark Gray", systemImage: "circle.fill").foregroundColor(Color(white: 0.2)) }
+                Button { viewModel.updateFontColor("#666666") } label: { Label("Gray", systemImage: "circle.fill").foregroundColor(Color(white: 0.4)) }
+                Button { viewModel.updateFontColor("#0000FF") } label: { Label("Blue", systemImage: "circle.fill").foregroundColor(.blue) }
+                Button { viewModel.updateFontColor("#FF0000") } label: { Label("Red", systemImage: "circle.fill").foregroundColor(.red) }
+            }
+            
             Menu("Opacity") {
                 Button("100%") { viewModel.updateOpacity(1.0) }
                 Button("80%") { viewModel.updateOpacity(0.8) }
                 Button("60%") { viewModel.updateOpacity(0.6) }
                 Button("40%") { viewModel.updateOpacity(0.4) }
+            }
+            
+            Button(viewModel.note.showLineNumbers ? "Hide Line Numbers" : "Show Line Numbers") {
+                viewModel.toggleLineNumbers()
             }
             
             Button("Enable Mouse-Through") {

@@ -14,17 +14,26 @@ Stickies.md is a file-linked sticky note application that combines the lightness
 2. **Stickies UI and Customization**:
    * **Minimal Title Bar**: Minimal area for window operations, allowing changes to color and transparency.
    * Always on Top (Floating Window).
-   * **Per-Window Appearance Settings**: Background color (theme color) and opacity can be set individually for each sticky note.
+   * **Per-Window Appearance Settings**: Background color (theme color), font color, and opacity can be set individually for each sticky note.
      * **Title Bar Controls**: Color can be changed via icons on the title bar, and opacity can be adjusted via buttons.
+   * **Editor Customization**:
+     * **Minimap**: Hidden by default (remove "mini editor" on top right).
+     * **Line Numbers**: Toggleable visibility, saved per window.
+     * **Heading Styles**: Headings should be displayed with larger font sizes for better structure visibility.
    * **Initial Value Randomization**: When opening a new file, a color is randomly selected from a classic stickies palette.
    * **Menu Operations**: New files can be opened from the application menu.
-   * **Mouse-through Mode (Low Priority)**: An overlay setting that allows clicks to pass through to windows behind.
 3. **Multi-format Support**: Parsing and rendering of Markdown and Org-mode.
    * **Direct Editing**: Text can be edited directly on the sticky note and saved as a Markdown/Org file.
 4. **Full File Linking and Persistence**:
    * One-to-one correspondence with local .md or .org files.
    * Detect changes in external editors (Emacs, etc.) and reflect them immediately (Hot Reload).
-   * **Save Appearance Settings**: Save the association between file paths and settings (color, opacity, window frame) to restore the same appearance on the next launch.
+   * **Save Appearance Settings**: Save the association between file paths and settings to restore the same appearance on the next launch.
+     * **Stored Properties**:
+       * `backgroundColor`: Hex String
+       * `fontColor`: Hex String (New)
+       * `opacity`: Double
+       * `windowFrame`: NSRect (String representation)
+       * `showLineNumbers`: Bool (New)
 5. **Rich Content and Interactivity**:
    * Inline image display ([[path/to/img]] or ![]()).
    * **Image Drag & Drop (D&D)**: Automatically save files and insert links when images are dragged and dropped onto a sticky note window.
@@ -33,88 +42,67 @@ Stickies.md is a file-linked sticky note application that combines the lightness
 
 ## **3. System Architecture**
 
-The project adopts a Monorepo format, configured with future iOS expansion in mind.
+The project adopts a simple single-target structure, leveraging powerful third-party editors.
 
 ### **Project Structure**
 
 * **StickiesMd (App)**: macOS application layer. Responsible for window management, file monitoring, UI rendering, user interface (settings screen, etc.), and **Persistence of appearance settings**.
-* **OrgKit (Swift Package)**: Core library with separated parsing logic.
+  * **Editor Engine**: Uses `CodeEditSourceEditor` for high-performance text editing and syntax highlighting.
+  * **Note**: Previously used a separate `OrgKit` package, but consolidated into the main app target to streamline development, relying on `CodeEditSourceEditor` for core text handling.
 
 ### **Persistence Strategy**
 
-* Use `UserDefaults` to store a dictionary where the key is the absolute path of the file URL, and the value is a struct (JSON) containing:
-  * backgroundColor: Hex String
-  * opacity: Double
-  * windowFrame: NSRect (String representation)
+* Use `UserDefaults` to store a dictionary where the key is the absolute path of the file URL, and the value is a struct (JSON) containing all per-window settings defined in Section 2.
 
-## **4. OrgKit Detailed Specification**
+## **4. Text Processing Strategy**
 
-Build a simple and highly extensible interface, referencing the API design of swiftlang/swift-markdown.
+Instead of a dedicated AST parser (like the deprecated `OrgKit`), the app relies on `CodeEditSourceEditor` for rendering and editing. 
 
-### **API Design**
-
-```swift
-// Usage example
-let parser = OrgParser()
-let document = parser.parse(parsing: content)
-
-// Visitor pattern similar to swift-markdown
-struct MyRenderer: OrgVisitor {
-    func visitHeading(_ heading: Heading) {
-        // Handle heading
-    }
-
-    func visitParagraph(_ paragraph: Paragraph) {
-        // Handle paragraph
-    }
-}
-
-var renderer = MyRenderer()
-renderer.visit(document)
-```
-
-### **Abstract Syntax Tree (AST) Definition Proposal**
-
-Based on the `OrgNode` protocol, holding Block elements and Inline elements hierarchically.
-
-* **Block Nodes**: Document, Heading, Paragraph, List, CodeBlock, Drawer, HorizontalRule
-* **Inline Nodes**: Text, Strong, Emphasis, Link, Image
+* **Parsing**: `CodeEditSourceEditor` (backed by Tree-sitter) handles syntax highlighting and basic structure.
+* **Advanced Logic**: Future features requiring deep structure understanding (e.g., outlining, folding) will utilize Tree-sitter's AST or lightweight internal logic within the App target.
 
 ## **5. Implementation Roadmap**
 
 ### **Phase 1: Infrastructure**
 
-* [ ] **Window Customization**: Use `NSPanel` (subclass of `NSWindow`). Implement title bar hiding and transparent backgrounds.
-* [ ] **File Watcher**: Monitor specific files using `NSFilePresenter`.
-* [ ] **Persistence**: Implement `StickiesStore` class. Save/load settings via `UserDefaults`.
-* [ ] **Library Link**: Make `OrgKit` accessible from the App target.
+* [x] **Window Customization**: Use `NSPanel` (subclass of `NSWindow`). Implement title bar hiding and transparent backgrounds.
+* [x] **File Watcher**: Monitor specific files using `NSFilePresenter`.
+* [x] **Persistence**: Implement `StickiesStore` class. Save/load settings via `UserDefaults`.
 
-### **Phase 2: OrgKit Development (Parser)**
+### **Phase 2: Core Text Editing**
 
-* [ ] **Lexer/Scanner**: Tokenize on a per-line basis.
-* [ ] **Node Types**: Define elements constituting the AST.
-* [ ] **TDD Implementation**: Incremental implementation using Swift Testing.
+* [x] **Editor Integration**: Integrated `CodeEditSourceEditor` as the primary editing and rendering engine.
+* [x] **Org-mode Support**: Currently using Markdown mode as a fallback for Org files.
+* [x] **Editing**: Enable actual text input using `CodeEditSourceEditor` when the window is focused.
 
-### **Phase 3: Rendering & Interaction**
+### **Phase 3: Interaction & Features**
 
-* [ ] **View Mapping**: Implement SwiftUI components corresponding to each `OrgNode`.
-* [ ] **Drag & Drop**: Handle image acceptance and saving via `FileManager`.
-* [ ] **Menu Operations**: Implement functionality to open files from the menu bar.
-* [ ] **Appearance UI**: Implement color change and opacity adjustment buttons on the title bar.
-* [ ] **Rich Rendering**: Implement rich rendering (syntax highlighting, styling) to improve visibility of Markdown and Org-mode.
+* [x] **Drag & Drop**: Handle image acceptance and saving via `FileManager`.
+* [x] **Menu Operations**: Implement functionality to open files from the menu bar.
+* [x] **Appearance UI**: Implement color change and opacity adjustment buttons on the title bar.
+* [x] **Window Configuration**: Per-window settings for color, opacity, and file association.
+* [x] **Editor Cleanup**: 
+  * [x] Remove Minimap (right-side mini editor).
+  * [x] Implement toggle for Line Numbers.
+* [x] **Styling**:
+  * [x] Implement Per-window Font Color (UI & Persistence).
+  * [x] **Heading Size**: Investigate and implement larger font sizes for headings within `CodeEditSourceEditor`.
 
-### **Phase 4: UX Enhancement**
+### **Phase 4: Refactoring & Cleanup**
+
+* [ ] **Remove OrgKit**: Delete the unused `OrgKit` package and remove dependencies.
+* [ ] **Cleanup ViewModel**: Remove unused `OrgDocument` and parser calls from `StickyNoteViewModel`.
+
+### **Phase 5: UX Enhancement**
 
 * [ ] **Mouse-through Mode**: Click-through functionality under specific conditions (modifier keys, etc.).
 * [ ] **App Sandbox & Security**: Handle file access rights considering security restrictions.
 
-### **Phase 5: Per-Window Appearance Settings**
+### **Phase 6: Advanced Features (Future)**
 
-* [x] **Window Configuration**: Add an icon to the title bar to open a window settings screen, allowing configuration of color, opacity, and file.
-
-### **Phase 6: Content Editing**
-
-* [x] **Editing**: Enable actual text input when the window is focused.
+* [ ] **Org-mode Syntax Highlighting**: Fully support Org-mode syntax in `CodeEditSourceEditor`.
+* [ ] **Inline Image Preview**: Display images directly within the editor.
+* [ ] **Bi-directional Linking**: Navigate between notes via links.
 
 ## **6. Technical Challenges and Investment Value**
 

@@ -6,26 +6,8 @@ struct RichTextEditor: View {
     let textStorage: NSTextStorage
     var format: FileFormat
     var isEditable: Bool = true
-    
-    // Create a default theme matching system colors somewhat
-    @State private var theme = EditorTheme(
-        text: .init(color: .black.toSRGB),
-        insertionPoint: .black.toSRGB,
-        invisibles: .init(color: .tertiaryLabelColor.toSRGB),
-        background: .clear.toSRGB, // Transparent background
-        lineHighlight: .clear.toSRGB,
-        selection: .selectedTextBackgroundColor.toSRGB,
-        keywords: .init(color: .systemPink.toSRGB, bold: true),
-        commands: .init(color: .systemBlue.toSRGB),
-        types: .init(color: .systemTeal.toSRGB),
-        attributes: .init(color: .systemBrown.toSRGB),
-        variables: .init(color: .systemPurple.toSRGB),
-        values: .init(color: .systemOrange.toSRGB),
-        numbers: .init(color: .systemGreen.toSRGB),
-        strings: .init(color: .systemRed.toSRGB),
-        characters: .init(color: .systemRed.toSRGB),
-        comments: .init(color: .secondaryLabelColor.toSRGB)
-    )
+    var fontColor: String
+    var showLineNumbers: Bool
     
     @State private var state = SourceEditorState(cursorPositions: [CursorPosition(line: 0, column: 0)])
 
@@ -36,7 +18,30 @@ struct RichTextEditor: View {
             configuration: configuration,
             state: $state
         )
-        .transparentScrolling()
+        .padding(.leading, showLineNumbers ? 0 : 8)
+        .transparentScrolling(showLineNumbers: showLineNumbers)
+    }
+    
+    var theme: EditorTheme {
+        let primaryColor = NSColor(hex: fontColor)?.toSRGB ?? .black.toSRGB
+        return EditorTheme(
+            text: .init(color: primaryColor),
+            insertionPoint: primaryColor,
+            invisibles: .init(color: .tertiaryLabelColor.toSRGB),
+            background: .clear.toSRGB, // Transparent background
+            lineHighlight: .clear.toSRGB,
+            selection: .selectedTextBackgroundColor.toSRGB,
+            keywords: .init(color: .systemPink.toSRGB, bold: true),
+            commands: .init(color: .systemBlue.toSRGB),
+            types: .init(color: .systemTeal.toSRGB),
+            attributes: .init(color: .systemBrown.toSRGB),
+            variables: .init(color: .systemPurple.toSRGB),
+            values: .init(color: .systemOrange.toSRGB),
+            numbers: .init(color: .systemGreen.toSRGB),
+            strings: .init(color: .systemRed.toSRGB),
+            characters: .init(color: .systemRed.toSRGB),
+            comments: .init(color: .secondaryLabelColor.toSRGB)
+        )
     }
     
     var configuration: SourceEditorConfiguration {
@@ -49,6 +54,14 @@ struct RichTextEditor: View {
             ),
             behavior: SourceEditorConfiguration.Behavior(
                 isEditable: isEditable
+            ),
+            layout: SourceEditorConfiguration.Layout(
+                additionalTextInsets: NSEdgeInsets(top: 1, left: showLineNumbers ? 0 : 4, bottom: 1, right: 8)
+            ),
+            peripherals: SourceEditorConfiguration.Peripherals(
+                showGutter: showLineNumbers,
+                showMinimap: false,
+                showFoldingRibbon: false
             )
         )
     }
@@ -62,12 +75,14 @@ struct RichTextEditor: View {
 }
 
 extension View {
-    func transparentScrolling() -> some View {
-        self.background(TransparentBackgroundView())
+    func transparentScrolling(showLineNumbers: Bool) -> some View {
+        self.background(TransparentBackgroundView(showLineNumbers: showLineNumbers))
     }
 }
 
 struct TransparentBackgroundView: NSViewRepresentable {
+    var showLineNumbers: Bool
+
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
         view.translatesAutoresizingMaskIntoConstraints = false

@@ -157,6 +157,18 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
         StickiesStore.shared.update(note: note)
         NotificationCenter.default.post(name: .stickyNoteAppearanceChanged, object: note)
     }
+
+    func updateFontColor(_ hex: String) {
+        note.fontColor = hex
+        StickiesStore.shared.update(note: note)
+        NotificationCenter.default.post(name: .stickyNoteFontColorChanged, object: note)
+    }
+
+    func toggleLineNumbers() {
+        note.showLineNumbers.toggle()
+        StickiesStore.shared.update(note: note)
+        NotificationCenter.default.post(name: .stickyNoteLineNumbersChanged, object: note)
+    }
     
     func updateFile(_ newURL: URL) {
         NSFileCoordinator.removeFilePresenter(self)
@@ -242,4 +254,6 @@ extension Notification.Name {
     static let stickyNoteAppearanceChanged = Notification.Name("stickyNoteAppearanceChanged")
     static let stickyNoteMouseThrough = Notification.Name("stickyNoteMouseThrough")
     static let stickyNoteAlwaysOnTopChanged = Notification.Name("stickyNoteAlwaysOnTopChanged")
+    static let stickyNoteFontColorChanged = Notification.Name("stickyNoteFontColorChanged")
+    static let stickyNoteLineNumbersChanged = Notification.Name("stickyNoteLineNumbersChanged")
 }
