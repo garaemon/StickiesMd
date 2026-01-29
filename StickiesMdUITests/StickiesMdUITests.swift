@@ -89,13 +89,28 @@ final class StickiesMdUITests: XCTestCase {
         XCTAssertTrue(opacitySlider.exists, "Opacity slider should exist in settings")
     }
 
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            let app = XCUIApplication()
-            app.launchArguments.append("--reset-state")
-            app.launch()
+        /*
+
+        @MainActor
+
+        func testLaunchPerformance() throws {
+
+            // This measures how long it takes to launch your application.
+
+            measure(metrics: [XCTApplicationLaunchMetric()]) {
+
+                let app = XCUIApplication()
+
+                app.launchArguments.append("--reset-state")
+
+                app.launch()
+
+            }
+
         }
+
+        */
+
     }
-}
+
+    

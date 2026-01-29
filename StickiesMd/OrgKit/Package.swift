@@ -15,11 +15,19 @@ let package = Package(
             targets: ["OrgKit"]
         ),
     ],
+    dependencies: [
+        .package(url: "https://github.com/CodeEditApp/CodeEditSourceEditor", from: "0.15.2"),
+        .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.20")
+    ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "OrgKit"
+            name: "OrgKit",
+            dependencies: [
+                .product(name: "CodeEditSourceEditor", package: "CodeEditSourceEditor"),
+                .product(name: "CodeEditLanguages", package: "CodeEditLanguages")
+            ]
         ),
         .testTarget(
             name: "OrgKitTests",
