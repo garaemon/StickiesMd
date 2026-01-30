@@ -86,7 +86,7 @@ Instead of a dedicated AST parser (like the deprecated `OrgKit`), the app relies
   * [x] Implement toggle for Line Numbers.
 * [x] **Styling**:
   * [x] Implement Per-window Font Color (UI & Persistence).
-  * [ ] **Heading Size**: Investigate and implement larger font sizes for headings within `CodeEditSourceEditor`.
+  * [x] **Heading Size**: Investigate and implement larger font sizes for headings within `CodeEditSourceEditor` (Implemented custom `EditorTheme`, `CaptureName` extensions, and runtime heading level detection).
 
 ### **Phase 4: Refactoring & Cleanup**
 

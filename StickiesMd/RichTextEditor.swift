@@ -40,7 +40,13 @@ struct RichTextEditor: View {
             numbers: .init(color: .systemGreen.toSRGB),
             strings: .init(color: .systemRed.toSRGB),
             characters: .init(color: .systemRed.toSRGB),
-            comments: .init(color: .secondaryLabelColor.toSRGB)
+            comments: .init(color: .secondaryLabelColor.toSRGB),
+            heading1: .init(color: primaryColor, bold: true, fontSize: 22),
+            heading2: .init(color: primaryColor, bold: true, fontSize: 20),
+            heading3: .init(color: primaryColor, bold: true, fontSize: 18),
+            heading4: .init(color: primaryColor, bold: true, fontSize: 16),
+            heading5: .init(color: primaryColor, bold: true, fontSize: 15),
+            heading6: .init(color: primaryColor, bold: true, fontSize: 14)
         )
     }
     

@@ -16,7 +16,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CodeEditApp/CodeEditSourceEditor", from: "0.15.2"),
+        .package(path: "../LocalPackages/CodeEditSourceEditor"),
         .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.20")
     ],
     targets: [
