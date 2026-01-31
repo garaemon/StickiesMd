@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import OrgKit
 import AppKit
 
 class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
@@ -20,7 +19,6 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     @Published var version: Int = 0
     
     let textStorage = NSTextStorage()
-    @Published var document: OrgDocument = OrgDocument(children: [])
     @Published var isFocused: Bool = false
     
     private var cancellables: Set<AnyCancellable> = []
@@ -55,11 +53,21 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
         if textStorage.string != content {
             textStorage.replaceCharacters(in: NSRange(location: 0, length: textStorage.length), with: content)
         }
-        textStorage.delegate = self
+        
+        setupTextStorageObserver()
         
         NSFileCoordinator.addFilePresenter(self)
         
         setupAutoSave()
+    }
+    
+    private func setupTextStorageObserver() {
+        NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: textStorage, queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            if self.content != self.textStorage.string {
+                self.content = self.textStorage.string
+            }
+        }
     }
     
     deinit {
@@ -92,10 +100,6 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
             do {
                 try text.write(to: url, atomically: true, encoding: .utf8)
                 self.lastSavedContent = text
-                // Also update the document model for rendering
-                DispatchQueue.main.async {
-                    self.document = OrgParser().parse(text, format: self.fileFormat)
-                }
             } catch {
                 print("Failed to save content: \(error)")
             }
@@ -128,7 +132,6 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
                             self.content = text
                             self.lastSavedContent = text
                             self.version += 1
-                            self.document = OrgParser().parse(text, format: self.fileFormat)
                         }
                     }
                 }
@@ -238,17 +241,6 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     }
 }
 
-extension StickyNoteViewModel: NSTextStorageDelegate {
-    func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, range editedRange: NSRange, changeInLength delta: Int) {
-        // Sync textStorage changes back to content
-        // This will trigger @Published content, which triggers save debounce
-        DispatchQueue.main.async {
-            if self.content != textStorage.string {
-                self.content = textStorage.string
-            }
-        }
-    }
-}
 
 extension Notification.Name {
     static let stickyNoteAppearanceChanged = Notification.Name("stickyNoteAppearanceChanged")

@@ -16,8 +16,8 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/CodeEditApp/CodeEditSourceEditor", from: "0.15.2"),
-        .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.20")
+        .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.8.0"),
+        .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -25,8 +25,8 @@ let package = Package(
         .target(
             name: "OrgKit",
             dependencies: [
-                .product(name: "CodeEditSourceEditor", package: "CodeEditSourceEditor"),
-                .product(name: "CodeEditLanguages", package: "CodeEditLanguages")
+                .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
+                .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
             ]
         ),
         .testTarget(

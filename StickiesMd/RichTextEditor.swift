@@ -1,124 +1,185 @@
 import SwiftUI
 import AppKit
 import OrgKit
+import SwiftTreeSitter
+import CodeEditLanguages
 
-struct RichTextEditor: View {
+struct RichTextEditor: NSViewRepresentable {
     let textStorage: NSTextStorage
     var format: FileFormat
-    var isEditable: Bool = true
+    var isEditable: Bool
     var fontColor: String
     var showLineNumbers: Bool
     
-    @State private var state = SourceEditorState(cursorPositions: [CursorPosition(line: 0, column: 0)])
-
-    var body: some View {
-        SourceEditor(
-            textStorage,
-            language: language,
-            configuration: configuration,
-            state: $state
-        )
-        .padding(.leading, showLineNumbers ? 0 : 8)
-        .transparentScrolling(showLineNumbers: showLineNumbers)
-    }
-    
-    var theme: EditorTheme {
-        let primaryColor = NSColor(hex: fontColor)?.toSRGB ?? .black.toSRGB
-        return EditorTheme(
-            text: .init(color: primaryColor),
-            insertionPoint: primaryColor,
-            invisibles: .init(color: .tertiaryLabelColor.toSRGB),
-            background: .clear.toSRGB, // Transparent background
-            lineHighlight: .clear.toSRGB,
-            selection: .selectedTextBackgroundColor.toSRGB,
-            keywords: .init(color: .systemPink.toSRGB, bold: true),
-            commands: .init(color: .systemBlue.toSRGB),
-            types: .init(color: .systemTeal.toSRGB),
-            attributes: .init(color: .systemBrown.toSRGB),
-            variables: .init(color: .systemPurple.toSRGB),
-            values: .init(color: .systemOrange.toSRGB),
-            numbers: .init(color: .systemGreen.toSRGB),
-            strings: .init(color: .systemRed.toSRGB),
-            characters: .init(color: .systemRed.toSRGB),
-            comments: .init(color: .secondaryLabelColor.toSRGB)
-        )
-    }
-    
-    var configuration: SourceEditorConfiguration {
-        SourceEditorConfiguration(
-            appearance: SourceEditorConfiguration.Appearance(
-                theme: theme,
-                useThemeBackground: true, // Respect theme colors including transparency
-                font: NSFont.monospacedSystemFont(ofSize: 14, weight: .regular),
-                wrapLines: true
-            ),
-            behavior: SourceEditorConfiguration.Behavior(
-                isEditable: isEditable
-            ),
-            layout: SourceEditorConfiguration.Layout(
-                additionalTextInsets: NSEdgeInsets(top: 1, left: showLineNumbers ? 0 : 4, bottom: 1, right: 8)
-            ),
-            peripherals: SourceEditorConfiguration.Peripherals(
-                showGutter: showLineNumbers,
-                showMinimap: false,
-                showFoldingRibbon: false
-            )
-        )
-    }
-    
-    var language: CodeLanguage {
-        switch format {
-        case .markdown: return .markdown
-        case .org: return .markdown // Temporary workaround: use markdown for org to avoid crash with .default
-        }
-    }
-}
-
-extension View {
-    func transparentScrolling(showLineNumbers: Bool) -> some View {
-        self.background(TransparentBackgroundView(showLineNumbers: showLineNumbers))
-    }
-}
-
-struct TransparentBackgroundView: NSViewRepresentable {
-    var showLineNumbers: Bool
-
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }
-    
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            // Traverse up to find the hosting view, then search for NSTextView
-            guard let window = nsView.window else { return }
-            
-            // We search for scroll views in the window content view.
-            // Since StickiesMd usually has one editor per window, this global search within window is acceptable.
-            if let contentView = window.contentView {
-                self.makeTransparent(view: contentView)
-            }
-        }
-    }
-    
-    func makeTransparent(view: NSView) {
-        if let scrollView = view as? NSScrollView {
-            scrollView.drawsBackground = false
-            scrollView.backgroundColor = .clear
-            
-            // Also handle the clip view just in case
-            scrollView.contentView.drawsBackground = false
-            scrollView.contentView.backgroundColor = .clear
-            
-            if let textView = scrollView.documentView as? NSTextView {
-                textView.drawsBackground = false
-                textView.backgroundColor = .clear
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.backgroundColor = .clear
+        scrollView.borderType = .noBorder
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+        
+        scrollView.contentView.drawsBackground = false
+        scrollView.contentView.backgroundColor = .clear
+        
+        let textView = NSTextView(usingTextLayoutManager: true)
+        textView.autoresizingMask = [.width]
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        
+        textView.drawsBackground = false
+        textView.backgroundColor = .clear
+        
+        textView.isEditable = isEditable
+        textView.isRichText = false
+        textView.importsGraphics = false
+        textView.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+        let color = NSColor(hex: fontColor) ?? .textColor
+        textView.textColor = color
+        textView.insertionPointColor = color
+        
+        if let textLayoutManager = textView.textLayoutManager {
+            if let textContentStorage = textLayoutManager.textContentManager as? NSTextContentStorage {
+                textContentStorage.textStorage = textStorage
+                textContentStorage.delegate = context.coordinator
+                context.coordinator.textLayoutManager = textLayoutManager
+                context.coordinator.textContentStorage = textContentStorage
+                if let textContainer = textLayoutManager.textContainer {
+                    textContainer.widthTracksTextView = true
+                }
+                textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
             }
         }
         
-        for subview in view.subviews {
-            makeTransparent(view: subview)
+        textView.delegate = context.coordinator
+        scrollView.documentView = textView
+        
+        context.coordinator.applyHighlighting()
+        
+        return scrollView
+    }
+    
+    func updateNSView(_ nsView: NSScrollView, context: Context) {
+        guard let textView = nsView.documentView as? NSTextView else { return }
+        
+        if textView.isEditable != isEditable {
+            textView.isEditable = isEditable
         }
+        
+        if let color = NSColor(hex: fontColor) {
+            if textView.textColor != color {
+                textView.textColor = color
+                textView.insertionPointColor = color
+            }
+        }
+        
+        if showLineNumbers {
+            nsView.rulersVisible = true
+            if !(nsView.verticalRulerView is LineNumberRulerView) {
+                nsView.verticalRulerView = LineNumberRulerView(textView: textView)
+            }
+        } else {
+            nsView.rulersVisible = false
+        }
+        
+        context.coordinator.applyHighlighting()
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, NSTextViewDelegate, NSTextContentStorageDelegate {
+        var parent: RichTextEditor
+        var textLayoutManager: NSTextLayoutManager?
+        var textContentStorage: NSTextContentStorage?
+        var parser: Parser
+        
+        init(_ parent: RichTextEditor) {
+            self.parent = parent
+            self.parser = Parser()
+            super.init()
+            setupParser()
+        }
+        
+        func setupParser() {
+            if let codeLang = CodeLanguage.allLanguages.first(where: { 
+                let id = "\($0.id)".lowercased()
+                return id == "markdown" || id.contains("markdown")
+            }), let tsLang = codeLang.language {
+                try? parser.setLanguage(tsLang)
+            }
+        }
+        
+        func textDidChange(_ notification: Notification) {
+            applyHighlighting()
+        }
+        
+        func applyHighlighting() {
+            guard let textContentStorage = textContentStorage,
+                  let textStorage = textContentStorage.textStorage else { return }
+            
+            let string = textStorage.string
+            if string.isEmpty { return }
+            
+            guard let tree = parser.parse(string) else { return }
+            
+            textStorage.beginEditing()
+            let fullRange = NSRange(location: 0, length: textStorage.length)
+            let defaultFont = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+            let defaultColor = NSColor(hex: parent.fontColor) ?? .textColor
+            textStorage.setAttributes([.font: defaultFont, .foregroundColor: defaultColor], range: fullRange)
+            
+            if let rootNode = tree.rootNode {
+                highlightNode(rootNode, in: textStorage)
+            }
+            textStorage.endEditing()
+            
+            if let lm = textLayoutManager {
+                lm.ensureLayout(for: lm.documentRange)
+            }
+        }
+        
+        private func highlightNode(_ node: Node, in textStorage: NSTextStorage) {
+            if let type = node.nodeType {
+                // Highlighting headings
+                if type == "atx_heading" || type == "setext_heading" || (type.contains("heading") && !type.contains("content")) {
+                    let byteRange = node.byteRange
+                    // Fix: Tree-sitter byte offsets are 2x UTF-16 unit offsets in this integration
+                    let start = Int(byteRange.lowerBound) / 2
+                    let end = Int(byteRange.upperBound) / 2
+                    
+                    if end > start && end <= textStorage.length {
+                        let range = NSRange(location: start, length: end - start)
+                        let font = NSFont.systemFont(ofSize: 18, weight: .bold)
+                        textStorage.addAttribute(.font, value: font, range: range)
+                    }
+                }
+            }
+            
+            for i in 0..<node.childCount {
+                if let child = node.child(at: i) {
+                    highlightNode(child, in: textStorage)
+                }
+            }
+        }
+    }
+}
+
+class LineNumberRulerView: NSRulerView {
+    init(textView: NSTextView) {
+        super.init(scrollView: textView.enclosingScrollView, orientation: .verticalRuler)
+        self.clientView = textView
+        self.ruleThickness = 30
+    }
+    
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func drawHashMarksAndLabels(in rect: NSRect) {
+        NSColor.clear.set()
+        rect.fill()
     }
 }

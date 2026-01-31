@@ -17,7 +17,7 @@ Stickies.md is a file-linked sticky note application that combines the lightness
    * **Per-Window Appearance Settings**: Background color (theme color), font color, and opacity can be set individually for each sticky note.
      * **Title Bar Controls**: Color can be changed via icons on the title bar, and opacity can be adjusted via buttons.
    * **Editor Customization**:
-     * **Minimap**: Hidden by default (remove "mini editor" on top right).
+     * **Minimap**: Hidden by default.
      * **Line Numbers**: Toggleable visibility, saved per window.
      * **Heading Styles**: Headings should be displayed with larger font sizes for better structure visibility.
    * **Initial Value Randomization**: When opening a new file, a color is randomly selected from a classic stickies palette.
@@ -42,13 +42,12 @@ Stickies.md is a file-linked sticky note application that combines the lightness
 
 ## **3. System Architecture**
 
-The project adopts a simple single-target structure, leveraging powerful third-party editors.
+The project adopts a simple single-target structure, leveraging powerful native frameworks and libraries.
 
 ### **Project Structure**
 
 * **StickiesMd (App)**: macOS application layer. Responsible for window management, file monitoring, UI rendering, user interface (settings screen, etc.), and **Persistence of appearance settings**.
-  * **Editor Engine**: Uses `CodeEditSourceEditor` for high-performance text editing and syntax highlighting.
-  * **Note**: Previously used a separate `OrgKit` package, but consolidated into the main app target to streamline development, relying on `CodeEditSourceEditor` for core text handling.
+  * **Editor Engine**: Uses **TextKit 2** for high-performance text rendering and editing, backed by **SwiftTreeSitter** for parsing and syntax highlighting.
 
 ### **Persistence Strategy**
 
@@ -56,10 +55,10 @@ The project adopts a simple single-target structure, leveraging powerful third-p
 
 ## **4. Text Processing Strategy**
 
-Instead of a dedicated AST parser (like the deprecated `OrgKit`), the app relies on `CodeEditSourceEditor` for rendering and editing. 
+The app utilizes **SwiftTreeSitter** for robust parsing of Markdown and Org-mode files, and **TextKit 2** for high-performance rendering and editing.
 
-* **Parsing**: `CodeEditSourceEditor` (backed by Tree-sitter) handles syntax highlighting and basic structure.
-* **Advanced Logic**: Future features requiring deep structure understanding (e.g., outlining, folding) will utilize Tree-sitter's AST or lightweight internal logic within the App target.
+* **Parsing**: Use **SwiftTreeSitter** to generate an Abstract Syntax Tree (AST) from the text. This allows for accurate detection of document structure (headers, lists, links, etc.) for both Markdown and Org-mode.
+* **Rendering & Editing**: Use **TextKit 2** (`NSTextLayoutManager`, `NSTextContentStorage`, `NSTextViewportLayoutController`) to render the text. Syntax highlighting and rich text attributes (font size for headers, colors) are applied based on the AST provided by SwiftTreeSitter.
 
 ## **5. Implementation Roadmap**
 
@@ -69,11 +68,13 @@ Instead of a dedicated AST parser (like the deprecated `OrgKit`), the app relies
 * [x] **File Watcher**: Monitor specific files using `NSFilePresenter`.
 * [x] **Persistence**: Implement `StickiesStore` class. Save/load settings via `UserDefaults`.
 
-### **Phase 2: Core Text Editing**
+### **Phase 2: Core Text Editing (Transition to TextKit 2)**
 
-* [x] **Editor Integration**: Integrated `CodeEditSourceEditor` as the primary editing and rendering engine.
-* [x] **Org-mode Support**: Currently using Markdown mode as a fallback for Org files.
-* [x] **Editing**: Enable actual text input using `CodeEditSourceEditor` when the window is focused.
+* [ ] **Dependency Setup**: Add `SwiftTreeSitter` and relevant language grammars (Markdown, Org-mode) to the project.
+* [ ] **TextKit 2 Integration**: Implement a custom text editor view using `NSTextLayoutManager`, `NSTextContentStorage`, and `NSTextView`.
+* [ ] **Syntax Highlighting**: Implement a mechanism to query `SwiftTreeSitter` for syntax nodes and apply attributes to the `NSTextContentStorage`.
+* [ ] **Org-mode Support**: Ensure proper parsing of Org-mode files using Tree-sitter.
+* [ ] **Markdown Support**: Ensure proper parsing of Markdown files using Tree-sitter.
 
 ### **Phase 3: Interaction & Features**
 
@@ -86,10 +87,11 @@ Instead of a dedicated AST parser (like the deprecated `OrgKit`), the app relies
   * [x] Implement toggle for Line Numbers.
 * [x] **Styling**:
   * [x] Implement Per-window Font Color (UI & Persistence).
-  * [ ] **Heading Size**: Investigate and implement larger font sizes for headings within `CodeEditSourceEditor`.
+  * [ ] **Heading Size**: Implement dynamic font sizing for headings based on Tree-sitter AST.
 
 ### **Phase 4: Refactoring & Cleanup**
 
+* [ ] **Remove CodeEditSourceEditor**: Remove the `CodeEditSourceEditor` dependency and associated code once TextKit 2 implementation is stable.
 * [ ] **Remove OrgKit**: Delete the unused `OrgKit` package and remove dependencies.
 * [ ] **Cleanup ViewModel**: Remove unused `OrgDocument` and parser calls from `StickyNoteViewModel`.
 
@@ -100,14 +102,13 @@ Instead of a dedicated AST parser (like the deprecated `OrgKit`), the app relies
 
 ### **Phase 6: Advanced Features (Future)**
 
-* [ ] **Org-mode Syntax Highlighting**: Fully support Org-mode syntax in `CodeEditSourceEditor`.
-* [ ] **Inline Image Preview**: Display images directly within the editor.
+* [ ] **Inline Image Preview**: Display images directly within the editor using `NSTextAttachment`.
 * [ ] **Bi-directional Linking**: Navigate between notes via links.
 
 ## **6. Technical Challenges and Investment Value**
 
-* **Org-mode implementation in Pure Swift**: Increase reusability within the Apple ecosystem.
-* **iOS Expansion**: Develop iOS apps/widgets at minimum cost using the same `OrgKit`.
+* **Modern Text Handling**: Leveraging TextKit 2 ensures the app is future-proof and performant on modern macOS.
+* **Robust Parsing**: Tree-sitter provides industry-standard parsing capabilities, making support for complex formats like Org-mode more reliable.
 
 ## **7. Implementation and Development Policy**
 
