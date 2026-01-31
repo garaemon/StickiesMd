@@ -47,7 +47,10 @@ The project adopts a simple single-target structure, leveraging powerful native 
 ### **Project Structure**
 
 * **StickiesMd (App)**: macOS application layer. Responsible for window management, file monitoring, UI rendering, user interface (settings screen, etc.), and **Persistence of appearance settings**.
-  * **Editor Engine**: Uses **TextKit 2** for high-performance text rendering and editing, backed by **SwiftTreeSitter** for parsing and syntax highlighting.
+  * **Editor Engine**: Uses **TextKit 2** for high-performance text rendering and editing, backed by **OrgKit** for parsing and syntax highlighting.
+* **OrgKit (Package)**: A standalone Swift Package responsible for document parsing and structure analysis.
+  * **Core**: Integrates **SwiftTreeSitter** to provide a unified interface for Markdown and Org-mode parsing.
+  * **Functionality**: Provides structured data (AST nodes, styling ranges) to the app, decoupling the editor from specific Tree-sitter details.
 
 ### **Persistence Strategy**
 
@@ -89,11 +92,16 @@ The app utilizes **SwiftTreeSitter** for robust parsing of Markdown and Org-mode
   * [x] Implement Per-window Font Color (UI & Persistence).
   * [ ] **Heading Size**: Implement dynamic font sizing for headings based on Tree-sitter AST.
 
-### **Phase 4: Refactoring & Cleanup**
+### **Phase 4: Refactoring & OrgKit Enhancement**
 
-* [ ] **Remove CodeEditSourceEditor**: Remove the `CodeEditSourceEditor` dependency and associated code once TextKit 2 implementation is stable.
-* [ ] **Remove OrgKit**: Delete the unused `OrgKit` package and remove dependencies.
-* [ ] **Cleanup ViewModel**: Remove unused `OrgDocument` and parser calls from `StickyNoteViewModel`.
+* [ ] **Enhance OrgKit**:
+  * [ ] Move Tree-sitter setup and highlighting logic from `RichTextEditor` into `OrgKit`.
+  * [ ] Implement a unified `DocumentParser` in `OrgKit` that returns abstract style attributes/ranges.
+  * [ ] Add more comprehensive tests for multi-byte characters and various Markdown/Org structures.
+* [ ] **Cleanup StickiesMd**:
+  * [ ] Remove the `CodeEditSourceEditor` dependency and associated code once TextKit 2 implementation is stable.
+  * [ ] Refactor `RichTextEditor` to use the high-level API provided by `OrgKit`.
+  * [ ] Cleanup `StickyNoteViewModel` by removing unused legacy parser calls.
 
 ### **Phase 5: UX Enhancement**
 
