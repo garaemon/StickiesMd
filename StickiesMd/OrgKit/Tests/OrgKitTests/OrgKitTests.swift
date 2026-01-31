@@ -20,10 +20,10 @@ final class TreeSitterIntegrationTests: XCTestCase {
         try parser.setLanguage(tsLang)
     }
     
-    /// 検証: Tree-sitter のオフセットを 2 で割ることで、Swift の UTF-16 文字数と一致するか
-    func testHeadingOffsetCorrectionWithJapanese() throws {
-        // 日本語を含む Markdown
-        let sourceString = "# はじめての付箋\n\n本文です。"
+    /// Verify if dividing Tree-sitter byte offsets by 2 matches Swift's UTF-16 code unit offsets.
+    func testHeadingOffsetCorrectionWithMultiByteCharacters() throws {
+        // Markdown containing multi-byte characters
+        let sourceString = "# Heading with Multi-byte 🌐\n\nSome body text."
         guard let tree = parser.parse(sourceString) else {
             XCTFail("Failed to parse")
             return
@@ -34,15 +34,14 @@ final class TreeSitterIntegrationTests: XCTestCase {
         func walk(_ node: Node) {
             if let type = node.nodeType, type == "atx_heading" {
                 let byteRange = node.byteRange
-                // この統合環境における「黄金律」: オフセットを 2 で割る
+                // In this integration, byte offsets appear to be 2x UTF-16 code unit offsets.
                 let start = Int(byteRange.lowerBound) / 2
                 let end = Int(byteRange.upperBound) / 2
                 
-                let utf16 = sourceString.utf16
-                if start < utf16.count && end <= utf16.count {
-                    let startIdx = sourceString.index(sourceString.startIndex, offsetBy: start)
-                    let endIdx = sourceString.index(sourceString.startIndex, offsetBy: end)
-                    foundText = String(sourceString[startIdx..<endIdx])
+                if sourceString.utf16.index(sourceString.utf16.startIndex, offsetBy: start, limitedBy: sourceString.utf16.endIndex) != nil,
+                   sourceString.utf16.index(sourceString.utf16.startIndex, offsetBy: end, limitedBy: sourceString.utf16.endIndex) != nil,
+                   let range = Range(NSRange(location: start, length: end - start), in: sourceString) {
+                    foundText = String(sourceString[range])
                 }
             }
             for i in 0..<node.childCount {
@@ -56,7 +55,6 @@ final class TreeSitterIntegrationTests: XCTestCase {
             walk(root)
         }
         
-        // 正しく取得できていれば、見出し記号を含めて一致するはず
-        XCTAssertTrue(foundText.hasPrefix("# はじめての付箋"))
+        XCTAssertTrue(foundText.hasPrefix("# Heading with Multi-byte 🌐"))
     }
 }

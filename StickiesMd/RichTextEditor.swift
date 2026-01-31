@@ -5,6 +5,9 @@ import SwiftTreeSitter
 import CodeEditLanguages
 
 struct RichTextEditor: NSViewRepresentable {
+    static let defaultFontSize: CGFloat = 14
+    static let headingFontSize: CGFloat = 18
+
     let textStorage: NSTextStorage
     var format: FileFormat
     var isEditable: Bool
@@ -34,7 +37,7 @@ struct RichTextEditor: NSViewRepresentable {
         textView.isEditable = isEditable
         textView.isRichText = false
         textView.importsGraphics = false
-        textView.font = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+        textView.font = NSFont.monospacedSystemFont(ofSize: Self.defaultFontSize, weight: .regular)
         let color = NSColor(hex: fontColor) ?? .textColor
         textView.textColor = color
         textView.insertionPointColor = color
@@ -79,6 +82,7 @@ struct RichTextEditor: NSViewRepresentable {
             if !(nsView.verticalRulerView is LineNumberRulerView) {
                 nsView.verticalRulerView = LineNumberRulerView(textView: textView)
             }
+            nsView.verticalRulerView?.needsDisplay = true
         } else {
             nsView.rulersVisible = false
         }
@@ -114,6 +118,9 @@ struct RichTextEditor: NSViewRepresentable {
         
         func textDidChange(_ notification: Notification) {
             applyHighlighting()
+            if let scrollView = (notification.object as? NSTextView)?.enclosingScrollView {
+                scrollView.verticalRulerView?.needsDisplay = true
+            }
         }
         
         func applyHighlighting() {
@@ -127,12 +134,12 @@ struct RichTextEditor: NSViewRepresentable {
             
             textStorage.beginEditing()
             let fullRange = NSRange(location: 0, length: textStorage.length)
-            let defaultFont = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+            let defaultFont = NSFont.monospacedSystemFont(ofSize: RichTextEditor.defaultFontSize, weight: .regular)
             let defaultColor = NSColor(hex: parent.fontColor) ?? .textColor
             textStorage.setAttributes([.font: defaultFont, .foregroundColor: defaultColor], range: fullRange)
             
             if let rootNode = tree.rootNode {
-                highlightNode(rootNode, in: textStorage)
+                highlightNode(rootNode, in: textStorage, sourceString: string)
             }
             textStorage.endEditing()
             
@@ -141,7 +148,7 @@ struct RichTextEditor: NSViewRepresentable {
             }
         }
         
-        private func highlightNode(_ node: Node, in textStorage: NSTextStorage) {
+        private func highlightNode(_ node: Node, in textStorage: NSTextStorage, sourceString: String) {
             if let type = node.nodeType {
                 // Highlighting headings
                 if type == "atx_heading" || type == "setext_heading" || (type.contains("heading") && !type.contains("content")) {
@@ -150,9 +157,10 @@ struct RichTextEditor: NSViewRepresentable {
                     let start = Int(byteRange.lowerBound) / 2
                     let end = Int(byteRange.upperBound) / 2
                     
-                    if end > start && end <= textStorage.length {
-                        let range = NSRange(location: start, length: end - start)
-                        let font = NSFont.systemFont(ofSize: 18, weight: .bold)
+                    if let startIdx = sourceString.utf16.index(sourceString.utf16.startIndex, offsetBy: start, limitedBy: sourceString.utf16.endIndex),
+                       let endIdx = sourceString.utf16.index(sourceString.utf16.startIndex, offsetBy: end, limitedBy: sourceString.utf16.endIndex) {
+                        let range = NSRange(startIdx..<endIdx, in: sourceString)
+                        let font = NSFont.systemFont(ofSize: RichTextEditor.headingFontSize, weight: .bold)
                         textStorage.addAttribute(.font, value: font, range: range)
                     }
                 }
@@ -160,7 +168,7 @@ struct RichTextEditor: NSViewRepresentable {
             
             for i in 0..<node.childCount {
                 if let child = node.child(at: i) {
-                    highlightNode(child, in: textStorage)
+                    highlightNode(child, in: textStorage, sourceString: sourceString)
                 }
             }
         }
@@ -179,7 +187,48 @@ class LineNumberRulerView: NSRulerView {
     }
     
     override func drawHashMarksAndLabels(in rect: NSRect) {
-        NSColor.clear.set()
-        rect.fill()
+        guard let textView = clientView as? NSTextView,
+              let textLayoutManager = textView.textLayoutManager else {
+            return
+        }
+        
+        let visibleRect = textView.visibleRect
+        let nsFont = textView.font ?? NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: nsFont,
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+        
+        var currentLineNumber = 1
+        
+        // We need to know the line number of the first visible fragment.
+        // For simplicity and correctness in small documents, we enumerate from the beginning.
+        textLayoutManager.enumerateTextLayoutFragments(from: textLayoutManager.documentRange.location, options: [.ensuresLayout]) { fragment in
+            let frame = fragment.layoutFragmentFrame
+            
+            if frame.origin.y + frame.height < visibleRect.origin.y {
+                // Fragment is above the visible area, just increment line count
+                currentLineNumber += 1
+                return true
+            }
+            
+            if frame.origin.y > visibleRect.origin.y + visibleRect.height {
+                // Fragment is below the visible area, we can stop
+                return false
+            }
+            
+            // Fragment is visible, draw the line number
+            let lineString = "\(currentLineNumber)"
+            let stringSize = lineString.size(withAttributes: attributes)
+            
+            // Center the line number in the ruler
+            let yOffset = frame.origin.y - visibleRect.origin.y + (frame.height - stringSize.height) / 2
+            let xOffset = ruleThickness - stringSize.width - 5
+            
+            lineString.draw(at: NSPoint(x: xOffset, y: yOffset), withAttributes: attributes)
+            
+            currentLineNumber += 1
+            return true
+        }
     }
 }
