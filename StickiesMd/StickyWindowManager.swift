@@ -46,11 +46,9 @@ class StickyWindowManager: NSObject, ObservableObject {
         }
     }
     
-    func createNewWindow(for fileURL: URL, persist: Bool = true) {
+    func createNewWindow(for fileURL: URL) {
         let note = StickyNote(fileURL: fileURL)
-        if persist {
-            StickiesStore.shared.add(note: note)
-        }
+        StickiesStore.shared.add(note: note)
         createWindow(for: note)
     }
     
@@ -124,38 +122,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             StickiesStore.shared.load()
         }
         
-        // Parse command line arguments for files to open
-        let args = ProcessInfo.processInfo.arguments
-        var filePaths: [String] = []
-        if args.count > 1 {
-            for arg in args.dropFirst() {
-                if !arg.hasPrefix("-") {
-                    filePaths.append(arg)
-                }
-            }
-        }
+        StickyWindowManager.shared.restoreWindows()
         
-        if !filePaths.isEmpty {
-            // Open specified files without persisting them as restored windows
-            for path in filePaths {
-                let url = URL(fileURLWithPath: path)
-                StickyWindowManager.shared.createNewWindow(for: url, persist: false)
-            }
-        } else {
-            // Normal restoration flow
-            StickyWindowManager.shared.restoreWindows()
+        if StickiesStore.shared.notes.isEmpty {
+            // Create a sample file for testing only if no notes exist
+            let fileManager = FileManager.default
+            let tempDir = fileManager.temporaryDirectory
+            let sampleURL = tempDir.appendingPathComponent("sample.org")
+            let content = "* Welcome to Stickies.md\nThis is a sample org file.\nYou can use *bold* and /italic/ text.\n\n- Item 1\n- Item 2\n"
             
-            if StickiesStore.shared.notes.isEmpty {
-                // Create a sample file for testing only if no notes exist
-                let fileManager = FileManager.default
-                let tempDir = fileManager.temporaryDirectory
-                let sampleURL = tempDir.appendingPathComponent("sample.org")
-                let content = "* Welcome to Stickies.md\nThis is a sample org file.\nYou can use *bold* and /italic/ text.\n\n- Item 1\n- Item 2\n"
-                
-                try? content.write(to: sampleURL, atomically: true, encoding: .utf8)
-                
-                StickyWindowManager.shared.createNewWindow(for: sampleURL)
-            }
+            try? content.write(to: sampleURL, atomically: true, encoding: .utf8)
+            
+            StickyWindowManager.shared.createNewWindow(for: sampleURL)
         }
     }
 }
