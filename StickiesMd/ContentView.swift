@@ -71,7 +71,6 @@ struct ContentView: View {
             
             Group {
                 RichTextEditor(textStorage: viewModel.textStorage, format: viewModel.fileFormat, isEditable: viewModel.isFocused, fontColor: viewModel.note.fontColor, showLineNumbers: viewModel.note.showLineNumbers)
-                    .id(viewModel.version) // Force recreate editor when content is reloaded
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(4)
             }

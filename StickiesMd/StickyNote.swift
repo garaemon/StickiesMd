@@ -1,6 +1,11 @@
 import Foundation
 import SwiftUI
 
+enum FileFormat: String, Codable {
+    case markdown
+    case org
+}
+
 struct StickyNote: Identifiable, Codable {
     var id: UUID = UUID()
     var fileURL: URL

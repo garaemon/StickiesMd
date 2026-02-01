@@ -130,7 +130,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if args.count > 1 {
             for arg in args.dropFirst() {
                 if !arg.hasPrefix("-") {
-                    filePaths.append(arg)
+                    // Check if it's a valid file path to avoid misinterpreting system flags like "YES"
+                    if FileManager.default.fileExists(atPath: arg) {
+                        filePaths.append(arg)
+                    }
                 }
             }
         }
