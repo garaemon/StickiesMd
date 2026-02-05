@@ -16,7 +16,7 @@ struct RichTextEditor: NSViewRepresentable {
   }
 
   static let defaultFontSize: CGFloat = FontSizes.standard
-  
+
   static func headingFontSize(level: Int) -> CGFloat {
     switch level {
     case 1: return FontSizes.h1
