@@ -5,9 +5,29 @@ import SwiftTreeSitter
 import SwiftUI
 
 struct RichTextEditor: NSViewRepresentable {
-  static let defaultFontSize: CGFloat = 14
-  // TODO: Change the font size based on the level of headings
-  static let headingFontSize: CGFloat = 18
+  struct FontSizes {
+    static let standard: CGFloat = 14
+    static let h1: CGFloat = 26
+    static let h2: CGFloat = 22
+    static let h3: CGFloat = 18
+    static let h4: CGFloat = 16
+    static let h5: CGFloat = 14
+    static let h6: CGFloat = 14
+  }
+
+  static let defaultFontSize: CGFloat = FontSizes.standard
+  
+  static func headingFontSize(level: Int) -> CGFloat {
+    switch level {
+    case 1: return FontSizes.h1
+    case 2: return FontSizes.h2
+    case 3: return FontSizes.h3
+    case 4: return FontSizes.h4
+    case 5: return FontSizes.h5
+    case 6: return FontSizes.h6
+    default: return FontSizes.standard
+    }
+  }
 
   let textStorage: NSTextStorage
   var format: FileFormat
@@ -174,7 +194,9 @@ struct RichTextEditor: NSViewRepresentable {
               sourceString.utf16.startIndex, offsetBy: end, limitedBy: sourceString.utf16.endIndex)
           {
             let range = NSRange(startIdx..<endIdx, in: sourceString)
-            let font = NSFont.systemFont(ofSize: RichTextEditor.headingFontSize, weight: .bold)
+            let level = getHeadingLevel(node)
+            let fontSize = RichTextEditor.headingFontSize(level: level)
+            let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
             textStorage.addAttribute(.font, value: font, range: range)
           }
         }
@@ -185,6 +207,22 @@ struct RichTextEditor: NSViewRepresentable {
           highlightNode(child, in: textStorage, sourceString: sourceString)
         }
       }
+    }
+
+    private func getHeadingLevel(_ node: Node) -> Int {
+      for i in 0..<node.childCount {
+        guard let child = node.child(at: i), let type = child.nodeType else { continue }
+        switch type {
+        case "atx_h1_marker", "setext_h1_underline": return 1
+        case "atx_h2_marker", "setext_h2_underline": return 2
+        case "atx_h3_marker": return 3
+        case "atx_h4_marker": return 4
+        case "atx_h5_marker": return 5
+        case "atx_h6_marker": return 6
+        default: continue
+        }
+      }
+      return 1
     }
   }
 }
