@@ -124,21 +124,33 @@ struct RichTextEditor: NSViewRepresentable {
     var parent: RichTextEditor
     var textLayoutManager: NSTextLayoutManager?
     var textContentStorage: NSTextContentStorage?
+    // We need two parsers because Tree-sitter's Markdown grammar is split into two parts:
+    // parser: Parses block-level elements like headings, lists, code blocks (tree-sitter-markdown)
+    // inlineParser: Parses inline elements like bold, emphasis, links (tree-sitter-markdown-inline)
     var parser: Parser
+    var inlineParser: Parser?
 
     init(_ parent: RichTextEditor) {
       self.parent = parent
       self.parser = Parser()
+      self.inlineParser = Parser()
       super.init()
       setupParser()
     }
 
     func setupParser() {
-      if let codeLang = CodeLanguage.allLanguages.first(where: {
+      if let markdownLang = CodeLanguage.allLanguages.first(where: {
         let id = "\($0.id)".lowercased()
-        return id == "markdown" || id.contains("markdown")
-      }), let tsLang = codeLang.language {
+        return id == "markdown"
+      }), let tsLang = markdownLang.language {
         try? parser.setLanguage(tsLang)
+      }
+
+      if let markdownInlineLang = CodeLanguage.allLanguages.first(where: {
+        let id = "\($0.id)".lowercased()
+        return id == "markdowninline" || id == "markdown-inline"
+      }), let tsInlineLang = markdownInlineLang.language {
+        try? inlineParser?.setLanguage(tsInlineLang)
       }
     }
 
@@ -168,8 +180,21 @@ struct RichTextEditor: NSViewRepresentable {
         [.font: defaultFont, .foregroundColor: defaultColor], range: fullRange)
 
       if let rootNode = tree.rootNode {
-        highlightNode(rootNode, in: textStorage, sourceString: string)
+        highlightNode(rootNode, in: textStorage, sourceString: string, parentTypes: [])
       }
+
+      if parent.format == .markdown, let inlineParser,
+        let inlineTree = inlineParser.parse(string),
+        let inlineRootNode = inlineTree.rootNode
+      {
+        highlightInlineNode(
+          inlineRootNode,
+          in: textStorage,
+          sourceString: string,
+          parentTypes: []
+        )
+      }
+
       textStorage.endEditing()
 
       if let lm = textLayoutManager {
@@ -177,34 +202,39 @@ struct RichTextEditor: NSViewRepresentable {
       }
     }
 
-    private func highlightNode(_ node: Node, in textStorage: NSTextStorage, sourceString: String) {
+    private func highlightNode(
+      _ node: Node,
+      in textStorage: NSTextStorage,
+      sourceString: String,
+      parentTypes: [String]
+    ) {
       if let type = node.nodeType {
         // Highlighting headings
         if type == "atx_heading" || type == "setext_heading"
           || (type.contains("heading") && !type.contains("content"))
         {
-          let byteRange = node.byteRange
-          // Fix: Tree-sitter byte offsets are 2x UTF-16 unit offsets in this integration
-          let start = Int(byteRange.lowerBound) / 2
-          let end = Int(byteRange.upperBound) / 2
-
-          if let startIdx = sourceString.utf16.index(
-            sourceString.utf16.startIndex, offsetBy: start, limitedBy: sourceString.utf16.endIndex),
-            let endIdx = sourceString.utf16.index(
-              sourceString.utf16.startIndex, offsetBy: end, limitedBy: sourceString.utf16.endIndex)
-          {
-            let range = NSRange(startIdx..<endIdx, in: sourceString)
+          if let range = nodeRange(node, in: sourceString) {
             let level = getHeadingLevel(node)
             let fontSize = RichTextEditor.headingFontSize(level: level)
             let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
             textStorage.addAttribute(.font, value: font, range: range)
           }
         }
+
       }
 
       for i in 0..<node.childCount {
         if let child = node.child(at: i) {
-          highlightNode(child, in: textStorage, sourceString: sourceString)
+          var nextParentTypes = parentTypes
+          if let type = node.nodeType {
+            nextParentTypes.append(type)
+          }
+          highlightNode(
+            child,
+            in: textStorage,
+            sourceString: sourceString,
+            parentTypes: nextParentTypes
+          )
         }
       }
     }
@@ -224,6 +254,103 @@ struct RichTextEditor: NSViewRepresentable {
       }
       return 1
     }
+
+    /// Converts a Tree-sitter Node's range into an NSRange for NSTextStorage.
+    ///
+    /// This function maps the byte range from a Tree-sitter Node to the corresponding
+    /// NSRange in the source string, which is required for text styling.
+    /// It handles the conversion from byte offsets to UTF-16 indices.
+    private func nodeRange(_ node: Node, in sourceString: String) -> NSRange? {
+      let byteRange = node.byteRange
+      // Fix: Tree-sitter byte offsets are 2x UTF-16 unit offsets in this integration
+      let start = Int(byteRange.lowerBound) / 2
+      let end = Int(byteRange.upperBound) / 2
+
+      guard
+        let startIdx = sourceString.utf16.index(
+          sourceString.utf16.startIndex, offsetBy: start, limitedBy: sourceString.utf16.endIndex),
+        let endIdx = sourceString.utf16.index(
+          sourceString.utf16.startIndex, offsetBy: end, limitedBy: sourceString.utf16.endIndex)
+      else {
+        return nil
+      }
+
+      return NSRange(startIdx..<endIdx, in: sourceString)
+    }
+
+    private func highlightInlineNode(
+      _ node: Node,
+      in textStorage: NSTextStorage,
+      sourceString: String,
+      parentTypes: [String]
+    ) {
+      if let type = node.nodeType {
+        if type == "strong_emphasis" {
+          if let range = nodeRange(node, in: sourceString) {
+            let isCombined = parentTypes.contains("emphasis")
+            applyFontTraits(
+              in: textStorage,
+              range: range,
+              bold: true,
+              italic: isCombined
+            )
+          }
+        }
+
+        if type == "emphasis" {
+          if let range = nodeRange(node, in: sourceString) {
+            let isCombined = parentTypes.contains("strong_emphasis")
+            applyFontTraits(
+              in: textStorage,
+              range: range,
+              bold: isCombined,
+              italic: true
+            )
+          }
+        }
+      }
+
+      for i in 0..<node.childCount {
+        if let child = node.child(at: i) {
+          var nextParentTypes = parentTypes
+          if let type = node.nodeType {
+            nextParentTypes.append(type)
+          }
+          highlightInlineNode(
+            child,
+            in: textStorage,
+            sourceString: sourceString,
+            parentTypes: nextParentTypes
+          )
+        }
+      }
+    }
+
+    /// Applies bold and/or italic traits to the text in the specified range.
+    ///
+    /// This function retrieves the current font at the given range, modifies its symbolic traits
+    /// to include bold or italic as requested, and applies the new font back to the text storage.
+    /// It attempts to preserve the existing font size.
+    private func applyFontTraits(
+      in textStorage: NSTextStorage,
+      range: NSRange,
+      bold: Bool,
+      italic: Bool
+    ) {
+      let baseFont =
+        (textStorage.attribute(.font, at: range.location, effectiveRange: nil) as? NSFont)
+        ?? NSFont.monospacedSystemFont(ofSize: RichTextEditor.defaultFontSize, weight: .regular)
+      var traits = baseFont.fontDescriptor.symbolicTraits
+      if bold { traits.insert(.bold) }
+      if italic { traits.insert(.italic) }
+      let descriptor = baseFont.fontDescriptor.withSymbolicTraits(traits)
+      if let styled = NSFont(descriptor: descriptor, size: baseFont.pointSize) {
+        textStorage.addAttribute(.font, value: styled, range: range)
+      } else {
+        textStorage.addAttribute(.font, value: baseFont, range: range)
+      }
+    }
+
   }
 }
 
