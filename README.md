@@ -20,3 +20,11 @@ Run the following command to format the code for the entire project:
 ```bash
 swift-format --in-place --recursive .
 ```
+
+### Testing
+
+Run the following command to execute tests via CLI:
+
+```bash
+xcodebuild test -scheme StickiesMd -destination 'platform=macOS'
+```

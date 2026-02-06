@@ -149,6 +149,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     loadContent()
   }
 
+  @MainActor
   func updateColor(_ hex: String) {
     note.backgroundColor = hex
     StickiesStore.shared.update(note: note)
@@ -158,24 +159,28 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     NotificationCenter.default.post(name: .stickyNoteAppearanceChanged, object: note)
   }
 
+  @MainActor
   func updateOpacity(_ opacity: Double) {
     note.opacity = opacity
     StickiesStore.shared.update(note: note)
     NotificationCenter.default.post(name: .stickyNoteAppearanceChanged, object: note)
   }
 
+  @MainActor
   func updateFontColor(_ hex: String) {
     note.fontColor = hex
     StickiesStore.shared.update(note: note)
     NotificationCenter.default.post(name: .stickyNoteFontColorChanged, object: note)
   }
 
+  @MainActor
   func toggleLineNumbers() {
     note.showLineNumbers.toggle()
     StickiesStore.shared.update(note: note)
     NotificationCenter.default.post(name: .stickyNoteLineNumbersChanged, object: note)
   }
 
+  @MainActor
   func updateFile(_ newURL: URL) {
     NSFileCoordinator.removeFilePresenter(self)
     if isAccessingResource {
@@ -234,6 +239,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     }
   }
 
+  @MainActor
   func toggleAlwaysOnTop() {
     note.isAlwaysOnTop.toggle()
     StickiesStore.shared.update(note: note)

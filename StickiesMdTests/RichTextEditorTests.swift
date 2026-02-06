@@ -34,7 +34,7 @@ final class RichTextEditorTests: XCTestCase {
     let textContentStorage = NSTextContentStorage()
 
     textContentStorage.textStorage = textStorage
-    layoutManager.textContentManager = textContentStorage
+    textContentStorage.addTextLayoutManager(layoutManager)
 
     // Create editor and coordinator
     let editor = RichTextEditor(
@@ -90,7 +90,7 @@ final class RichTextEditorTests: XCTestCase {
     let textContentStorage = NSTextContentStorage()
 
     textContentStorage.textStorage = textStorage
-    layoutManager.textContentManager = textContentStorage
+    textContentStorage.addTextLayoutManager(layoutManager)
 
     let editor = RichTextEditor(
       textStorage: textStorage,
@@ -125,7 +125,7 @@ final class RichTextEditorTests: XCTestCase {
     let textContentStorage = NSTextContentStorage()
 
     textContentStorage.textStorage = textStorage
-    layoutManager.textContentManager = textContentStorage
+    textContentStorage.addTextLayoutManager(layoutManager)
 
     let editor = RichTextEditor(
       textStorage: textStorage,

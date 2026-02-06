@@ -31,9 +31,8 @@ final class NSColorHexTests: XCTestCase {
 
     // Test P3 color conversion (simulated by creating a color that needs conversion)
     // If we create a color in P3, toHex should convert it to sRGB first
-    if let p3Color = NSColor(colorSpace: .displayP3, components: [1.0, 0.0, 0.0, 1.0], count: 4) {
-      // In sRGB, P3 Red is slightly different or clipped, but conceptually it should return a hex string.
-      XCTAssertNotNil(p3Color.toHex())
-    }
+    let p3Color = NSColor(colorSpace: .displayP3, components: [1.0, 0.0, 0.0, 1.0], count: 4)
+    // In sRGB, P3 Red is slightly different or clipped, but conceptually it should return a hex string.
+    XCTAssertNotNil(p3Color.toHex())
   }
 }

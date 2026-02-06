@@ -2,6 +2,7 @@ import XCTest
 
 @testable import StickiesMd
 
+@MainActor
 final class StickyNoteViewModelTests: XCTestCase {
   var note: StickyNote!
   var viewModel: StickyNoteViewModel!
