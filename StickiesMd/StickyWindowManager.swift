@@ -110,6 +110,31 @@ class StickyWindowManager: NSObject, ObservableObject {
     windows[note.id] = window
     return window
   }
+
+  func takeScreenshot(
+    for window: StickyWindow, to outputURL: URL, completion: @escaping (Result<Void, Error>) -> Void
+  ) {
+    if let view = window.contentView {
+      let bounds = view.bounds
+      if let bitmapRep = view.bitmapImageRepForCachingDisplay(in: bounds) {
+        view.cacheDisplay(in: bounds, to: bitmapRep)
+        if let data = bitmapRep.representation(using: .png, properties: [:]) {
+          do {
+            try data.write(to: outputURL)
+            completion(.success(()))
+          } catch {
+            completion(.failure(error))
+          }
+        } else {
+          completion(.failure(NSError(domain: "StickiesMd", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to create PNG representation"])))
+        }
+      } else {
+        completion(.failure(NSError(domain: "StickiesMd", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to create bitmap representation"])))
+      }
+    } else {
+      completion(.failure(NSError(domain: "StickiesMd", code: 3, userInfo: [NSLocalizedDescriptionKey: "Window has no content view"])))
+    }
+  }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -230,25 +255,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Wait for rendering
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-      if let view = window.contentView {
-        let bounds = view.bounds
-        if let bitmapRep = view.bitmapImageRepForCachingDisplay(in: bounds) {
-          view.cacheDisplay(in: bounds, to: bitmapRep)
-          if let data = bitmapRep.representation(using: .png, properties: [:]) {
-            do {
-              try data.write(to: URL(fileURLWithPath: output))
-              print("Screenshot saved to \(output)")
-            } catch {
-              print("Failed to save screenshot: \(error)")
-            }
-          } else {
-            print("Failed to create PNG representation")
-          }
-        } else {
-          print("Failed to create bitmap representation")
+      StickyWindowManager.shared.takeScreenshot(for: window, to: URL(fileURLWithPath: output)) { result in
+        switch result {
+        case .success:
+          print("Screenshot saved to \(output)")
+        case .failure(let error):
+          print("Failed to save screenshot: \(error)")
         }
+        NSApplication.shared.terminate(nil)
       }
-      NSApplication.shared.terminate(nil)
     }
   }
 }
