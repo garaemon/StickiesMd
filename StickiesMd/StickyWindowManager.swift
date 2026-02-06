@@ -48,12 +48,13 @@ class StickyWindowManager: NSObject, ObservableObject {
     }
   }
 
-  func createNewWindow(for fileURL: URL, persist: Bool = true) {
+  @discardableResult
+  func createNewWindow(for fileURL: URL, persist: Bool = true) -> StickyWindow? {
     let note = StickyNote(fileURL: fileURL)
     if persist {
       StickiesStore.shared.add(note: note)
     }
-    createWindow(for: note)
+    return createWindow(for: note)
   }
 
   func updateWindowAppearance(for note: StickyNote) {
@@ -69,7 +70,8 @@ class StickyWindowManager: NSObject, ObservableObject {
     }
   }
 
-  private func createWindow(for note: StickyNote) {
+  @discardableResult
+  private func createWindow(for note: StickyNote) -> StickyWindow {
     let viewModel = StickyNoteViewModel(note: note)
 
     let window = StickyWindow(
@@ -106,6 +108,7 @@ class StickyWindowManager: NSObject, ObservableObject {
 
     window.makeKeyAndOrderFront(nil)
     windows[note.id] = window
+    return window
   }
 }
 
@@ -129,6 +132,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Parse command line arguments for files to open
     let args = ProcessInfo.processInfo.arguments
+    if args.contains("--screenshot") {
+      handleScreenshotMode(args: args)
+      return
+    }
+
     var filePaths: [String] = []
     if args.count > 1 {
       for arg in args.dropFirst() {
@@ -163,6 +171,84 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         StickyWindowManager.shared.createNewWindow(for: sampleURL)
       }
+    }
+  }
+
+  private func handleScreenshotMode(args: [String]) {
+    var width: CGFloat = 800
+    var height: CGFloat = 600
+    var output: String?
+    var targetFile: String?
+
+    var i = 1
+    while i < args.count {
+      let arg = args[i]
+      switch arg {
+      case "--screenshot": break
+      case "--width":
+        if i + 1 < args.count, let w = Double(args[i + 1]) {
+          width = CGFloat(w)
+          i += 1
+        }
+      case "--height":
+        if i + 1 < args.count, let h = Double(args[i + 1]) {
+          height = CGFloat(h)
+          i += 1
+        }
+      case "--output":
+        if i + 1 < args.count {
+          output = args[i + 1]
+          i += 1
+        }
+      default:
+        // Ignore other flags
+        if !arg.hasPrefix("-") {
+          targetFile = arg
+        }
+      }
+      i += 1
+    }
+
+    guard let targetFile = targetFile, let output = output else {
+      print("Usage: StickiesMd --screenshot --output <path> [--width <w>] [--height <h>] <file>")
+      NSApplication.shared.terminate(nil)
+      return
+    }
+
+    let url = URL(fileURLWithPath: targetFile)
+    guard
+      let window = StickyWindowManager.shared.createNewWindow(
+        for: url, persist: false)
+    else {
+      print("Failed to create window")
+      NSApplication.shared.terminate(nil)
+      return
+    }
+
+    window.setFrame(
+      NSRect(x: 100, y: 100, width: width, height: height), display: true)
+
+    // Wait for rendering
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      if let view = window.contentView {
+        let bounds = view.bounds
+        if let bitmapRep = view.bitmapImageRepForCachingDisplay(in: bounds) {
+          view.cacheDisplay(in: bounds, to: bitmapRep)
+          if let data = bitmapRep.representation(using: .png, properties: [:]) {
+            do {
+              try data.write(to: URL(fileURLWithPath: output))
+              print("Screenshot saved to \(output)")
+            } catch {
+              print("Failed to save screenshot: \(error)")
+            }
+          } else {
+            print("Failed to create PNG representation")
+          }
+        } else {
+          print("Failed to create bitmap representation")
+        }
+      }
+      NSApplication.shared.terminate(nil)
     }
   }
 }
