@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 
+@MainActor
 class StickiesStore: ObservableObject {
   static let shared = StickiesStore()
   private let key = "StickyNotes"

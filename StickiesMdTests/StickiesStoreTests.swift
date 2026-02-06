@@ -2,6 +2,7 @@ import XCTest
 
 @testable import StickiesMd
 
+@MainActor
 final class StickiesStoreTests: XCTestCase {
   var store: StickiesStore!
   var tempDefaults: UserDefaults!
