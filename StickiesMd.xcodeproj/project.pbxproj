@@ -11,6 +11,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		F1882B392F3579A200DF69AD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F17FCB5E2F21FAC30080A54B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F17FCB652F21FAC30080A54B;
+			remoteInfo = StickiesMd;
+		};
 		F1D4D2662F248EC100ED54A4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F17FCB5E2F21FAC30080A54B /* Project object */;
@@ -22,6 +29,7 @@
 
 /* Begin PBXFileReference section */
 		F17FCB662F21FAC30080A54B /* StickiesMd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StickiesMd.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1882B352F3579A200DF69AD /* StickiesMdTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StickiesMdTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F1D4D2602F248EC100ED54A4 /* StickiesMdUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StickiesMdUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -44,6 +52,11 @@
 			path = StickiesMd;
 			sourceTree = "<group>";
 		};
+		F1882B362F3579A200DF69AD /* StickiesMdTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = StickiesMdTests;
+			sourceTree = "<group>";
+		};
 		F1D4D2612F248EC100ED54A4 /* StickiesMdUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = StickiesMdUITests;
@@ -57,6 +70,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				F17FCB782F21FCA50080A54B /* OrgKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F1882B322F3579A200DF69AD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,6 +95,7 @@
 			children = (
 				F17FCB682F21FAC30080A54B /* StickiesMd */,
 				F1D4D2612F248EC100ED54A4 /* StickiesMdUITests */,
+				F1882B362F3579A200DF69AD /* StickiesMdTests */,
 				F17FCB762F21FCA50080A54B /* Frameworks */,
 				F17FCB672F21FAC30080A54B /* Products */,
 			);
@@ -85,6 +106,7 @@
 			children = (
 				F17FCB662F21FAC30080A54B /* StickiesMd.app */,
 				F1D4D2602F248EC100ED54A4 /* StickiesMdUITests.xctest */,
+				F1882B352F3579A200DF69AD /* StickiesMdTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -122,6 +144,29 @@
 			productReference = F17FCB662F21FAC30080A54B /* StickiesMd.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F1882B342F3579A200DF69AD /* StickiesMdTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F1882B3D2F3579A200DF69AD /* Build configuration list for PBXNativeTarget "StickiesMdTests" */;
+			buildPhases = (
+				F1882B312F3579A200DF69AD /* Sources */,
+				F1882B322F3579A200DF69AD /* Frameworks */,
+				F1882B332F3579A200DF69AD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F1882B3A2F3579A200DF69AD /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F1882B362F3579A200DF69AD /* StickiesMdTests */,
+			);
+			name = StickiesMdTests;
+			packageProductDependencies = (
+			);
+			productName = StickiesMdTests;
+			productReference = F1882B352F3579A200DF69AD /* StickiesMdTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		F1D4D25F2F248EC100ED54A4 /* StickiesMdUITests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F1D4D26A2F248EC100ED54A4 /* Build configuration list for PBXNativeTarget "StickiesMdUITests" */;
@@ -158,6 +203,10 @@
 					F17FCB652F21FAC30080A54B = {
 						CreatedOnToolsVersion = 26.2;
 					};
+					F1882B342F3579A200DF69AD = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = F17FCB652F21FAC30080A54B;
+					};
 					F1D4D25F2F248EC100ED54A4 = {
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = F17FCB652F21FAC30080A54B;
@@ -180,12 +229,20 @@
 			targets = (
 				F17FCB652F21FAC30080A54B /* StickiesMd */,
 				F1D4D25F2F248EC100ED54A4 /* StickiesMdUITests */,
+				F1882B342F3579A200DF69AD /* StickiesMdTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		F17FCB642F21FAC30080A54B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F1882B332F3579A200DF69AD /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -209,6 +266,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F1882B312F3579A200DF69AD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F1D4D25C2F248EC100ED54A4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -219,6 +283,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		F1882B3A2F3579A200DF69AD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F17FCB652F21FAC30080A54B /* StickiesMd */;
+			targetProxy = F1882B392F3579A200DF69AD /* PBXContainerItemProxy */;
+		};
 		F1D4D2672F248EC100ED54A4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F17FCB652F21FAC30080A54B /* StickiesMd */;
@@ -405,6 +474,46 @@
 			};
 			name = Release;
 		};
+		F1882B3B2F3579A200DF69AD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.garaemon.StickiesMdTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StickiesMd.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/StickiesMd";
+			};
+			name = Debug;
+		};
+		F1882B3C2F3579A200DF69AD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.garaemon.StickiesMdTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/StickiesMd.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/StickiesMd";
+			};
+			name = Release;
+		};
 		F1D4D2682F248EC100ED54A4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -458,6 +567,15 @@
 			buildConfigurations = (
 				F17FCB722F21FAC50080A54B /* Debug */,
 				F17FCB732F21FAC50080A54B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F1882B3D2F3579A200DF69AD /* Build configuration list for PBXNativeTarget "StickiesMdTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F1882B3B2F3579A200DF69AD /* Debug */,
+				F1882B3C2F3579A200DF69AD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
