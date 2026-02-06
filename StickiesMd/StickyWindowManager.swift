@@ -149,6 +149,7 @@ class StickyWindowManager: NSObject, ObservableObject {
   }
 }
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     if ProcessInfo.processInfo.arguments.contains("--reset-state") {
