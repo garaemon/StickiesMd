@@ -12,6 +12,9 @@ final class StickiesStoreTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
+    // Use a unique suite name for each test case to completely isolate UserDefaults.
+    // This prevents race conditions and crashes caused by `removePersistentDomain` affects other running tests
+    // or previous test state leaking into the current one.
     suiteName = UUID().uuidString
     tempDefaults = UserDefaults(suiteName: suiteName)
     tempDefaults.removePersistentDomain(forName: suiteName)
@@ -34,15 +37,15 @@ final class StickiesStoreTests: XCTestCase {
   func testAddAndSave() {
     let note = StickyNote(fileURL: URL(fileURLWithPath: "/tmp/test1.md"))
     store.add(note: note)
-    
+
     XCTAssertEqual(store.notes.count, 1)
     XCTAssertEqual(store.notes.first?.id, note.id)
 
     // Verify it was saved to defaults
     // emulate app restart by clearing memory and loading from defaults
-    store.notes = [] 
+    store.notes = []
     store.load()
-    
+
     XCTAssertEqual(store.notes.count, 1)
     XCTAssertEqual(store.notes.first?.id, note.id)
   }
