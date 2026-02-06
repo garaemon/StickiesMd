@@ -3,15 +3,18 @@ import XCTest
 @testable import StickiesMd
 
 @MainActor
+
 final class StickiesStoreTests: XCTestCase {
   var store: StickiesStore!
   var tempDefaults: UserDefaults!
   var tempDir: URL!
+  var suiteName: String!
 
   override func setUp() {
     super.setUp()
-    tempDefaults = UserDefaults(suiteName: "StickiesStoreTests")
-    tempDefaults.removePersistentDomain(forName: "StickiesStoreTests")
+    suiteName = UUID().uuidString
+    tempDefaults = UserDefaults(suiteName: suiteName)
+    tempDefaults.removePersistentDomain(forName: suiteName)
 
     tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -21,7 +24,9 @@ final class StickiesStoreTests: XCTestCase {
   }
 
   override func tearDown() {
-    tempDefaults.removePersistentDomain(forName: "StickiesStoreTests")
+    if let suiteName = suiteName {
+      tempDefaults.removePersistentDomain(forName: suiteName)
+    }
     try? FileManager.default.removeItem(at: tempDir)
     super.tearDown()
   }
@@ -29,15 +34,17 @@ final class StickiesStoreTests: XCTestCase {
   func testAddAndSave() {
     let note = StickyNote(fileURL: URL(fileURLWithPath: "/tmp/test1.md"))
     store.add(note: note)
-
+    
     XCTAssertEqual(store.notes.count, 1)
     XCTAssertEqual(store.notes.first?.id, note.id)
 
     // Verify it was saved to defaults
-    let newStore = StickiesStore()
-    newStore.configure(defaults: tempDefaults, storageDirectory: tempDir)
-    XCTAssertEqual(newStore.notes.count, 1)
-    XCTAssertEqual(newStore.notes.first?.id, note.id)
+    // emulate app restart by clearing memory and loading from defaults
+    store.notes = [] 
+    store.load()
+    
+    XCTAssertEqual(store.notes.count, 1)
+    XCTAssertEqual(store.notes.first?.id, note.id)
   }
 
   func testUpdate() {
@@ -49,9 +56,9 @@ final class StickiesStoreTests: XCTestCase {
 
     XCTAssertEqual(store.notes.first?.fontColor, "#00FF00")
 
-    let newStore = StickiesStore()
-    newStore.configure(defaults: tempDefaults, storageDirectory: tempDir)
-    XCTAssertEqual(newStore.notes.first?.fontColor, "#00FF00")
+    store.notes = []
+    store.load()
+    XCTAssertEqual(store.notes.first?.fontColor, "#00FF00")
   }
 
   func testRemove() {

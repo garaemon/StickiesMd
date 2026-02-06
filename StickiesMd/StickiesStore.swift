@@ -2,6 +2,7 @@ import Combine
 import Foundation
 
 @MainActor
+
 class StickiesStore: ObservableObject {
   static let shared = StickiesStore()
   private let key = "StickyNotes"
@@ -17,6 +18,7 @@ class StickiesStore: ObservableObject {
   }()
 
   @Published var notes: [StickyNote] = []
+  @Published var lastError: Error?
 
   init() {
     // Load will be called manually or explicitly if needed,
@@ -32,17 +34,26 @@ class StickiesStore: ObservableObject {
   }
 
   func save() {
-    if let encoded = try? JSONEncoder().encode(notes) {
+    do {
+      let encoded = try JSONEncoder().encode(notes)
       defaults.set(encoded, forKey: key)
+    } catch {
+      self.lastError = error
+      print("[StickiesStore] Save failed: \(error)")
     }
   }
 
   func load() {
-    if let data = defaults.data(forKey: key),
-      let decoded = try? JSONDecoder().decode([StickyNote].self, from: data)
-    {
+    guard let data = defaults.data(forKey: key) else {
+      self.notes = []
+      return
+    }
+    do {
+      let decoded = try JSONDecoder().decode([StickyNote].self, from: data)
       self.notes = decoded
-    } else {
+    } catch {
+      self.lastError = error
+      print("[StickiesStore] Load failed: \(error)")
       self.notes = []
     }
   }
