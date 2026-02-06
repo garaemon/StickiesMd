@@ -126,13 +126,25 @@ class StickyWindowManager: NSObject, ObservableObject {
             completion(.failure(error))
           }
         } else {
-          completion(.failure(NSError(domain: "StickiesMd", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to create PNG representation"])))
+          completion(
+            .failure(
+              NSError(
+                domain: "StickiesMd", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to create PNG representation"])))
         }
       } else {
-        completion(.failure(NSError(domain: "StickiesMd", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to create bitmap representation"])))
+        completion(
+          .failure(
+            NSError(
+              domain: "StickiesMd", code: 2,
+              userInfo: [NSLocalizedDescriptionKey: "Failed to create bitmap representation"])))
       }
     } else {
-      completion(.failure(NSError(domain: "StickiesMd", code: 3, userInfo: [NSLocalizedDescriptionKey: "Window has no content view"])))
+      completion(
+        .failure(
+          NSError(
+            domain: "StickiesMd", code: 3,
+            userInfo: [NSLocalizedDescriptionKey: "Window has no content view"])))
     }
   }
 }
@@ -255,7 +267,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Wait for rendering
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-      StickyWindowManager.shared.takeScreenshot(for: window, to: URL(fileURLWithPath: output)) { result in
+      StickyWindowManager.shared.takeScreenshot(for: window, to: URL(fileURLWithPath: output)) {
+        result in
         switch result {
         case .success:
           print("Screenshot saved to \(output)")
