@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import SwiftUI
 
+@MainActor
 class StickyWindowManager: NSObject, ObservableObject {
   static let shared = StickyWindowManager()
   private var windows: [UUID: StickyWindow] = [:]
