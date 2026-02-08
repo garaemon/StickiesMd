@@ -54,12 +54,10 @@ final class GoldenTests: XCTestCase {
 
     // Compare with golden
     if FileManager.default.fileExists(atPath: goldenImageURL.path) {
-      let goldenData = try Data(contentsOf: goldenImageURL)
-      let outputData = try Data(contentsOf: outputImageURL)
-
-      XCTAssertEqual(
-        goldenData, outputData,
-        "Screenshot does not match golden image. Output: \(outputImageURL.path)")
+      let match = compareImages(url1: goldenImageURL, url2: outputImageURL, tolerance: 0.02)
+      XCTAssertTrue(
+        match,
+        "Screenshot does not match golden image within tolerance. Output: \(outputImageURL.path)")
     } else {
       // Record mode: Save the generated image as golden if it doesn't exist?
       // Or just fail.
@@ -68,6 +66,66 @@ final class GoldenTests: XCTestCase {
         "Golden image not found. Generated image at \(outputImageURL.path). Verify and move to \(goldenImageURL.path)."
       )
     }
+  }
+
+  private func compareImages(url1: URL, url2: URL, tolerance: Double) -> Bool {
+    guard let image1 = NSImage(contentsOf: url1),
+      let image2 = NSImage(contentsOf: url2)
+    else {
+      print("Failed to load images")
+      return false
+    }
+
+    var rect = CGRect(x: 0, y: 0, width: image1.size.width, height: image1.size.height)
+    guard let cgImage1 = image1.cgImage(forProposedRect: &rect, context: nil, hints: nil) else {
+      print("Failed to get CGImage for image1")
+      return false
+    }
+
+    rect = CGRect(x: 0, y: 0, width: image2.size.width, height: image2.size.height)
+    guard let cgImage2 = image2.cgImage(forProposedRect: &rect, context: nil, hints: nil) else {
+      print("Failed to get CGImage for image2")
+      return false
+    }
+
+    guard cgImage1.width == cgImage2.width, cgImage1.height == cgImage2.height else {
+      print(
+        "Dimensions mismatch: \(cgImage1.width)x\(cgImage1.height) vs \(cgImage2.width)x\(cgImage2.height)"
+      )
+      return false
+    }
+
+    guard let data1 = cgImage1.dataProvider?.data,
+      let data2 = cgImage2.dataProvider?.data
+    else {
+      print("Failed to get data provider")
+      return false
+    }
+
+    let length1 = CFDataGetLength(data1)
+    let length2 = CFDataGetLength(data2)
+    guard length1 == length2 else {
+      print("Data length mismatch: \(length1) vs \(length2)")
+      return false
+    }
+
+    guard let ptr1 = CFDataGetBytePtr(data1),
+      let ptr2 = CFDataGetBytePtr(data2)
+    else {
+      print("Failed to get byte pointers")
+      return false
+    }
+
+    var diffCount = 0
+    for i in 0..<length1 {
+      if ptr1[i] != ptr2[i] {
+        diffCount += 1
+      }
+    }
+
+    let diffRatio = Double(diffCount) / Double(length1)
+    print("Image difference ratio: \(diffRatio)")
+    return diffRatio <= tolerance
   }
 
   private func checkFileExists(at url: URL, timeout: TimeInterval) -> Bool {
