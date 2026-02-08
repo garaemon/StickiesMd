@@ -132,6 +132,12 @@ The app utilizes **SwiftTreeSitter** for robust parsing of Markdown and Org-mode
 
 * **Workflow**: Write tests first (Red), then proceed with implementation (Green).
 
+### **7.4. Pull Request Workflow**
+
+* **Pre-requisites**: Always run linter, formatter, and tests before creating a Pull Request.
+  * **Formatter**: `swift-format --recursive --in-place .`
+  * **Tests**: `xcodebuild test -project StickiesMd.xcodeproj -scheme StickiesMd -destination 'platform=macOS'`
+
 ## **8. Technical Deep Dives**
 
 ### **8.1. Window Behavior**
