@@ -7,8 +7,8 @@ import XCTest
 final class ScreenshotTests: XCTestCase {
   var tempDir: URL!
 
-  override func setUp() {
-    super.setUp()
+  override func setUp() async throws {
+    try await super.setUp()
     tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
@@ -18,9 +18,9 @@ final class ScreenshotTests: XCTestCase {
     StickiesStore.shared.configure(defaults: defaults, storageDirectory: tempDir)
   }
 
-  override func tearDown() {
+  override func tearDown() async throws {
     try? FileManager.default.removeItem(at: tempDir)
-    super.tearDown()
+    try await super.tearDown()
   }
 
   func testTakeScreenshot() {
