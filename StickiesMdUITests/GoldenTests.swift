@@ -13,14 +13,6 @@ final class GoldenTests: XCTestCase {
   /// and compares it with the reference image located in `ReferenceImages/sample.png`.
   /// If the test fails, use `scripts/generate-golden.sh` to update the reference image.
   func testSampleMdGolden() throws {
-    // Skip on CI
-    // environment["CI"] check might fail if xcodebuild doesn't pass env vars
-    // NSUserName() == "runner" is a common pattern for GitHub Actions runners
-    if ProcessInfo.processInfo.environment["CI"] != nil || NSUserName() == "runner" {
-      print("Skipping GoldenTests on CI due to environment differences")
-      return
-    }
-
     let app = XCUIApplication()
 
     // Locate reference directory relative to this source file
