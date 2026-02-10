@@ -35,7 +35,7 @@ jobs:
         run: xcodebuild -version
 
       - name: Build StickiesMd
-        run: xcodebuild build -project StickiesMd.xcodeproj -scheme StickiesMd -destination 'platform=macOS' -quiet -skipPackagePluginValidation
+        run: xcodebuild build -project StickiesMd.xcodeproj -scheme StickiesMd -destination 'platform=macOS' -skipPackagePluginValidation
 
       - name: Run UI Tests
-        run: xcodebuild test -project StickiesMd.xcodeproj -scheme StickiesMd -destination 'platform=macOS' -quiet -skipPackagePluginValidation
+        run: xcodebuild test -project StickiesMd.xcodeproj -scheme StickiesMd -destination 'platform=macOS' -skipPackagePluginValidation
