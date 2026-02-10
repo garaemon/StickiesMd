@@ -3,7 +3,7 @@ import XCTest
 @MainActor
 final class GoldenTests: XCTestCase {
   override func setUpWithError() throws {
-    print("GoldenTests: setUpWithError started")
+    logError("GoldenTests: setUpWithError started") // Use stderr to ensure output in CI with -quiet
     continueAfterFailure = false
   }
 
@@ -125,16 +125,16 @@ final class GoldenTests: XCTestCase {
     }
 
     let diffRatio = Double(diffCount) / Double(length1)
-    print("GoldenTests: Image difference ratio: \(diffRatio)")
+    logError("GoldenTests: Image difference ratio: \(diffRatio)")
     
     if diffRatio > tolerance {
-      print("GoldenTests: FAILED - Difference ratio \(diffRatio) exceeds tolerance \(tolerance)")
-      print("GoldenTests: Image 1 size: \(image1.size)")
-      print("GoldenTests: Image 2 size: \(image2.size)")
-      print("GoldenTests: Data length 1: \(length1)")
-      print("GoldenTests: Data length 2: \(length2)")
+      logError("GoldenTests: FAILED - Difference ratio \(diffRatio) exceeds tolerance \(tolerance)")
+      logError("GoldenTests: Image 1 size: \(image1.size)")
+      logError("GoldenTests: Image 2 size: \(image2.size)")
+      logError("GoldenTests: Data length 1: \(length1)")
+      logError("GoldenTests: Data length 2: \(length2)")
     } else {
-      print("GoldenTests: PASSED - Difference ratio \(diffRatio) within tolerance \(tolerance)")
+      logError("GoldenTests: PASSED - Difference ratio \(diffRatio) within tolerance \(tolerance)")
     }
     
     return diffRatio <= tolerance
@@ -149,5 +149,9 @@ final class GoldenTests: XCTestCase {
       Thread.sleep(forTimeInterval: 0.1)
     }
     return false
+  }
+
+  private func logError(_ message: String) {
+    fputs("\(message)\n", stderr)
   }
 }
