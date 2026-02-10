@@ -24,6 +24,7 @@ final class ScreenshotTests: XCTestCase {
   }
 
   func testTakeScreenshot() {
+    print("ScreenshotTests: testTakeScreenshot started")
     let expectation = self.expectation(description: "Screenshot taken")
 
     // Create a dummy file

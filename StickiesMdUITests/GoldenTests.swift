@@ -3,6 +3,7 @@ import XCTest
 @MainActor
 final class GoldenTests: XCTestCase {
   override func setUpWithError() throws {
+    print("GoldenTests: setUpWithError started")
     continueAfterFailure = false
   }
 
@@ -124,10 +125,18 @@ final class GoldenTests: XCTestCase {
     }
 
     let diffRatio = Double(diffCount) / Double(length1)
-    print("Image difference ratio: \(diffRatio)")
+    print("GoldenTests: Image difference ratio: \(diffRatio)")
+    
     if diffRatio > tolerance {
-      print("Expected tolerance: \(tolerance), Actual difference: \(diffRatio)")
+      print("GoldenTests: FAILED - Difference ratio \(diffRatio) exceeds tolerance \(tolerance)")
+      print("GoldenTests: Image 1 size: \(image1.size)")
+      print("GoldenTests: Image 2 size: \(image2.size)")
+      print("GoldenTests: Data length 1: \(length1)")
+      print("GoldenTests: Data length 2: \(length2)")
+    } else {
+      print("GoldenTests: PASSED - Difference ratio \(diffRatio) within tolerance \(tolerance)")
     }
+    
     return diffRatio <= tolerance
   }
 
