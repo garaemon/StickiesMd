@@ -80,7 +80,8 @@ struct ContentView: View {
       }
     }
     .environment(\.colorScheme, .light)
-    .frame(minWidth: 200, minHeight: 150)
+    .frame(minWidth: 200, maxWidth: .infinity, minHeight: 150, maxHeight: .infinity)
+    .background(Color(nsColor: NSColor(hex: viewModel.note.backgroundColor) ?? .clear))
     .ignoresSafeArea(.container, edges: .top)
     .onDrop(of: [.image], isTargeted: nil) { providers in
       guard let provider = providers.first else { return false }
