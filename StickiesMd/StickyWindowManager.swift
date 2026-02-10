@@ -135,7 +135,7 @@ class StickyWindowManager: NSObject, ObservableObject {
       ) {
         bitmapRep.size = bounds.size
         view.cacheDisplay(in: bounds, to: bitmapRep)
-        
+
         if let data = bitmapRep.representation(using: .png, properties: [:]) {
           do {
             try data.write(to: outputURL)

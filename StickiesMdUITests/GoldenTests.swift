@@ -126,7 +126,7 @@ final class GoldenTests: XCTestCase {
 
     let diffRatio = Double(diffCount) / Double(length1)
     print("GoldenTests: Image difference ratio: \(diffRatio)")
-    
+
     if diffRatio > tolerance {
       print("GoldenTests: FAILED - Difference ratio \(diffRatio) exceeds tolerance \(tolerance)")
       print("GoldenTests: Image 1 size: \(image1.size)")
@@ -136,7 +136,7 @@ final class GoldenTests: XCTestCase {
     } else {
       print("GoldenTests: PASSED - Difference ratio \(diffRatio) within tolerance \(tolerance)")
     }
-    
+
     return diffRatio <= tolerance
   }
 
