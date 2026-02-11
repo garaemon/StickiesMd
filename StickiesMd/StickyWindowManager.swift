@@ -136,6 +136,15 @@ class StickyWindowManager: NSObject, ObservableObject {
       ) {
         bitmapRep.size = bounds.size
         
+        // Manually fill background color because dataWithPDF/cacheDisplay might not capture window background
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+        if let bgColor = window.backgroundColor {
+            bgColor.setFill()
+            NSRect(origin: .zero, size: bounds.size).fill()
+        }
+        NSGraphicsContext.restoreGraphicsState()
+        
         // Try to capture using PDF data which sometimes works better for hosting views
         let pdfData = view.dataWithPDF(inside: bounds)
         if let pdfImageRep = NSPDFImageRep(data: pdfData) {
@@ -297,6 +306,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Wait for rendering
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
       if let contentView = window.contentView {
+        if let bgColor = window.backgroundColor {
+             contentView.layer?.backgroundColor = bgColor.cgColor
+        }
         contentView.layoutSubtreeIfNeeded()
         contentView.display()
         CATransaction.flush()
