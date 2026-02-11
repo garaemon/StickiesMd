@@ -135,24 +135,24 @@ class StickyWindowManager: NSObject, ObservableObject {
         bitsPerPixel: 0
       ) {
         bitmapRep.size = bounds.size
-        
+
         // Manually fill background color because dataWithPDF/cacheDisplay might not capture window background
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
         if let bgColor = window.backgroundColor {
-            bgColor.setFill()
-            NSRect(origin: .zero, size: bounds.size).fill()
+          bgColor.setFill()
+          NSRect(origin: .zero, size: bounds.size).fill()
         }
         NSGraphicsContext.restoreGraphicsState()
-        
+
         // Try to capture using PDF data which sometimes works better for hosting views
         let pdfData = view.dataWithPDF(inside: bounds)
         if let pdfImageRep = NSPDFImageRep(data: pdfData) {
-            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
-            pdfImageRep.draw(in: NSRect(origin: .zero, size: bounds.size))
+          NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+          pdfImageRep.draw(in: NSRect(origin: .zero, size: bounds.size))
         } else {
-            // Fallback to cacheDisplay if PDF fails (unlikely)
-            view.cacheDisplay(in: bounds, to: bitmapRep)
+          // Fallback to cacheDisplay if PDF fails (unlikely)
+          view.cacheDisplay(in: bounds, to: bitmapRep)
         }
 
         if let data = bitmapRep.representation(using: .png, properties: [:]) {
@@ -302,7 +302,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     window.setFrame(
       NSRect(x: 100, y: 100, width: width, height: height), display: true)
-    
+
     // Enforce deterministic color for golden tests (yellow)
     window.setStickyColor("#FFF9C4")
 
@@ -310,13 +310,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
       if let contentView = window.contentView {
         if let bgColor = window.backgroundColor {
-             contentView.layer?.backgroundColor = bgColor.cgColor
+          contentView.layer?.backgroundColor = bgColor.cgColor
         }
         contentView.layoutSubtreeIfNeeded()
         contentView.display()
         CATransaction.flush()
       }
-      
+
       // Additional small delay to ensure display changes take effect
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
         StickyWindowManager.shared.takeScreenshot(for: window, to: URL(fileURLWithPath: output)) {
@@ -327,7 +327,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           case .failure(let error):
             print("Failed to save screenshot: \(error)")
           }
-          
+
           if !args.contains("--no-exit") {
             NSApplication.shared.terminate(nil)
           }

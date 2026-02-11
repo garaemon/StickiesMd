@@ -39,7 +39,8 @@ final class GoldenTests: XCTestCase {
     // Launch arguments for screenshot generation
     // --reset-state to ensure clean start and isolated store
     let bundleURL = Bundle(for: GoldenTests.self).bundleURL
-    let appURL = bundleURL
+    let appURL =
+      bundleURL
       .deletingLastPathComponent()
       .deletingLastPathComponent()
       .deletingLastPathComponent()
@@ -48,10 +49,11 @@ final class GoldenTests: XCTestCase {
       .appendingPathComponent("Contents")
       .appendingPathComponent("MacOS")
       .appendingPathComponent("StickiesMd")
-      
+
     // Verify app exists
-    XCTAssertTrue(FileManager.default.fileExists(atPath: appURL.path), "App binary not found at \(appURL.path)")
-      
+    XCTAssertTrue(
+      FileManager.default.fileExists(atPath: appURL.path), "App binary not found at \(appURL.path)")
+
     let process = Process()
     process.executableURL = appURL
     process.arguments = [
@@ -63,14 +65,14 @@ final class GoldenTests: XCTestCase {
       "--height", "600",
       sampleMdURL.path,
     ]
-    
+
     try process.run()
 
     // Wait for the file to be created.
     // The app terminates after saving.
     let exists = checkFileExists(at: outputImageURL, timeout: 20)
     XCTAssertTrue(exists, "Screenshot was not generated at \(outputImageURL.path)")
-    
+
     // Ensure process terminates (it should have by now if it worked)
     process.waitUntilExit()
     XCTAssertEqual(process.terminationStatus, 0, "App exited with non-zero status")
