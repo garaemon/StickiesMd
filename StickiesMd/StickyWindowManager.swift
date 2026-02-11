@@ -302,6 +302,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     window.setFrame(
       NSRect(x: 100, y: 100, width: width, height: height), display: true)
+    
+    // Enforce deterministic color for golden tests (yellow)
+    window.setStickyColor("#FFF9C4")
 
     // Wait for rendering
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -324,7 +327,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           case .failure(let error):
             print("Failed to save screenshot: \(error)")
           }
-          NSApplication.shared.terminate(nil)
+          
+          if !args.contains("--no-exit") {
+            NSApplication.shared.terminate(nil)
+          }
         }
       }
     }
