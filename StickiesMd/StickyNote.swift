@@ -6,7 +6,7 @@ enum FileFormat: String, Codable {
   case org
 }
 
-struct StickyNote: Identifiable, Codable {
+struct StickyNote: Identifiable, Codable, Sendable {
   var id: UUID = UUID()
   var fileURL: URL
   var backgroundColor: String  // Hex string

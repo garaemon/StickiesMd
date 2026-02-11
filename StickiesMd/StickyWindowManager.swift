@@ -116,8 +116,26 @@ class StickyWindowManager: NSObject, ObservableObject {
   ) {
     if let view = window.contentView {
       let bounds = view.bounds
-      if let bitmapRep = view.bitmapImageRepForCachingDisplay(in: bounds) {
+      // Force 2.0 scale for consistent golden image generation across different environments (CI vs Local)
+      let scale: CGFloat = 2.0
+      let width = Int(bounds.width * scale)
+      let height = Int(bounds.height * scale)
+
+      if let bitmapRep = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: width,
+        pixelsHigh: height,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+      ) {
+        bitmapRep.size = bounds.size
         view.cacheDisplay(in: bounds, to: bitmapRep)
+
         if let data = bitmapRep.representation(using: .png, properties: [:]) {
           do {
             try data.write(to: outputURL)

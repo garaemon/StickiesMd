@@ -74,7 +74,6 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
   }
 
   deinit {
-    NSFileCoordinator.removeFilePresenter(self)
     if isAccessingResource {
       note.fileURL.stopAccessingSecurityScopedResource()
     }

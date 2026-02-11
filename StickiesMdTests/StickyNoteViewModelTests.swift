@@ -8,8 +8,8 @@ final class StickyNoteViewModelTests: XCTestCase {
   var viewModel: StickyNoteViewModel!
   var tempFileURL: URL!
 
-  override func setUp() {
-    super.setUp()
+  override func setUp() async throws {
+    try await super.setUp()
     tempFileURL = FileManager.default.temporaryDirectory.appendingPathComponent(
       "test_\(UUID().uuidString).md")
     try? "# Test".write(to: tempFileURL, atomically: true, encoding: .utf8)
@@ -18,9 +18,9 @@ final class StickyNoteViewModelTests: XCTestCase {
     viewModel = StickyNoteViewModel(note: note)
   }
 
-  override func tearDown() {
+  override func tearDown() async throws {
     try? FileManager.default.removeItem(at: tempFileURL)
-    super.tearDown()
+    try await super.tearDown()
   }
 
   func testUpdateFontColor() {
