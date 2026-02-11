@@ -39,3 +39,19 @@ jobs:
 
       - name: Run UI Tests
         run: xcodebuild test -project StickiesMd.xcodeproj -scheme StickiesMd -destination 'platform=macOS' -skipPackagePluginValidation
+
+      - name: Collect Golden Test Artifacts
+        if: always()
+        run: |
+          mkdir -p golden-test-artifacts
+          find /Users/runner /var/folders /tmp -name "actual_sample.png" -exec cp {} golden-test-artifacts/ \; 2>/dev/null || true
+          cp StickiesMdUITests/ReferenceImages/sample.png golden-test-artifacts/expected_sample.png 2>/dev/null || true
+          ls -la golden-test-artifacts/
+
+      - name: Upload Golden Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-test-images
+          path: golden-test-artifacts/
+          if-no-files-found: ignore
