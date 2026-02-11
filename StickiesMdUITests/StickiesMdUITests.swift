@@ -9,22 +9,19 @@ import XCTest
 
 final class StickiesMdUITests: XCTestCase {
 
+  private let app = XCUIApplication()
+
   override func setUpWithError() throws {
-    // Put setup code here. This method is called before the invocation of each test method in the class.
-
-    // In UI tests it is usually best to stop immediately when a failure occurs.
     continueAfterFailure = false
-
-    // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
   }
 
   override func tearDownWithError() throws {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
+    app.terminate()
+    waitForAppToTerminate(app)
   }
 
   @MainActor
   func testMainControlsExist() throws {
-    let app = XCUIApplication()
     app.launchArguments.append("--reset-state")
     app.launch()
 
@@ -52,7 +49,6 @@ final class StickiesMdUITests: XCTestCase {
 
   @MainActor
   func skipTestOpenSettings() throws {
-    let app = XCUIApplication()
     app.launchArguments.append("--reset-state")
     app.launch()
 
@@ -90,13 +86,10 @@ final class StickiesMdUITests: XCTestCase {
     XCTAssertTrue(opacitySlider.exists, "Opacity slider should exist in settings")
   }
 
-  // @MainActor
-  // func testLaunchPerformance() throws {
-  //   // This measures how long it takes to launch your application.
-  //   measure(metrics: [XCTApplicationLaunchMetric()]) {
-  //     let app = XCUIApplication()
-  //     app.launchArguments.append("--reset-state")
-  //     app.launch()
-  //   }
-  // }
+  private func waitForAppToTerminate(_ app: XCUIApplication, timeout: TimeInterval = 5) {
+    let deadline = Date().addingTimeInterval(timeout)
+    while app.state != .notRunning && Date() < deadline {
+      Thread.sleep(forTimeInterval: 0.1)
+    }
+  }
 }

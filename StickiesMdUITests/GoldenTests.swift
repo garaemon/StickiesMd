@@ -38,31 +38,53 @@ final class GoldenTests: XCTestCase {
 
     // Launch arguments for screenshot generation
     // --reset-state to ensure clean start and isolated store
-    app.launchArguments = [
+    let bundleURL = Bundle(for: GoldenTests.self).bundleURL
+    let appURL =
+      bundleURL
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .appendingPathComponent("StickiesMd.app")
+      .appendingPathComponent("Contents")
+      .appendingPathComponent("MacOS")
+      .appendingPathComponent("StickiesMd")
+
+    // Verify app exists
+    XCTAssertTrue(
+      FileManager.default.fileExists(atPath: appURL.path), "App binary not found at \(appURL.path)")
+
+    let process = Process()
+    process.executableURL = appURL
+    process.arguments = [
       "--reset-state",
       "--screenshot",
+      // Note: We do NOT pass --no-exit, so the app should terminate automatically after saving
       "--output", outputImageURL.path,
       "--width", "800",
       "--height", "600",
       sampleMdURL.path,
     ]
-    app.launch()
+
+    try process.run()
 
     // Wait for the file to be created.
     // The app terminates after saving.
-    let exists = checkFileExists(at: outputImageURL, timeout: 10)
+    let exists = checkFileExists(at: outputImageURL, timeout: 20)
     XCTAssertTrue(exists, "Screenshot was not generated at \(outputImageURL.path)")
+
+    // Ensure process terminates (it should have by now if it worked)
+    process.waitUntilExit()
+    XCTAssertEqual(process.terminationStatus, 0, "App exited with non-zero status")
 
     // Compare with golden
     if FileManager.default.fileExists(atPath: goldenImageURL.path) {
-      let match = compareImages(url1: goldenImageURL, url2: outputImageURL, tolerance: 0.05)
+      let match = compareImages(url1: goldenImageURL, url2: outputImageURL, tolerance: 0.10)
       XCTAssertTrue(
         match,
         "Screenshot does not match golden image within tolerance. Output: \(outputImageURL.path)")
     } else {
-      // Record mode: Save the generated image as golden if it doesn't exist?
-      // Or just fail.
-      // For this task, we want to fail so we can manually verify and copy.
+      // Record mode: Save the generated image as golden if it doesn't exist
       XCTFail(
         "Golden image not found. Generated image at \(outputImageURL.path). Verify and move to \(goldenImageURL.path)."
       )

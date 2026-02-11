@@ -13,13 +13,22 @@ final class StickiesMdUITestsLaunchTests: XCTestCase {
     false
   }
 
+  private let app = XCUIApplication()
+
   override func setUpWithError() throws {
     continueAfterFailure = false
   }
 
+  override func tearDownWithError() throws {
+    app.terminate()
+    waitForAppToTerminate(app)
+  }
+
   @MainActor
   func testLaunch() throws {
-    let app = XCUIApplication()
+    // Terminate any leftover instance and wait for it to fully exit
+    app.terminate()
+    waitForAppToTerminate(app)
     app.launchArguments.append("--reset-state")
     app.launch()
 
@@ -30,5 +39,12 @@ final class StickiesMdUITestsLaunchTests: XCTestCase {
     attachment.name = "Launch Screen"
     attachment.lifetime = .keepAlways
     add(attachment)
+  }
+
+  private func waitForAppToTerminate(_ app: XCUIApplication, timeout: TimeInterval = 5) {
+    let deadline = Date().addingTimeInterval(timeout)
+    while app.state != .notRunning && Date() < deadline {
+      Thread.sleep(forTimeInterval: 0.1)
+    }
   }
 }
