@@ -9,23 +9,24 @@ import XCTest
 
 final class CommandLineArgumentTests: XCTestCase {
 
+  private let app = XCUIApplication()
+
   override func setUpWithError() throws {
     continueAfterFailure = false
   }
 
   override func tearDownWithError() throws {
+    app.terminate()
+    waitForAppToTerminate(app)
   }
 
   @MainActor
   func testLaunchWithFileArgument() throws {
-    // Create a temporary file
     let tempDir = FileManager.default.temporaryDirectory
     let fileURL = tempDir.appendingPathComponent("test_arg.md")
     let content = "# Test Argument Content"
     try content.write(to: fileURL, atomically: true, encoding: .utf8)
 
-    let app = XCUIApplication()
-    // Use --reset-state to ensure clean state, then pass the file path
     app.launchArguments = ["--reset-state", fileURL.path]
     app.launch()
 
@@ -50,5 +51,12 @@ final class CommandLineArgumentTests: XCTestCase {
     // Note: XCUIElementQuery count is not always instant.
 
     // A better check might be to verify that the persistent store is empty afterwards, but UI tests can't access app internal state directly.
+  }
+
+  private func waitForAppToTerminate(_ app: XCUIApplication, timeout: TimeInterval = 5) {
+    let deadline = Date().addingTimeInterval(timeout)
+    while app.state != .notRunning && Date() < deadline {
+      Thread.sleep(forTimeInterval: 0.1)
+    }
   }
 }
