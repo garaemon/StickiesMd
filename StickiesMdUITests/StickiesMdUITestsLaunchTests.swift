@@ -20,6 +20,8 @@ final class StickiesMdUITestsLaunchTests: XCTestCase {
   @MainActor
   func testLaunch() throws {
     let app = XCUIApplication()
+    // Explicitly terminate any existing instance to avoid "Failed to terminate" errors
+    app.terminate()
     app.launchArguments.append("--reset-state")
     app.launch()
 
