@@ -117,6 +117,11 @@ struct RichTextEditor: NSViewRepresentable {
     Coordinator(self)
   }
 
+  /// Common intermediate representation for document elements across formats.
+  enum DocumentElement {
+    case heading(level: Int)
+  }
+
   /// The Coordinator class acts as the delegate for both the NSTextView and NSTextContentStorage.
   /// It manages the lifecycle of the Tree-sitter parser and triggers syntax highlighting
   /// whenever the text content changes.
@@ -217,14 +222,11 @@ struct RichTextEditor: NSViewRepresentable {
       sourceString: String,
       parentTypes: [String]
     ) {
-      if let type = node.nodeType {
-        switch parent.format {
-        case .markdown:
-          highlightMarkdownNode(
-            type: type, node: node, in: textStorage, sourceString: sourceString)
-        case .org:
-          highlightOrgNode(
-            type: type, node: node, in: textStorage, sourceString: sourceString)
+      if let type = node.nodeType,
+        let element = classifyNode(type: type, node: node)
+      {
+        if let range = nodeRange(node, in: sourceString) {
+          applyElementStyle(element, in: textStorage, range: range)
         }
       }
 
@@ -244,38 +246,43 @@ struct RichTextEditor: NSViewRepresentable {
       }
     }
 
-    private func highlightMarkdownNode(
-      type: String,
-      node: Node,
-      in textStorage: NSTextStorage,
-      sourceString: String
-    ) {
-      if type == "atx_heading" || type == "setext_heading"
-        || (type.contains("heading") && !type.contains("content"))
-      {
-        if let range = nodeRange(node, in: sourceString) {
-          let level = getHeadingLevel(node)
-          let fontSize = RichTextEditor.headingFontSize(level: level)
-          let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
-          textStorage.addAttribute(.font, value: font, range: range)
-        }
+    /// Classifies a Tree-sitter node into a format-independent DocumentElement.
+    private func classifyNode(type: String, node: Node) -> DocumentElement? {
+      switch parent.format {
+      case .markdown:
+        return classifyMarkdownNode(type: type, node: node)
+      case .org:
+        return classifyOrgNode(type: type, node: node)
       }
     }
 
-    private func highlightOrgNode(
-      type: String,
-      node: Node,
-      in textStorage: NSTextStorage,
-      sourceString: String
-    ) {
-      // In tree-sitter-org, "headline" contains "stars" and heading content
+    private func classifyMarkdownNode(type: String, node: Node) -> DocumentElement? {
+      if type == "atx_heading" || type == "setext_heading"
+        || (type.contains("heading") && !type.contains("content"))
+      {
+        return .heading(level: getHeadingLevel(node))
+      }
+      return nil
+    }
+
+    private func classifyOrgNode(type: String, node: Node) -> DocumentElement? {
       if type == "headline" {
-        if let range = nodeRange(node, in: sourceString) {
-          let level = getOrgHeadingLevel(node)
-          let fontSize = RichTextEditor.headingFontSize(level: level)
-          let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
-          textStorage.addAttribute(.font, value: font, range: range)
-        }
+        return .heading(level: getOrgHeadingLevel(node))
+      }
+      return nil
+    }
+
+    /// Applies visual styling for a DocumentElement to the given range.
+    private func applyElementStyle(
+      _ element: DocumentElement,
+      in textStorage: NSTextStorage,
+      range: NSRange
+    ) {
+      switch element {
+      case .heading(let level):
+        let fontSize = RichTextEditor.headingFontSize(level: level)
+        let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
+        textStorage.addAttribute(.font, value: font, range: range)
       }
     }
 
