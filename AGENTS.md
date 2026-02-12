@@ -92,15 +92,27 @@ The app utilizes **SwiftTreeSitter** for robust parsing of Markdown and Org-mode
   * [x] Implement Per-window Font Color (UI & Persistence).
   * [ ] **Heading Size**: Implement dynamic font sizing for headings based on Tree-sitter AST.
 
-### **Phase 4: Refactoring & OrgKit Enhancement**
+### **Phase 4: Refactoring & OrgKit Enhancement (Org-mode Integration)**
 
-* [ ] **Enhance OrgKit**:
+* **[x] Integrate tree-sitter-org Grammar**:
+  * [x] Create `TreeSitterOrg` C target within the `OrgKit` package.
+  * [x] Add `parser.c`, `scanner.c`, and necessary headers from `milisims/tree-sitter-org`.
+  * [x] Expose `tree_sitter_org()` function to Swift via `publicHeadersPath`.
+* **Enhance OrgKit API**:
+  * [x] Define `OrgLanguage` providing a `SwiftTreeSitter.Language` instance.
   * [ ] Move Tree-sitter setup and highlighting logic from `RichTextEditor` into `OrgKit`.
   * [ ] Implement a unified `DocumentParser` in `OrgKit` that returns abstract style attributes/ranges.
-  * [ ] Add more comprehensive tests for multi-byte characters and various Markdown/Org structures.
-* [ ] **Cleanup StickiesMd**:
-  * [ ] Remove the `CodeEditSourceEditor` dependency and associated code once TextKit 2 implementation is stable.
+* **Update RichTextEditor for Multi-format Support**:
+  * [x] Refactor `Coordinator` to switch between Markdown and Org parsers based on the file extension.
+  * [ ] Abstract highlighting logic to handle generic document elements (Heading, Bold, Italic, etc.).
   * [ ] Refactor `RichTextEditor` to use the high-level API provided by `OrgKit`.
+* **Implement Org-mode Syntax Highlighting**:
+  * [x] Headings (`*`).
+  * [ ] Bold (`*text*`), Italic (`/text/`), Underline (`_text_`), Code (`~text~`, `=text=`), Strike (`+text+`).
+  * [ ] Lists: Unordered (`-`, `+`) and Ordered (`1.`).
+* **Testing & Cleanup**:
+  * [x] Add comprehensive tests in `OrgKitTests` for various Org-mode structures and multi-byte characters.
+  * [ ] Remove the `CodeEditSourceEditor` dependency and associated code once TextKit 2 implementation is stable.
   * [ ] Cleanup `StickyNoteViewModel` by removing unused legacy parser calls.
 
 ### **Phase 5: UX Enhancement**

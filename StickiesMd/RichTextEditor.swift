@@ -117,6 +117,11 @@ struct RichTextEditor: NSViewRepresentable {
     Coordinator(self)
   }
 
+  /// Common intermediate representation for document elements across formats.
+  enum DocumentElement {
+    case heading(level: Int)
+  }
+
   /// The Coordinator class acts as the delegate for both the NSTextView and NSTextContentStorage.
   /// It manages the lifecycle of the Tree-sitter parser and triggers syntax highlighting
   /// whenever the text content changes.
@@ -139,18 +144,27 @@ struct RichTextEditor: NSViewRepresentable {
     }
 
     func setupParser() {
-      if let markdownLang = CodeLanguage.allLanguages.first(where: {
-        let id = "\($0.id)".lowercased()
-        return id == "markdown"
-      }), let tsLang = markdownLang.language {
-        try? parser.setLanguage(tsLang)
-      }
+      switch parent.format {
+      case .org:
+        if let orgLang = OrgLanguage.language {
+          try? parser.setLanguage(orgLang)
+        }
+        // Org-mode does not use a separate inline parser
+        inlineParser = nil
+      case .markdown:
+        if let markdownLang = CodeLanguage.allLanguages.first(where: {
+          let id = "\($0.id)".lowercased()
+          return id == "markdown"
+        }), let tsLang = markdownLang.language {
+          try? parser.setLanguage(tsLang)
+        }
 
-      if let markdownInlineLang = CodeLanguage.allLanguages.first(where: {
-        let id = "\($0.id)".lowercased()
-        return id == "markdowninline" || id == "markdown-inline"
-      }), let tsInlineLang = markdownInlineLang.language {
-        try? inlineParser?.setLanguage(tsInlineLang)
+        if let markdownInlineLang = CodeLanguage.allLanguages.first(where: {
+          let id = "\($0.id)".lowercased()
+          return id == "markdowninline" || id == "markdown-inline"
+        }), let tsInlineLang = markdownInlineLang.language {
+          try? inlineParser?.setLanguage(tsInlineLang)
+        }
       }
     }
 
@@ -208,19 +222,12 @@ struct RichTextEditor: NSViewRepresentable {
       sourceString: String,
       parentTypes: [String]
     ) {
-      if let type = node.nodeType {
-        // Highlighting headings
-        if type == "atx_heading" || type == "setext_heading"
-          || (type.contains("heading") && !type.contains("content"))
-        {
-          if let range = nodeRange(node, in: sourceString) {
-            let level = getHeadingLevel(node)
-            let fontSize = RichTextEditor.headingFontSize(level: level)
-            let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
-            textStorage.addAttribute(.font, value: font, range: range)
-          }
+      if let type = node.nodeType,
+        let element = classifyNode(type: type, node: node)
+      {
+        if let range = nodeRange(node, in: sourceString) {
+          applyElementStyle(element, in: textStorage, range: range)
         }
-
       }
 
       for i in 0..<node.childCount {
@@ -237,6 +244,59 @@ struct RichTextEditor: NSViewRepresentable {
           )
         }
       }
+    }
+
+    /// Classifies a Tree-sitter node into a format-independent DocumentElement.
+    private func classifyNode(type: String, node: Node) -> DocumentElement? {
+      switch parent.format {
+      case .markdown:
+        return classifyMarkdownNode(type: type, node: node)
+      case .org:
+        return classifyOrgNode(type: type, node: node)
+      }
+    }
+
+    private func classifyMarkdownNode(type: String, node: Node) -> DocumentElement? {
+      if type == "atx_heading" || type == "setext_heading"
+        || (type.contains("heading") && !type.contains("content"))
+      {
+        return .heading(level: getHeadingLevel(node))
+      }
+      return nil
+    }
+
+    private func classifyOrgNode(type: String, node: Node) -> DocumentElement? {
+      if type == "headline" {
+        return .heading(level: getOrgHeadingLevel(node))
+      }
+      return nil
+    }
+
+    /// Applies visual styling for a DocumentElement to the given range.
+    private func applyElementStyle(
+      _ element: DocumentElement,
+      in textStorage: NSTextStorage,
+      range: NSRange
+    ) {
+      switch element {
+      case .heading(let level):
+        let fontSize = RichTextEditor.headingFontSize(level: level)
+        let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
+        textStorage.addAttribute(.font, value: font, range: range)
+      }
+    }
+
+    /// Determines org-mode heading level by counting "*" characters in the "stars" child node.
+    private func getOrgHeadingLevel(_ node: Node) -> Int {
+      for i in 0..<node.childCount {
+        guard let child = node.child(at: i), let type = child.nodeType else { continue }
+        if type == "stars", let range = child.byteRange as Range<UInt32>? {
+          // Each star is one byte, and byte offsets are 2x UTF-16 units
+          let starCount = Int(range.upperBound - range.lowerBound) / 2
+          return min(max(starCount, 1), 6)
+        }
+      }
+      return 1
     }
 
     private func getHeadingLevel(_ node: Node) -> Int {
