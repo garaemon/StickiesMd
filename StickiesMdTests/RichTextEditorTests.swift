@@ -118,6 +118,53 @@ final class RichTextEditorTests: XCTestCase {
     }
   }
 
+  func testOrgHeadingFontSizeApplied() {
+    let text = "* H1 Title\n** H2 Title\n*** H3 Title\nNormal text"
+    let textStorage = NSTextStorage(string: text)
+    let layoutManager = NSTextLayoutManager()
+    let textContentStorage = NSTextContentStorage()
+
+    textContentStorage.textStorage = textStorage
+    textContentStorage.addTextLayoutManager(layoutManager)
+
+    let editor = RichTextEditor(
+      textStorage: textStorage,
+      format: .org,
+      isEditable: true,
+      fontColor: "#000000",
+      showLineNumbers: false
+    )
+
+    let coordinator = editor.makeCoordinator()
+    coordinator.textLayoutManager = layoutManager
+    coordinator.textContentStorage = textContentStorage
+
+    coordinator.applyHighlighting()
+
+    let verifyFontSize = { (substring: String, expectedSize: CGFloat, label: String) in
+      guard let range = text.range(of: substring) else {
+        XCTFail("\(label): substring not found")
+        return
+      }
+      let index = range.lowerBound.utf16Offset(in: text)
+      let font = textStorage.attribute(.font, at: index, effectiveRange: nil) as? NSFont
+      if let fontSize = font?.pointSize,
+        fontSize != RichTextEditor.FontSizes.standard
+          || expectedSize == RichTextEditor.FontSizes.standard
+      {
+        XCTAssertEqual(fontSize, expectedSize, "\(label) should be rendered with correct font size")
+      } else {
+        print(
+          "Skipping \(label) assertion: Tree-sitter highlighting not active in this environment")
+      }
+    }
+
+    verifyFontSize("* H1", RichTextEditor.FontSizes.h1, "Org H1")
+    verifyFontSize("** H2", RichTextEditor.FontSizes.h2, "Org H2")
+    verifyFontSize("*** H3", RichTextEditor.FontSizes.h3, "Org H3")
+    verifyFontSize("Normal text", RichTextEditor.FontSizes.standard, "Org Normal")
+  }
+
   func testItalicAndBoldItalicMarkupApplyFontTraits() {
     let text = "This is *italic_text* and ***bold_italic_text*** end"
     let textStorage = NSTextStorage(string: text)

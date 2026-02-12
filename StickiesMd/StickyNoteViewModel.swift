@@ -34,10 +34,12 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
   }
 
   var fileFormat: FileFormat {
-    if note.fileURL.pathExtension.lowercased() == "md" {
+    switch note.fileURL.pathExtension.lowercased() {
+    case "org":
+      return .org
+    default:
       return .markdown
     }
-    return .org
   }
 
   init(note: StickyNote) {

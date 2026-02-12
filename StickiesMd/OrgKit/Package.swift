@@ -20,11 +20,19 @@ let package = Package(
     .package(url: "https://github.com/CodeEditApp/CodeEditLanguages", from: "0.1.0"),
   ],
   targets: [
-    // Targets are the basic building blocks of a package, defining a module or a test suite.
-    // Targets can depend on other targets in this package and products from dependencies.
+    .target(
+      name: "TreeSitterOrg",
+      path: "Sources/TreeSitterOrg",
+      sources: ["parser.c", "scanner.c"],
+      publicHeadersPath: "include",
+      cSettings: [
+        .headerSearchPath(".")
+      ]
+    ),
     .target(
       name: "OrgKit",
       dependencies: [
+        "TreeSitterOrg",
         .product(name: "SwiftTreeSitter", package: "SwiftTreeSitter"),
         .product(name: "CodeEditLanguages", package: "CodeEditLanguages"),
       ]

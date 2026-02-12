@@ -139,18 +139,27 @@ struct RichTextEditor: NSViewRepresentable {
     }
 
     func setupParser() {
-      if let markdownLang = CodeLanguage.allLanguages.first(where: {
-        let id = "\($0.id)".lowercased()
-        return id == "markdown"
-      }), let tsLang = markdownLang.language {
-        try? parser.setLanguage(tsLang)
-      }
+      switch parent.format {
+      case .org:
+        if let orgLang = OrgLanguage.language {
+          try? parser.setLanguage(orgLang)
+        }
+        // Org-mode does not use a separate inline parser
+        inlineParser = nil
+      case .markdown:
+        if let markdownLang = CodeLanguage.allLanguages.first(where: {
+          let id = "\($0.id)".lowercased()
+          return id == "markdown"
+        }), let tsLang = markdownLang.language {
+          try? parser.setLanguage(tsLang)
+        }
 
-      if let markdownInlineLang = CodeLanguage.allLanguages.first(where: {
-        let id = "\($0.id)".lowercased()
-        return id == "markdowninline" || id == "markdown-inline"
-      }), let tsInlineLang = markdownInlineLang.language {
-        try? inlineParser?.setLanguage(tsInlineLang)
+        if let markdownInlineLang = CodeLanguage.allLanguages.first(where: {
+          let id = "\($0.id)".lowercased()
+          return id == "markdowninline" || id == "markdown-inline"
+        }), let tsInlineLang = markdownInlineLang.language {
+          try? inlineParser?.setLanguage(tsInlineLang)
+        }
       }
     }
 
@@ -209,18 +218,14 @@ struct RichTextEditor: NSViewRepresentable {
       parentTypes: [String]
     ) {
       if let type = node.nodeType {
-        // Highlighting headings
-        if type == "atx_heading" || type == "setext_heading"
-          || (type.contains("heading") && !type.contains("content"))
-        {
-          if let range = nodeRange(node, in: sourceString) {
-            let level = getHeadingLevel(node)
-            let fontSize = RichTextEditor.headingFontSize(level: level)
-            let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
-            textStorage.addAttribute(.font, value: font, range: range)
-          }
+        switch parent.format {
+        case .markdown:
+          highlightMarkdownNode(
+            type: type, node: node, in: textStorage, sourceString: sourceString)
+        case .org:
+          highlightOrgNode(
+            type: type, node: node, in: textStorage, sourceString: sourceString)
         }
-
       }
 
       for i in 0..<node.childCount {
@@ -237,6 +242,54 @@ struct RichTextEditor: NSViewRepresentable {
           )
         }
       }
+    }
+
+    private func highlightMarkdownNode(
+      type: String,
+      node: Node,
+      in textStorage: NSTextStorage,
+      sourceString: String
+    ) {
+      if type == "atx_heading" || type == "setext_heading"
+        || (type.contains("heading") && !type.contains("content"))
+      {
+        if let range = nodeRange(node, in: sourceString) {
+          let level = getHeadingLevel(node)
+          let fontSize = RichTextEditor.headingFontSize(level: level)
+          let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
+          textStorage.addAttribute(.font, value: font, range: range)
+        }
+      }
+    }
+
+    private func highlightOrgNode(
+      type: String,
+      node: Node,
+      in textStorage: NSTextStorage,
+      sourceString: String
+    ) {
+      // In tree-sitter-org, "headline" contains "stars" and heading content
+      if type == "headline" {
+        if let range = nodeRange(node, in: sourceString) {
+          let level = getOrgHeadingLevel(node)
+          let fontSize = RichTextEditor.headingFontSize(level: level)
+          let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
+          textStorage.addAttribute(.font, value: font, range: range)
+        }
+      }
+    }
+
+    /// Determines org-mode heading level by counting "*" characters in the "stars" child node.
+    private func getOrgHeadingLevel(_ node: Node) -> Int {
+      for i in 0..<node.childCount {
+        guard let child = node.child(at: i), let type = child.nodeType else { continue }
+        if type == "stars", let range = child.byteRange as Range<UInt32>? {
+          // Each star is one byte, and byte offsets are 2x UTF-16 units
+          let starCount = Int(range.upperBound - range.lowerBound) / 2
+          return min(max(starCount, 1), 6)
+        }
+      }
+      return 1
     }
 
     private func getHeadingLevel(_ node: Node) -> Int {
