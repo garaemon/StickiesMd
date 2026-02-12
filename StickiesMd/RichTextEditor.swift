@@ -197,6 +197,12 @@ struct RichTextEditor: NSViewRepresentable {
         highlightNode(rootNode, in: textStorage, sourceString: string, parentTypes: [])
       }
 
+      // tree-sitter-org does not parse inline markup, so we use regex
+      // following Org-mode's official PRE/POST emphasis rules.
+      if parent.format == .org {
+        highlightOrgInlineMarkup(in: textStorage, sourceString: string)
+      }
+
       if parent.format == .markdown, let inlineParser,
         let inlineTree = inlineParser.parse(string),
         let inlineRootNode = inlineTree.rootNode
@@ -384,6 +390,76 @@ struct RichTextEditor: NSViewRepresentable {
           )
         }
       }
+    }
+
+    /// Entry point for Org-mode inline emphasis highlighting.
+    ///
+    /// tree-sitter-org only handles block-level structure, so inline markup
+    /// (bold, italic) is detected via regex with Org-mode PRE/POST rules.
+    private func highlightOrgInlineMarkup(
+      in textStorage: NSTextStorage,
+      sourceString: String
+    ) {
+      applyOrgEmphasis(
+        marker: "*", in: textStorage, sourceString: sourceString,
+        bold: true, italic: false)
+      applyOrgEmphasis(
+        marker: "/", in: textStorage, sourceString: sourceString,
+        bold: false, italic: true)
+    }
+
+    /// Finds and highlights a specific Org-mode emphasis marker in the text.
+    ///
+    /// Uses regex to find `MARKER content MARKER` spans where content
+    /// doesn't start/end with whitespace, then validates surrounding
+    /// characters against Org-mode's PRE/POST rules.
+    private func applyOrgEmphasis(
+      marker: String,
+      in textStorage: NSTextStorage,
+      sourceString: String,
+      bold: Bool,
+      italic: Bool
+    ) {
+      let escaped = NSRegularExpression.escapedPattern(for: marker)
+      let pattern = "\(escaped)(?:\\S|\\S[^\(escaped)\\n]*?\\S)\(escaped)"
+      guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
+
+      let nsString = sourceString as NSString
+      let fullRange = NSRange(location: 0, length: nsString.length)
+
+      for result in regex.matches(in: sourceString, range: fullRange) {
+        let matchRange = result.range
+        let startPos = matchRange.location
+        let endPos = startPos + matchRange.length - 1
+
+        // Validate PRE: char before opening marker must be BOL, whitespace, or PRE char
+        if startPos > 0 {
+          let preChar = nsString.character(at: startPos - 1)
+          if !isOrgEmphasisPre(preChar) { continue }
+        }
+
+        // Validate POST: char after closing marker must be EOL, whitespace, or POST char
+        if endPos + 1 < nsString.length {
+          let postChar = nsString.character(at: endPos + 1)
+          if !isOrgEmphasisPost(postChar) { continue }
+        }
+
+        applyFontTraits(in: textStorage, range: matchRange, bold: bold, italic: italic)
+      }
+    }
+
+    private func isOrgEmphasisPre(_ charCode: unichar) -> Bool {
+      guard let scalar = Unicode.Scalar(charCode) else { return false }
+      let char = Character(scalar)
+      if char.isWhitespace || char.isNewline { return true }
+      return "-('\"{ ".contains(char)
+    }
+
+    private func isOrgEmphasisPost(_ charCode: unichar) -> Bool {
+      guard let scalar = Unicode.Scalar(charCode) else { return false }
+      let char = Character(scalar)
+      if char.isWhitespace || char.isNewline { return true }
+      return "-.,;:!?'\")}]".contains(char)
     }
 
     /// Applies bold and/or italic traits to the text in the specified range.
