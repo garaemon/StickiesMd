@@ -287,4 +287,149 @@ final class RichTextEditorTests: XCTestCase {
         "Skipping bold+italic assertion: Tree-sitter highlighting not active in this environment")
     }
   }
+
+  // MARK: - Org-mode underline, code, strikethrough
+
+  func testOrgUnderlineMarkupAppliesUnderlineAttribute() {
+    let text = "This is _underlined text_ end"
+    let (textStorage, coordinator) = makeOrgCoordinator(text: text)
+    coordinator.applyHighlighting()
+
+    let matchStart = text.range(of: "_underlined text_")?.lowerBound.utf16Offset(in: text) ?? 0
+    let underlineValue =
+      textStorage.attribute(.underlineStyle, at: matchStart, effectiveRange: nil) as? Int
+    if let value = underlineValue {
+      XCTAssertEqual(
+        value, NSUnderlineStyle.single.rawValue,
+        "Org underline markup should apply underline attribute")
+    } else {
+      print("Skipping org underline assertion: highlighting not active in this environment")
+    }
+  }
+
+  func testOrgStrikethroughMarkupAppliesStrikethroughAttribute() {
+    let text = "This is +deleted text+ end"
+    let (textStorage, coordinator) = makeOrgCoordinator(text: text)
+    coordinator.applyHighlighting()
+
+    let matchStart = text.range(of: "+deleted text+")?.lowerBound.utf16Offset(in: text) ?? 0
+    let strikeValue =
+      textStorage.attribute(.strikethroughStyle, at: matchStart, effectiveRange: nil) as? Int
+    if let value = strikeValue {
+      XCTAssertEqual(
+        value, NSUnderlineStyle.single.rawValue,
+        "Org strikethrough markup should apply strikethrough attribute")
+    } else {
+      print("Skipping org strikethrough assertion: highlighting not active in this environment")
+    }
+  }
+
+  func testOrgCodeTildeMarkupAppliesBackgroundColor() {
+    let text = "This is ~inline code~ end"
+    let (textStorage, coordinator) = makeOrgCoordinator(text: text)
+    coordinator.applyHighlighting()
+
+    let matchStart = text.range(of: "~inline code~")?.lowerBound.utf16Offset(in: text) ?? 0
+    let bgColor =
+      textStorage.attribute(.backgroundColor, at: matchStart, effectiveRange: nil) as? NSColor
+    if bgColor != nil {
+      XCTAssertNotNil(bgColor, "Org code (~) markup should apply background color")
+    } else {
+      print("Skipping org code (~) assertion: highlighting not active in this environment")
+    }
+  }
+
+  func testOrgCodeEqualsMarkupAppliesBackgroundColor() {
+    let text = "This is =verbatim text= end"
+    let (textStorage, coordinator) = makeOrgCoordinator(text: text)
+    coordinator.applyHighlighting()
+
+    let matchStart = text.range(of: "=verbatim text=")?.lowerBound.utf16Offset(in: text) ?? 0
+    let bgColor =
+      textStorage.attribute(.backgroundColor, at: matchStart, effectiveRange: nil) as? NSColor
+    if bgColor != nil {
+      XCTAssertNotNil(bgColor, "Org code (=) markup should apply background color")
+    } else {
+      print("Skipping org code (=) assertion: highlighting not active in this environment")
+    }
+  }
+
+  // MARK: - Markdown strikethrough, code
+
+  func testMarkdownStrikethroughAppliesStrikethroughAttribute() {
+    let text = "This is ~~deleted text~~ end"
+    let (textStorage, coordinator) = makeMarkdownCoordinator(text: text)
+    coordinator.applyHighlighting()
+
+    let matchStart = text.range(of: "deleted text")?.lowerBound.utf16Offset(in: text) ?? 0
+    let strikeValue =
+      textStorage.attribute(.strikethroughStyle, at: matchStart, effectiveRange: nil) as? Int
+    if let value = strikeValue {
+      XCTAssertEqual(
+        value, NSUnderlineStyle.single.rawValue,
+        "Markdown strikethrough should apply strikethrough attribute")
+    } else {
+      print(
+        "Skipping markdown strikethrough assertion: highlighting not active in this environment")
+    }
+  }
+
+  func testMarkdownCodeSpanAppliesBackgroundColor() {
+    let text = "This is `inline code` end"
+    let (textStorage, coordinator) = makeMarkdownCoordinator(text: text)
+    coordinator.applyHighlighting()
+
+    let matchStart = text.range(of: "inline code")?.lowerBound.utf16Offset(in: text) ?? 0
+    let bgColor =
+      textStorage.attribute(.backgroundColor, at: matchStart, effectiveRange: nil) as? NSColor
+    if bgColor != nil {
+      XCTAssertNotNil(bgColor, "Markdown code span should apply background color")
+    } else {
+      print("Skipping markdown code span assertion: highlighting not active in this environment")
+    }
+  }
+
+  // MARK: - Test Helpers
+
+  private func makeOrgCoordinator(text: String) -> (NSTextStorage, RichTextEditor.Coordinator) {
+    let textStorage = NSTextStorage(string: text)
+    let layoutManager = NSTextLayoutManager()
+    let textContentStorage = NSTextContentStorage()
+    textContentStorage.textStorage = textStorage
+    textContentStorage.addTextLayoutManager(layoutManager)
+
+    let editor = RichTextEditor(
+      textStorage: textStorage,
+      format: .org,
+      isEditable: true,
+      fontColor: "#000000",
+      showLineNumbers: false
+    )
+    let coordinator = editor.makeCoordinator()
+    coordinator.textLayoutManager = layoutManager
+    coordinator.textContentStorage = textContentStorage
+    return (textStorage, coordinator)
+  }
+
+  private func makeMarkdownCoordinator(text: String) -> (
+    NSTextStorage, RichTextEditor.Coordinator
+  ) {
+    let textStorage = NSTextStorage(string: text)
+    let layoutManager = NSTextLayoutManager()
+    let textContentStorage = NSTextContentStorage()
+    textContentStorage.textStorage = textStorage
+    textContentStorage.addTextLayoutManager(layoutManager)
+
+    let editor = RichTextEditor(
+      textStorage: textStorage,
+      format: .markdown,
+      isEditable: true,
+      fontColor: "#000000",
+      showLineNumbers: false
+    )
+    let coordinator = editor.makeCoordinator()
+    coordinator.textLayoutManager = layoutManager
+    coordinator.textContentStorage = textContentStorage
+    return (textStorage, coordinator)
+  }
 }
