@@ -120,6 +120,8 @@ struct RichTextEditor: NSViewRepresentable {
   /// Common intermediate representation for document elements across formats.
   enum DocumentElement {
     case heading(level: Int)
+    case bold
+    case italic
   }
 
   /// The Coordinator class acts as the delegate for both the NSTextView and NSTextContentStorage.
@@ -197,6 +199,12 @@ struct RichTextEditor: NSViewRepresentable {
         highlightNode(rootNode, in: textStorage, sourceString: string, parentTypes: [])
       }
 
+      // tree-sitter-org does not parse inline markup, so we use regex
+      // following Org-mode's official PRE/POST emphasis rules.
+      if parent.format == .org {
+        highlightOrgInlineMarkup(in: textStorage, sourceString: string)
+      }
+
       if parent.format == .markdown, let inlineParser,
         let inlineTree = inlineParser.parse(string),
         let inlineRootNode = inlineTree.rootNode
@@ -204,8 +212,7 @@ struct RichTextEditor: NSViewRepresentable {
         highlightInlineNode(
           inlineRootNode,
           in: textStorage,
-          sourceString: string,
-          parentTypes: []
+          sourceString: string
         )
       }
 
@@ -283,6 +290,10 @@ struct RichTextEditor: NSViewRepresentable {
         let fontSize = RichTextEditor.headingFontSize(level: level)
         let font = NSFont.systemFont(ofSize: fontSize, weight: .bold)
         textStorage.addAttribute(.font, value: font, range: range)
+      case .bold:
+        applyFontTraits(in: textStorage, range: range, bold: true, italic: false)
+      case .italic:
+        applyFontTraits(in: textStorage, range: range, bold: false, italic: true)
       }
     }
 
@@ -338,52 +349,125 @@ struct RichTextEditor: NSViewRepresentable {
       return NSRange(startIdx..<endIdx, in: sourceString)
     }
 
+    /// Classifies a Markdown inline Tree-sitter node into a DocumentElement.
+    private func classifyInlineNode(type: String) -> DocumentElement? {
+      switch type {
+      case "strong_emphasis": return .bold
+      case "emphasis": return .italic
+      default: return nil
+      }
+    }
+
+    /// Walks inline Tree-sitter nodes and applies styling via DocumentElement.
+    ///
+    /// parentTypes tracking is unnecessary because applyFontTraits is additive:
+    /// nested emphasis (e.g. ***bold italic***) automatically combines traits
+    /// as the parent node's style is already applied before recursing into children.
     private func highlightInlineNode(
       _ node: Node,
       in textStorage: NSTextStorage,
-      sourceString: String,
-      parentTypes: [String]
+      sourceString: String
     ) {
-      if let type = node.nodeType {
-        if type == "strong_emphasis" {
-          if let range = nodeRange(node, in: sourceString) {
-            let isCombined = parentTypes.contains("emphasis")
-            applyFontTraits(
-              in: textStorage,
-              range: range,
-              bold: true,
-              italic: isCombined
-            )
-          }
-        }
-
-        if type == "emphasis" {
-          if let range = nodeRange(node, in: sourceString) {
-            let isCombined = parentTypes.contains("strong_emphasis")
-            applyFontTraits(
-              in: textStorage,
-              range: range,
-              bold: isCombined,
-              italic: true
-            )
-          }
+      if let type = node.nodeType,
+        let element = classifyInlineNode(type: type)
+      {
+        if let range = nodeRange(node, in: sourceString) {
+          applyElementStyle(element, in: textStorage, range: range)
         }
       }
 
       for i in 0..<node.childCount {
         if let child = node.child(at: i) {
-          var nextParentTypes = parentTypes
-          if let type = node.nodeType {
-            nextParentTypes.append(type)
-          }
-          highlightInlineNode(
-            child,
-            in: textStorage,
-            sourceString: sourceString,
-            parentTypes: nextParentTypes
-          )
+          highlightInlineNode(child, in: textStorage, sourceString: sourceString)
         }
       }
+    }
+
+    /// Entry point for Org-mode inline emphasis highlighting.
+    ///
+    /// tree-sitter-org only handles block-level structure, so inline markup
+    /// (bold, italic) is detected via regex with Org-mode PRE/POST rules.
+    /// Parsing and styling are separated: parseOrgInlineElements produces
+    /// format-independent DocumentElements, then applyElementStyle renders them.
+    private func highlightOrgInlineMarkup(
+      in textStorage: NSTextStorage,
+      sourceString: String
+    ) {
+      for (element, range) in parseOrgInlineElements(sourceString: sourceString) {
+        applyElementStyle(element, in: textStorage, range: range)
+      }
+    }
+
+    /// Parses all Org-mode inline emphasis spans into DocumentElements.
+    ///
+    /// Returns an array of (DocumentElement, NSRange) pairs without
+    /// applying any styling, keeping parsing separate from rendering.
+    private func parseOrgInlineElements(
+      sourceString: String
+    ) -> [(DocumentElement, NSRange)] {
+      var elements: [(DocumentElement, NSRange)] = []
+      elements.append(
+        contentsOf: findOrgEmphasisRanges(
+          marker: "*", element: .bold, sourceString: sourceString))
+      elements.append(
+        contentsOf: findOrgEmphasisRanges(
+          marker: "/", element: .italic, sourceString: sourceString))
+      return elements
+    }
+
+    /// Finds ranges matching a specific Org-mode emphasis marker.
+    ///
+    /// Uses regex to find `MARKER content MARKER` spans where content
+    /// doesn't start/end with whitespace, then validates surrounding
+    /// characters against Org-mode's PRE/POST rules.
+    private func findOrgEmphasisRanges(
+      marker: String,
+      element: DocumentElement,
+      sourceString: String
+    ) -> [(DocumentElement, NSRange)] {
+      let escaped = NSRegularExpression.escapedPattern(for: marker)
+      let pattern = "\(escaped)(?:\\S|\\S[^\(escaped)\\n]*?\\S)\(escaped)"
+      guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+
+      let nsString = sourceString as NSString
+      let fullRange = NSRange(location: 0, length: nsString.length)
+      var results: [(DocumentElement, NSRange)] = []
+
+      for result in regex.matches(in: sourceString, range: fullRange) {
+        let matchRange = result.range
+        let startPos = matchRange.location
+        let endPos = startPos + matchRange.length - 1
+
+        // Validate PRE: char before opening marker must be BOL, whitespace, or PRE char
+        if startPos > 0 {
+          let preChar = nsString.character(at: startPos - 1)
+          if !isOrgEmphasisPre(preChar) { continue }
+        }
+
+        // Validate POST: char after closing marker must be EOL, whitespace, or POST char
+        if endPos + 1 < nsString.length {
+          let postChar = nsString.character(at: endPos + 1)
+          if !isOrgEmphasisPost(postChar) { continue }
+        }
+
+        results.append((element, matchRange))
+      }
+
+      return results
+    }
+
+    private func isOrgEmphasisPre(_ charCode: unichar) -> Bool {
+      guard let scalar = Unicode.Scalar(charCode) else { return false }
+      let char = Character(scalar)
+      if char.isWhitespace || char.isNewline { return true }
+      return "-('\"{ ".contains(char)
+    }
+
+    private func isOrgEmphasisPost(_ charCode: unichar) -> Bool {
+      guard let scalar = Unicode.Scalar(charCode) else { return false }
+      let char = Character(scalar)
+      if char.isWhitespace || char.isNewline { return true }
+      return "-.,;:!?'\")}]".contains(char)
     }
 
     /// Applies bold and/or italic traits to the text in the specified range.
