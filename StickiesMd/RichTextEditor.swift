@@ -122,6 +122,9 @@ struct RichTextEditor: NSViewRepresentable {
     case heading(level: Int)
     case bold
     case italic
+    case underline
+    case strikethrough
+    case code
   }
 
   /// The Coordinator class acts as the delegate for both the NSTextView and NSTextContentStorage.
@@ -294,6 +297,18 @@ struct RichTextEditor: NSViewRepresentable {
         applyFontTraits(in: textStorage, range: range, bold: true, italic: false)
       case .italic:
         applyFontTraits(in: textStorage, range: range, bold: false, italic: true)
+      case .underline:
+        textStorage.addAttribute(
+          .underlineStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+      case .strikethrough:
+        textStorage.addAttribute(
+          .strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+      case .code:
+        let monoFont = NSFont.monospacedSystemFont(
+          ofSize: RichTextEditor.defaultFontSize, weight: .regular)
+        textStorage.addAttribute(.font, value: monoFont, range: range)
+        textStorage.addAttribute(
+          .backgroundColor, value: NSColor.gray.withAlphaComponent(0.15), range: range)
       }
     }
 
@@ -354,6 +369,8 @@ struct RichTextEditor: NSViewRepresentable {
       switch type {
       case "strong_emphasis": return .bold
       case "emphasis": return .italic
+      case "strikethrough": return .strikethrough
+      case "code_span": return .code
       default: return nil
       }
     }
@@ -412,6 +429,18 @@ struct RichTextEditor: NSViewRepresentable {
       elements.append(
         contentsOf: findOrgEmphasisRanges(
           marker: "/", element: .italic, sourceString: sourceString))
+      elements.append(
+        contentsOf: findOrgEmphasisRanges(
+          marker: "_", element: .underline, sourceString: sourceString))
+      elements.append(
+        contentsOf: findOrgEmphasisRanges(
+          marker: "+", element: .strikethrough, sourceString: sourceString))
+      elements.append(
+        contentsOf: findOrgEmphasisRanges(
+          marker: "~", element: .code, sourceString: sourceString))
+      elements.append(
+        contentsOf: findOrgEmphasisRanges(
+          marker: "=", element: .code, sourceString: sourceString))
       return elements
     }
 
