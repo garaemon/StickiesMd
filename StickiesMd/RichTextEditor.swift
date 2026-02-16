@@ -29,11 +29,16 @@ struct RichTextEditor: NSViewRepresentable {
     }
   }
 
+  static let supportedImageExtensions: Set<String> = [
+    "png", "jpg", "jpeg", "gif", "svg", "webp", "tiff", "bmp",
+  ]
+
   let textStorage: NSTextStorage
   var format: FileFormat
   var isEditable: Bool
   var fontColor: String
   var showLineNumbers: Bool
+  var fileURL: URL?
 
   // NSViewRepresentable protocol requires makeNSView
   func makeNSView(context: Context) -> NSScrollView {
@@ -78,6 +83,7 @@ struct RichTextEditor: NSViewRepresentable {
     }
 
     textView.delegate = context.coordinator
+    context.coordinator.textView = textView
     scrollView.documentView = textView
 
     context.coordinator.applyHighlighting()
@@ -88,6 +94,10 @@ struct RichTextEditor: NSViewRepresentable {
   // NSViewRepresentable requires updateNSView method
   func updateNSView(_ nsView: NSScrollView, context: Context) {
     guard let textView = nsView.documentView as? NSTextView else { return }
+
+    // Keep coordinator state in sync with current SwiftUI view values
+    context.coordinator.textView = textView
+    context.coordinator.parent = self
 
     if textView.isEditable != isEditable {
       textView.isEditable = isEditable
@@ -125,6 +135,8 @@ struct RichTextEditor: NSViewRepresentable {
     case underline
     case strikethrough
     case code
+    case codeBlock
+    case image(path: String)
   }
 
   /// The Coordinator class acts as the delegate for both the NSTextView and NSTextContentStorage.
@@ -139,6 +151,8 @@ struct RichTextEditor: NSViewRepresentable {
     // inlineParser: Parses inline elements like bold, emphasis, links (tree-sitter-markdown-inline)
     var parser: Parser
     var inlineParser: Parser?
+    weak var textView: NSTextView?
+    var imageOverlays: [NSImageView] = []
 
     init(_ parent: RichTextEditor) {
       self.parent = parent
@@ -190,6 +204,8 @@ struct RichTextEditor: NSViewRepresentable {
 
       guard let tree = parser.parse(string) else { return }
 
+      var collectedImages: [(path: String, range: NSRange)] = []
+
       textStorage.beginEditing()
       let fullRange = NSRange(location: 0, length: textStorage.length)
       let defaultFont = NSFont.monospacedSystemFont(
@@ -206,6 +222,8 @@ struct RichTextEditor: NSViewRepresentable {
       // following Org-mode's official PRE/POST emphasis rules.
       if parent.format == .org {
         highlightOrgInlineMarkup(in: textStorage, sourceString: string)
+        collectedImages.append(
+          contentsOf: findOrgImageLinks(sourceString: string, textStorage: textStorage))
       }
 
       if parent.format == .markdown, let inlineParser,
@@ -217,6 +235,9 @@ struct RichTextEditor: NSViewRepresentable {
           in: textStorage,
           sourceString: string
         )
+        collectedImages.append(
+          contentsOf: findMarkdownImageLinks(
+            inlineRootNode, sourceString: string, textStorage: textStorage))
       }
 
       textStorage.endEditing()
@@ -224,6 +245,8 @@ struct RichTextEditor: NSViewRepresentable {
       if let lm = textLayoutManager {
         lm.ensureLayout(for: lm.documentRange)
       }
+
+      updateImageOverlays(images: collectedImages)
     }
 
     private func highlightNode(
@@ -272,12 +295,18 @@ struct RichTextEditor: NSViewRepresentable {
       {
         return .heading(level: getHeadingLevel(node))
       }
+      if type == "fenced_code_block" || type == "indented_code_block" {
+        return .codeBlock
+      }
       return nil
     }
 
     private func classifyOrgNode(type: String, node: Node) -> DocumentElement? {
       if type == "headline" {
         return .heading(level: getOrgHeadingLevel(node))
+      }
+      if type == "block" {
+        return .codeBlock
       }
       return nil
     }
@@ -309,6 +338,15 @@ struct RichTextEditor: NSViewRepresentable {
         textStorage.addAttribute(.font, value: monoFont, range: range)
         textStorage.addAttribute(
           .backgroundColor, value: NSColor.gray.withAlphaComponent(0.15), range: range)
+      case .codeBlock:
+        let monoFont = NSFont.monospacedSystemFont(
+          ofSize: RichTextEditor.defaultFontSize, weight: .regular)
+        textStorage.addAttribute(.font, value: monoFont, range: range)
+        textStorage.addAttribute(
+          .backgroundColor, value: NSColor.black.withAlphaComponent(0.06), range: range)
+      case .image:
+        textStorage.addAttribute(
+          .foregroundColor, value: NSColor.systemBlue, range: range)
       }
     }
 
@@ -398,6 +436,96 @@ struct RichTextEditor: NSViewRepresentable {
           highlightInlineNode(child, in: textStorage, sourceString: sourceString)
         }
       }
+    }
+
+    /// Finds Markdown image links from inline tree-sitter nodes.
+    ///
+    /// Walks the inline AST looking for "image" nodes and extracts
+    /// the link destination child to get the image path.
+    private func findMarkdownImageLinks(
+      _ node: Node,
+      sourceString: String,
+      textStorage: NSTextStorage
+    ) -> [(path: String, range: NSRange)] {
+      var results: [(path: String, range: NSRange)] = []
+      collectMarkdownImages(
+        node, sourceString: sourceString, textStorage: textStorage, into: &results)
+      return results
+    }
+
+    private func collectMarkdownImages(
+      _ node: Node,
+      sourceString: String,
+      textStorage: NSTextStorage,
+      into results: inout [(path: String, range: NSRange)]
+    ) {
+      if let type = node.nodeType, type == "image" {
+        if let range = nodeRange(node, in: sourceString) {
+          let imagePath = extractMarkdownImagePath(node, sourceString: sourceString)
+          if let path = imagePath {
+            // Always style image links with blue color
+            applyElementStyle(.image(path: path), in: textStorage, range: range)
+            // Only collect for overlay if it looks like a local image file
+            if isImagePath(path) {
+              results.append((path: path, range: range))
+            }
+          }
+        }
+      }
+      for i in 0..<node.childCount {
+        if let child = node.child(at: i) {
+          collectMarkdownImages(
+            child, sourceString: sourceString, textStorage: textStorage, into: &results)
+        }
+      }
+    }
+
+    /// Extracts the image path from a Markdown "image" inline node.
+    private func extractMarkdownImagePath(_ node: Node, sourceString: String) -> String? {
+      for i in 0..<node.childCount {
+        guard let child = node.child(at: i), let type = child.nodeType else { continue }
+        if type == "link_destination" {
+          if let range = nodeRange(child, in: sourceString) {
+            return (sourceString as NSString).substring(with: range)
+          }
+        }
+      }
+      return nil
+    }
+
+    /// Checks if a path points to a supported image file.
+    private func isImagePath(_ path: String) -> Bool {
+      let ext = (path as NSString).pathExtension.lowercased()
+      return RichTextEditor.supportedImageExtensions.contains(ext)
+    }
+
+    /// Finds Org-mode image links using regex.
+    ///
+    /// Detects `[[file:path]]` and `[[./path]]` patterns.
+    private func findOrgImageLinks(
+      sourceString: String,
+      textStorage: NSTextStorage
+    ) -> [(path: String, range: NSRange)] {
+      // Match [[file:path.ext]] or [[./path.ext]] or [[/path.ext]]
+      let pattern = "\\[\\[(?:file:)?([^]]+?\\.[a-zA-Z]+)\\]\\]"
+      guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+
+      let nsString = sourceString as NSString
+      let fullRange = NSRange(location: 0, length: nsString.length)
+      var results: [(path: String, range: NSRange)] = []
+
+      for match in regex.matches(in: sourceString, range: fullRange) {
+        let matchRange = match.range
+        let pathRange = match.range(at: 1)
+        guard pathRange.location != NSNotFound else { continue }
+        let path = nsString.substring(with: pathRange)
+        if isImagePath(path) {
+          applyElementStyle(.image(path: path), in: textStorage, range: matchRange)
+          results.append((path: path, range: matchRange))
+        }
+      }
+
+      return results
     }
 
     /// Entry point for Org-mode inline emphasis highlighting.
@@ -522,6 +650,147 @@ struct RichTextEditor: NSViewRepresentable {
       } else {
         textStorage.addAttribute(.font, value: baseFont, range: range)
       }
+    }
+
+    /// Resolves a possibly-relative image path against the document directory.
+    private func resolveImageURL(_ path: String) -> URL? {
+      if path.hasPrefix("/") {
+        return URL(fileURLWithPath: path)
+      }
+      guard let fileURL = parent.fileURL else { return nil }
+      let directoryURL = fileURL.deletingLastPathComponent()
+      return directoryURL.appendingPathComponent(path).standardized
+    }
+
+    /// Updates image overlay views positioned below each image link.
+    ///
+    /// Removes all previous overlays and creates new NSImageViews
+    /// placed below the corresponding image link text.
+    private func updateImageOverlays(images: [(path: String, range: NSRange)]) {
+      for overlay in imageOverlays {
+        overlay.removeFromSuperview()
+      }
+      imageOverlays.removeAll()
+
+      guard let textView = textView,
+        let textLayoutManager = textLayoutManager,
+        let textContentStorage = textContentStorage
+      else { return }
+
+      guard let textStorage = textContentStorage.textStorage else { return }
+
+      let maxImageWidth = textView.bounds.width - 20
+      let maxImageHeight: CGFloat = 200
+
+      // Pre-calculate image sizes and add paragraph spacing
+      var imageEntries:
+        [(url: URL, image: NSImage, range: NSRange, width: CGFloat, height: CGFloat)] = []
+
+      for imageInfo in images {
+        guard let imageURL = resolveImageURL(imageInfo.path),
+          FileManager.default.fileExists(atPath: imageURL.path),
+          let nsImage = NSImage(contentsOf: imageURL)
+        else { continue }
+
+        let originalSize = nsImage.size
+        var displayWidth = min(maxImageWidth, originalSize.width)
+        var scale = displayWidth / originalSize.width
+        var displayHeight = originalSize.height * scale
+
+        if displayHeight > maxImageHeight {
+          displayHeight = maxImageHeight
+          scale = displayHeight / originalSize.height
+          displayWidth = originalSize.width * scale
+        }
+
+        imageEntries.append(
+          (
+            url: imageURL, image: nsImage, range: imageInfo.range, width: displayWidth,
+            height: displayHeight
+          ))
+      }
+
+      // Add paragraph spacing so text below images doesn't overlap
+      if !imageEntries.isEmpty {
+        textStorage.beginEditing()
+        for entry in imageEntries {
+          addParagraphSpacing(
+            after: entry.range, spacing: entry.height + 4, in: textStorage)
+        }
+        textStorage.endEditing()
+
+        textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
+      }
+
+      // Place image overlays at calculated positions
+      for entry in imageEntries {
+        let linkRect = computeRectForRange(
+          entry.range,
+          textLayoutManager: textLayoutManager,
+          textContentStorage: textContentStorage
+        )
+        guard let rect = linkRect else { continue }
+
+        let imageView = NSImageView(
+          frame: NSRect(
+            x: rect.origin.x,
+            y: rect.origin.y + rect.height + 2,
+            width: entry.width,
+            height: entry.height
+          ))
+        imageView.image = entry.image
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+
+        textView.addSubview(imageView)
+        imageOverlays.append(imageView)
+      }
+    }
+
+    /// Adds paragraph spacing after the line containing the given range.
+    ///
+    /// This creates room for image overlays so they don't overlap
+    /// with the following text.
+    private func addParagraphSpacing(
+      after range: NSRange, spacing: CGFloat, in textStorage: NSTextStorage
+    ) {
+      let string = textStorage.string as NSString
+      let lineRange = string.lineRange(for: range)
+      let style = NSMutableParagraphStyle()
+      style.paragraphSpacing = spacing
+      textStorage.addAttribute(.paragraphStyle, value: style, range: lineRange)
+    }
+
+    /// Computes the bounding rectangle for a character range in the text view.
+    private func computeRectForRange(
+      _ nsRange: NSRange,
+      textLayoutManager: NSTextLayoutManager,
+      textContentStorage: NSTextContentStorage
+    ) -> NSRect? {
+      guard
+        let contentManager = textLayoutManager.textContentManager,
+        let start = contentManager.location(
+          contentManager.documentRange.location,
+          offsetBy: nsRange.location),
+        let end = contentManager.location(start, offsetBy: nsRange.length)
+      else { return nil }
+
+      guard let textRange = NSTextRange(location: start, end: end) else { return nil }
+      var resultRect: NSRect?
+
+      textLayoutManager.enumerateTextSegments(
+        in: textRange,
+        type: .standard,
+        options: []
+      ) { _, rect, _, _ in
+        if let existing = resultRect {
+          resultRect = existing.union(rect)
+        } else {
+          resultRect = rect
+        }
+        return true
+      }
+
+      return resultRect
     }
 
   }

@@ -48,3 +48,4 @@ Run the following script to regenerate the reference image:
 ```
 
 This script builds the application in Debug configuration and uses the CLI to generate a new screenshot.
+

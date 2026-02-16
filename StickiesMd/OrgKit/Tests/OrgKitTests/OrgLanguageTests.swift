@@ -80,6 +80,42 @@ final class OrgLanguageTests: XCTestCase {
     XCTAssertTrue(headlineTexts[1].contains("Another heading"))
   }
 
+  func testParseOrgCodeBlock() throws {
+    let language = try XCTUnwrap(OrgLanguage.language)
+    let parser = Parser()
+    try parser.setLanguage(language)
+
+    let source = "#+BEGIN_SRC python\nprint('hello')\n#+END_SRC\n"
+    let tree = try XCTUnwrap(parser.parse(source))
+    let rootNode = try XCTUnwrap(tree.rootNode)
+
+    var blockCount = 0
+    walkNode(rootNode) { node in
+      if node.nodeType == "block" {
+        blockCount += 1
+      }
+    }
+    XCTAssertEqual(blockCount, 1, "Should find 1 block node for #+BEGIN_SRC...#+END_SRC")
+  }
+
+  func testParseOrgExampleBlock() throws {
+    let language = try XCTUnwrap(OrgLanguage.language)
+    let parser = Parser()
+    try parser.setLanguage(language)
+
+    let source = "#+BEGIN_EXAMPLE\nsome example text\n#+END_EXAMPLE\n"
+    let tree = try XCTUnwrap(parser.parse(source))
+    let rootNode = try XCTUnwrap(tree.rootNode)
+
+    var blockCount = 0
+    walkNode(rootNode) { node in
+      if node.nodeType == "block" {
+        blockCount += 1
+      }
+    }
+    XCTAssertEqual(blockCount, 1, "Should find 1 block node for #+BEGIN_EXAMPLE...#+END_EXAMPLE")
+  }
+
   private func walkNode(_ node: Node, visitor: (Node) -> Void) {
     visitor(node)
     for i in 0..<node.childCount {
