@@ -73,7 +73,8 @@ struct ContentView: View {
         RichTextEditor(
           textStorage: viewModel.textStorage, format: viewModel.fileFormat,
           isEditable: viewModel.isFocused, fontColor: viewModel.note.fontColor,
-          showLineNumbers: viewModel.note.showLineNumbers
+          showLineNumbers: viewModel.note.showLineNumbers,
+          fileURL: viewModel.note.fileURL
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(4)

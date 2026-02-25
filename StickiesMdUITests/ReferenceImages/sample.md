@@ -73,7 +73,10 @@ No syntax highlighting
 
 [Link to Google](https://google.com)
 
-![Placeholder Image](https://via.placeholder.com/150)
+![Web Placeholder Image](https://via.placeholder.com/150)
+
+![Local Image](./sample.png)
+
 
 ## Horizontal Rule
 
