@@ -38,6 +38,8 @@ struct RichTextEditor: NSViewRepresentable {
   var isEditable: Bool
   var fontColor: String
   var showLineNumbers: Bool
+  // This is optional because it might be a newly created, unsaved document.
+  // It is also used as the base URL to resolve relative image paths.
   var fileURL: URL?
 
   // NSViewRepresentable protocol requires makeNSView
@@ -134,7 +136,9 @@ struct RichTextEditor: NSViewRepresentable {
     case italic
     case underline
     case strikethrough
+    // code is for inline codes
     case code
+    // codeBlock is for code blocks
     case codeBlock
     case image(path: String)
   }
@@ -152,6 +156,8 @@ struct RichTextEditor: NSViewRepresentable {
     var parser: Parser
     var inlineParser: Parser?
     weak var textView: NSTextView?
+    // imageOverlays holds NSImageView instances used to display inline images below their link text.
+    // They are updated and repositioned whenever the text changes.
     var imageOverlays: [NSImageView] = []
 
     init(_ parent: RichTextEditor) {
@@ -295,6 +301,8 @@ struct RichTextEditor: NSViewRepresentable {
       {
         return .heading(level: getHeadingLevel(node))
       }
+      // fenced_code_block: Code blocks surrounded by backticks (```) or tildes (~~~)
+      // indented_code_block: Code blocks indented by 4 spaces or a tab
       if type == "fenced_code_block" || type == "indented_code_block" {
         return .codeBlock
       }
@@ -440,20 +448,25 @@ struct RichTextEditor: NSViewRepresentable {
 
     /// Finds Markdown image links from inline tree-sitter nodes.
     ///
-    /// Walks the inline AST looking for "image" nodes and extracts
-    /// the link destination child to get the image path.
+    /// This function acts as a public entry point that initializes an empty array
+    /// and then delegates the actual recursive search to `findMarkdownImageLinksRecursive`.
+    /// This separation hides the `inout` array parameter from the caller, providing
+    /// a cleaner API that simply returns the collected results.
     private func findMarkdownImageLinks(
       _ node: Node,
       sourceString: String,
       textStorage: NSTextStorage
     ) -> [(path: String, range: NSRange)] {
       var results: [(path: String, range: NSRange)] = []
-      collectMarkdownImages(
+      findMarkdownImageLinksRecursive(
         node, sourceString: sourceString, textStorage: textStorage, into: &results)
       return results
     }
 
-    private func collectMarkdownImages(
+    /// Recursively walks the inline AST looking for "image" nodes and extracts
+    /// the link destination child to get the image path. Matches are appended
+    /// to the `results` array passed by reference (`inout`).
+    private func findMarkdownImageLinksRecursive(
       _ node: Node,
       sourceString: String,
       textStorage: NSTextStorage,
@@ -474,7 +487,7 @@ struct RichTextEditor: NSViewRepresentable {
       }
       for i in 0..<node.childCount {
         if let child = node.child(at: i) {
-          collectMarkdownImages(
+          findMarkdownImageLinksRecursive(
             child, sourceString: sourceString, textStorage: textStorage, into: &results)
         }
       }
