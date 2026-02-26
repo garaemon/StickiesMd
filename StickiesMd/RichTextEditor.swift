@@ -98,8 +98,13 @@ struct RichTextEditor: NSViewRepresentable {
     guard let textView = nsView.documentView as? NSTextView else { return }
 
     // Keep coordinator state in sync with current SwiftUI view values
+    let previousFormat = context.coordinator.parent.format
     context.coordinator.textView = textView
     context.coordinator.parent = self
+
+    if previousFormat != format {
+      context.coordinator.setupParser()
+    }
 
     if textView.isEditable != isEditable {
       textView.isEditable = isEditable
@@ -182,6 +187,10 @@ struct RichTextEditor: NSViewRepresentable {
           return id == "markdown"
         }), let tsLang = markdownLang.language {
           try? parser.setLanguage(tsLang)
+        }
+
+        if inlineParser == nil {
+          inlineParser = Parser()
         }
 
         if let markdownInlineLang = CodeLanguage.allLanguages.first(where: {
