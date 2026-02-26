@@ -13,8 +13,10 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
         textStorage.replaceCharacters(in: range, with: content)
         textStorage.endEditing()
       }
+      hasUnsavedChanges = content != lastSavedContent
     }
   }
+  @Published var hasUnsavedChanges: Bool = false
   // Version counter to force view refresh when content is loaded from disk
   @Published var version: Int = 0
 
@@ -104,6 +106,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
       do {
         try text.write(to: url, atomically: true, encoding: .utf8)
         self.lastSavedContent = text
+        self.hasUnsavedChanges = false
       } catch {
         print("Failed to save content: \(error)")
       }
@@ -135,6 +138,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
             if text != self.lastSavedContent {
               self.content = text
               self.lastSavedContent = text
+              self.hasUnsavedChanges = false
               self.version += 1
             }
           }

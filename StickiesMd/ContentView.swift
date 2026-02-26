@@ -16,12 +16,16 @@ struct ContentView: View {
   var body: some View {
     VStack(spacing: 0) {
       HStack {
-        Text(viewModel.note.fileURL.lastPathComponent)
-          .font(.caption)
-          .foregroundColor(.secondary)
-          .lineLimit(1)
-          .truncationMode(.middle)
-          .help(viewModel.note.fileURL.path)
+        Text(
+          viewModel.hasUnsavedChanges
+            ? "* " + viewModel.note.fileURL.lastPathComponent
+            : viewModel.note.fileURL.lastPathComponent
+        )
+        .font(.caption)
+        .foregroundColor(.secondary)
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .help(viewModel.note.fileURL.path)
 
         Spacer()
 
