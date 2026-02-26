@@ -147,6 +147,8 @@ struct RichTextEditor: NSViewRepresentable {
     case code
     // codeBlock is for code blocks
     case codeBlock
+    case codeBlockLanguage
+    case codeBlockDelimiter
     case image(path: String)
   }
 
@@ -317,6 +319,12 @@ struct RichTextEditor: NSViewRepresentable {
       if type == "fenced_code_block" || type == "indented_code_block" {
         return .codeBlock
       }
+      if type == "info_string" {
+        return .codeBlockLanguage
+      }
+      if type == "fenced_code_block_delimiter" {
+        return .codeBlockDelimiter
+      }
       return nil
     }
 
@@ -359,10 +367,28 @@ struct RichTextEditor: NSViewRepresentable {
           .backgroundColor, value: NSColor.gray.withAlphaComponent(0.15), range: range)
       case .codeBlock:
         let monoFont = NSFont.monospacedSystemFont(
-          ofSize: RichTextEditor.defaultFontSize, weight: .regular)
+          ofSize: RichTextEditor.defaultFontSize - 1, weight: .regular)
         textStorage.addAttribute(.font, value: monoFont, range: range)
         textStorage.addAttribute(
-          .backgroundColor, value: NSColor.black.withAlphaComponent(0.06), range: range)
+          .backgroundColor, value: NSColor.black.withAlphaComponent(0.08), range: range)
+        // Indent code blocks slightly for visual separation from surrounding text
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.headIndent = 8
+        paragraphStyle.firstLineHeadIndent = 8
+        paragraphStyle.tailIndent = -8
+        textStorage.addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
+      case .codeBlockLanguage:
+        let monoFont = NSFont.monospacedSystemFont(
+          ofSize: RichTextEditor.defaultFontSize - 1, weight: .medium)
+        textStorage.addAttribute(.font, value: monoFont, range: range)
+        textStorage.addAttribute(
+          .foregroundColor, value: NSColor.systemBlue.withAlphaComponent(0.7), range: range)
+      case .codeBlockDelimiter:
+        let monoFont = NSFont.monospacedSystemFont(
+          ofSize: RichTextEditor.defaultFontSize - 1, weight: .regular)
+        textStorage.addAttribute(.font, value: monoFont, range: range)
+        textStorage.addAttribute(
+          .foregroundColor, value: NSColor.tertiaryLabelColor, range: range)
       case .image:
         textStorage.addAttribute(
           .foregroundColor, value: NSColor.systemBlue, range: range)
