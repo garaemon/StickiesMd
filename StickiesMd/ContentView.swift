@@ -31,6 +31,18 @@ struct ContentView: View {
           Spacer()
 
           Button(action: {
+            viewModel.toggleImages()
+          }) {
+            Image(systemName: viewModel.showImages ? "photo" : "photo.badge.minus")
+              .font(.caption)
+              .foregroundColor(viewModel.showImages ? .secondary : .primary)
+          }
+          .buttonStyle(.plain)
+          .help("Toggle image display")
+          .accessibilityIdentifier("toggleImagesButton")
+          .padding(.trailing, 4)
+
+          Button(action: {
             viewModel.manualSave()
           }) {
             Image(systemName: "opticaldisc")
@@ -81,7 +93,8 @@ struct ContentView: View {
           isEditable: viewModel.isFocused, fontColor: viewModel.note.fontColor,
           showLineNumbers: viewModel.note.showLineNumbers,
           version: viewModel.version,
-          fileURL: viewModel.note.fileURL
+          fileURL: viewModel.note.fileURL,
+          showImages: viewModel.showImages
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(4)

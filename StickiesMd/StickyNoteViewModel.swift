@@ -23,6 +23,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
   let textStorage = NSTextStorage()
   @Published var isFocused: Bool = false
   @Published var screenshotMode: Bool = false
+  @Published var showImages: Bool = true
 
   private var lastSavedContent: String = ""
   private var isAccessingResource = false
@@ -240,6 +241,11 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     } catch {
       print("Failed to append text: \(error)")
     }
+  }
+
+  @MainActor
+  func toggleImages() {
+    showImages.toggle()
   }
 
   @MainActor
