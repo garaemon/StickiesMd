@@ -18,7 +18,7 @@ struct ContentView: View {
       HStack {
         Text(
           viewModel.hasUnsavedChanges
-            ? "* " + viewModel.note.fileURL.lastPathComponent
+            ? "** " + viewModel.note.fileURL.lastPathComponent
             : viewModel.note.fileURL.lastPathComponent
         )
         .font(.caption)
