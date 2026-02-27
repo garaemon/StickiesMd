@@ -166,6 +166,8 @@ struct RichTextEditor: NSViewRepresentable {
     // imageOverlays holds NSImageView instances used to display inline images below their link text.
     // They are updated and repositioned whenever the text changes.
     var imageOverlays: [NSImageView] = []
+    // Cache web images to avoid re-downloading on every highlight pass.
+    var webImageCache: [String: NSImage] = [:]
 
     init(_ parent: RichTextEditor) {
       self.parent = parent
@@ -489,8 +491,8 @@ struct RichTextEditor: NSViewRepresentable {
           if let path = imagePath {
             // Always style image links with blue color
             applyElementStyle(.image(path: path), in: textStorage, range: range)
-            // Only collect for overlay if it looks like a local image file
-            if isImagePath(path) {
+            // Collect for overlay if it's a local image file or a web URL
+            if isImagePath(path) || isWebURL(path) {
               results.append((path: path, range: range))
             }
           }
@@ -519,19 +521,29 @@ struct RichTextEditor: NSViewRepresentable {
 
     /// Checks if a path points to a supported image file.
     private func isImagePath(_ path: String) -> Bool {
-      let ext = (path as NSString).pathExtension.lowercased()
+      var pathToCheck = path
+      // Strip query parameters for extension checking
+      if let queryIndex = path.firstIndex(of: "?") {
+        pathToCheck = String(path[..<queryIndex])
+      }
+      let ext = (pathToCheck as NSString).pathExtension.lowercased()
       return RichTextEditor.supportedImageExtensions.contains(ext)
+    }
+
+    /// Checks if a path is a web URL (http or https).
+    private func isWebURL(_ path: String) -> Bool {
+      return path.hasPrefix("http://") || path.hasPrefix("https://")
     }
 
     /// Finds Org-mode image links using regex.
     ///
-    /// Detects `[[file:path]]` and `[[./path]]` patterns.
+    /// Detects `[[file:path]]`, `[[./path]]`, and `[[https://...]]` patterns.
     private func findOrgImageLinks(
       sourceString: String,
       textStorage: NSTextStorage
     ) -> [(path: String, range: NSRange)] {
-      // Match [[file:path.ext]] or [[./path.ext]] or [[/path.ext]]
-      let pattern = "\\[\\[(?:file:)?([^]]+?\\.[a-zA-Z]+)\\]\\]"
+      // Match [[file:path.ext]], [[./path.ext]], [[/path.ext]], or [[https://url]]
+      let pattern = "\\[\\[(?:file:)?((?:https?://)?[^]]+?\\.[a-zA-Z]+(?:\\?[^]]*)?)\\]\\]"
       guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
 
       let nsString = sourceString as NSString
@@ -543,7 +555,7 @@ struct RichTextEditor: NSViewRepresentable {
         let pathRange = match.range(at: 1)
         guard pathRange.location != NSNotFound else { continue }
         let path = nsString.substring(with: pathRange)
-        if isImagePath(path) {
+        if isImagePath(path) || isWebURL(path) {
           applyElementStyle(.image(path: path), in: textStorage, range: matchRange)
           results.append((path: path, range: matchRange))
         }
@@ -678,12 +690,32 @@ struct RichTextEditor: NSViewRepresentable {
 
     /// Resolves a possibly-relative image path against the document directory.
     private func resolveImageURL(_ path: String) -> URL? {
+      if isWebURL(path) {
+        return URL(string: path)
+      }
       if path.hasPrefix("/") {
         return URL(fileURLWithPath: path)
       }
       guard let fileURL = parent.fileURL else { return nil }
       let directoryURL = fileURL.deletingLastPathComponent()
       return directoryURL.appendingPathComponent(path).standardized
+    }
+
+    /// Loads an image from a local path or web URL, using cache for web images.
+    private func loadImage(path: String) -> NSImage? {
+      if isWebURL(path) {
+        if let cached = webImageCache[path] { return cached }
+        guard let url = URL(string: path),
+          let data = try? Data(contentsOf: url),
+          let image = NSImage(data: data)
+        else { return nil }
+        webImageCache[path] = image
+        return image
+      }
+      guard let imageURL = resolveImageURL(path),
+        FileManager.default.fileExists(atPath: imageURL.path)
+      else { return nil }
+      return NSImage(contentsOf: imageURL)
     }
 
     /// Updates image overlay views positioned below each image link.
@@ -707,13 +739,10 @@ struct RichTextEditor: NSViewRepresentable {
       let maxImageHeight: CGFloat = 200
 
       // Pre-calculate image sizes and add paragraph spacing
-      var imageEntries:
-        [(url: URL, image: NSImage, range: NSRange, width: CGFloat, height: CGFloat)] = []
+      var imageEntries: [(image: NSImage, range: NSRange, width: CGFloat, height: CGFloat)] = []
 
       for imageInfo in images {
-        guard let imageURL = resolveImageURL(imageInfo.path),
-          FileManager.default.fileExists(atPath: imageURL.path),
-          let nsImage = NSImage(contentsOf: imageURL)
+        guard let nsImage = loadImage(path: imageInfo.path)
         else { continue }
 
         let originalSize = nsImage.size
@@ -729,7 +758,7 @@ struct RichTextEditor: NSViewRepresentable {
 
         imageEntries.append(
           (
-            url: imageURL, image: nsImage, range: imageInfo.range, width: displayWidth,
+            image: nsImage, range: imageInfo.range, width: displayWidth,
             height: displayHeight
           ))
       }
