@@ -307,9 +307,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Enforce deterministic color for golden tests (yellow)
     window.setStickyColor("#FFF9C4")
 
-    // Enable screenshot mode to hide UI elements (title bar, scrollbars) that
-    // render differently across environments
+    // Enable screenshot mode to hide UI elements (title bar, toolbar, scrollbars)
+    // that render differently across environments
     window.viewModel?.screenshotMode = true
+    window.toolbar = nil
+    window.styleMask.remove(.titled)
     hideScrollBars(in: window)
 
     // Wait for rendering
