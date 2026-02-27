@@ -106,6 +106,7 @@ class StickyWindowManager: NSObject, ObservableObject {
     let hostingView = NSHostingView(rootView: contentView)
     hostingView.wantsLayer = true
     window.contentView = hostingView
+    window.viewModel = viewModel
 
     window.makeKeyAndOrderFront(nil)
     windows[note.id] = window
@@ -306,8 +307,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Enforce deterministic color for golden tests (yellow)
     window.setStickyColor("#FFF9C4")
 
-    // Hide scrollbars to avoid CI vs local differences caused by macOS scroller style settings.
-    // CI runners without a trackpad default to "always show" legacy scrollbars.
+    // Enable screenshot mode to hide UI elements (title bar, scrollbars) that
+    // render differently across environments
+    window.viewModel?.screenshotMode = true
     hideScrollBars(in: window)
 
     // Wait for rendering

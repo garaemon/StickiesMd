@@ -22,6 +22,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
 
   let textStorage = NSTextStorage()
   @Published var isFocused: Bool = false
+  @Published var screenshotMode: Bool = false
 
   private var lastSavedContent: String = ""
   private var isAccessingResource = false
