@@ -165,7 +165,7 @@ struct RichTextEditor: NSViewRepresentable {
     weak var textView: NSTextView?
     // imageOverlays holds NSImageView instances used to display inline images below their link text.
     // They are updated and repositioned whenever the text changes.
-    var imageOverlays: [NSImageView] = []
+    var imageOverlays: [NSView] = []
 
     init(_ parent: RichTextEditor) {
       self.parent = parent
@@ -755,15 +755,15 @@ struct RichTextEditor: NSViewRepresentable {
         )
         guard let rect = linkRect else { continue }
 
-        let imageView = NSImageView(
+        let imageView = ResizableImageView(
           frame: NSRect(
             x: rect.origin.x,
             y: rect.origin.y + rect.height + 2,
             width: entry.width,
             height: entry.height
-          ))
-        imageView.image = entry.image
-        imageView.imageScaling = .scaleProportionallyUpOrDown
+          ),
+          image: entry.image
+        )
 
         textView.addSubview(imageView)
         imageOverlays.append(imageView)
@@ -817,6 +817,101 @@ struct RichTextEditor: NSViewRepresentable {
       return resultRect
     }
 
+  }
+}
+
+/// Allows the user to resize inline images by dragging the bottom-right corner.
+/// Aspect ratio is always maintained during resize.
+class ResizableImageView: NSView {
+  private let imageView: NSImageView
+  private let aspectRatio: CGFloat
+  private var isDragging = false
+  private var dragStartPoint: NSPoint = .zero
+  private var dragStartSize: NSSize = .zero
+  private let handleSize: CGFloat = 10
+
+  // Callback to notify parent about size changes so paragraph spacing can be updated
+  var onResize: ((CGFloat, CGFloat) -> Void)?
+
+  init(frame: NSRect, image: NSImage) {
+    self.aspectRatio = image.size.width / image.size.height
+    self.imageView = NSImageView(frame: NSRect(origin: .zero, size: frame.size))
+    super.init(frame: frame)
+    imageView.image = image
+    imageView.imageScaling = .scaleProportionallyUpOrDown
+    imageView.autoresizingMask = [.width, .height]
+    addSubview(imageView)
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  private func isInResizeHandle(_ point: NSPoint) -> Bool {
+    let handleRect = NSRect(
+      x: bounds.width - handleSize,
+      y: bounds.height - handleSize,
+      width: handleSize,
+      height: handleSize
+    )
+    return handleRect.contains(point)
+  }
+
+  override func resetCursorRects() {
+    super.resetCursorRects()
+    let handleRect = NSRect(
+      x: bounds.width - handleSize,
+      y: bounds.height - handleSize,
+      width: handleSize,
+      height: handleSize
+    )
+    addCursorRect(handleRect, cursor: .crosshair)
+  }
+
+  override func draw(_ dirtyRect: NSRect) {
+    super.draw(dirtyRect)
+    // Draw diagonal lines as a visual resize-handle indicator
+    let handlePath = NSBezierPath()
+    let x = bounds.width - handleSize
+    let y = bounds.height - handleSize
+    NSColor.secondaryLabelColor.withAlphaComponent(0.5).setStroke()
+    handlePath.lineWidth = 1.0
+    for offset in stride(from: 3.0, through: handleSize - 1, by: 3.0) {
+      handlePath.move(to: NSPoint(x: x + offset, y: bounds.height))
+      handlePath.line(to: NSPoint(x: bounds.width, y: y + offset))
+    }
+    handlePath.stroke()
+  }
+
+  override func mouseDown(with event: NSEvent) {
+    let localPoint = convert(event.locationInWindow, from: nil)
+    if isInResizeHandle(localPoint) {
+      isDragging = true
+      dragStartPoint = event.locationInWindow
+      dragStartSize = frame.size
+    } else {
+      super.mouseDown(with: event)
+    }
+  }
+
+  override func mouseDragged(with event: NSEvent) {
+    guard isDragging else {
+      super.mouseDragged(with: event)
+      return
+    }
+    let currentPoint = event.locationInWindow
+    let deltaX = currentPoint.x - dragStartPoint.x
+    // Use horizontal delta to determine new width, then derive height from aspect ratio
+    let newWidth = max(50, dragStartSize.width + deltaX)
+    let newHeight = newWidth / aspectRatio
+    setFrameSize(NSSize(width: newWidth, height: newHeight))
+    onResize?(newWidth, newHeight)
+    needsDisplay = true
+  }
+
+  override func mouseUp(with event: NSEvent) {
+    isDragging = false
+    super.mouseUp(with: event)
   }
 }
 
