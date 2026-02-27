@@ -16,12 +16,16 @@ struct ContentView: View {
   var body: some View {
     VStack(spacing: 0) {
       HStack {
-        Text(viewModel.note.fileURL.lastPathComponent)
-          .font(.caption)
-          .foregroundColor(.secondary)
-          .lineLimit(1)
-          .truncationMode(.middle)
-          .help(viewModel.note.fileURL.path)
+        Text(
+          viewModel.hasUnsavedChanges
+            ? "** " + viewModel.note.fileURL.lastPathComponent
+            : viewModel.note.fileURL.lastPathComponent
+        )
+        .font(.caption)
+        .foregroundColor(.secondary)
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .help(viewModel.note.fileURL.path)
 
         Spacer()
 
@@ -74,6 +78,7 @@ struct ContentView: View {
           textStorage: viewModel.textStorage, format: viewModel.fileFormat,
           isEditable: viewModel.isFocused, fontColor: viewModel.note.fontColor,
           showLineNumbers: viewModel.note.showLineNumbers,
+          version: viewModel.version,
           fileURL: viewModel.note.fileURL
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -42,7 +42,8 @@ final class RichTextEditorTests: XCTestCase {
       format: .markdown,
       isEditable: true,
       fontColor: "#000000",
-      showLineNumbers: false
+      showLineNumbers: false,
+      version: 0
     )
 
     let coordinator = editor.makeCoordinator()
@@ -97,7 +98,8 @@ final class RichTextEditorTests: XCTestCase {
       format: .markdown,
       isEditable: true,
       fontColor: "#000000",
-      showLineNumbers: false
+      showLineNumbers: false,
+      version: 0
     )
 
     let coordinator = editor.makeCoordinator()
@@ -132,7 +134,8 @@ final class RichTextEditorTests: XCTestCase {
       format: .org,
       isEditable: true,
       fontColor: "#000000",
-      showLineNumbers: false
+      showLineNumbers: false,
+      version: 0
     )
 
     let coordinator = editor.makeCoordinator()
@@ -179,7 +182,8 @@ final class RichTextEditorTests: XCTestCase {
       format: .org,
       isEditable: true,
       fontColor: "#000000",
-      showLineNumbers: false
+      showLineNumbers: false,
+      version: 0
     )
 
     let coordinator = editor.makeCoordinator()
@@ -214,7 +218,8 @@ final class RichTextEditorTests: XCTestCase {
       format: .org,
       isEditable: true,
       fontColor: "#000000",
-      showLineNumbers: false
+      showLineNumbers: false,
+      version: 0
     )
 
     let coordinator = editor.makeCoordinator()
@@ -250,7 +255,8 @@ final class RichTextEditorTests: XCTestCase {
       format: .markdown,
       isEditable: true,
       fontColor: "#000000",
-      showLineNumbers: false
+      showLineNumbers: false,
+      version: 0
     )
 
     let coordinator = editor.makeCoordinator()
@@ -444,7 +450,8 @@ final class RichTextEditorTests: XCTestCase {
       format: .org,
       isEditable: true,
       fontColor: "#000000",
-      showLineNumbers: false
+      showLineNumbers: false,
+      version: 0
     )
     let coordinator = editor.makeCoordinator()
     coordinator.textLayoutManager = layoutManager
@@ -466,7 +473,8 @@ final class RichTextEditorTests: XCTestCase {
       format: .markdown,
       isEditable: true,
       fontColor: "#000000",
-      showLineNumbers: false
+      showLineNumbers: false,
+      version: 0
     )
     let coordinator = editor.makeCoordinator()
     coordinator.textLayoutManager = layoutManager

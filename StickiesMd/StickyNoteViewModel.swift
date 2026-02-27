@@ -13,15 +13,16 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
         textStorage.replaceCharacters(in: range, with: content)
         textStorage.endEditing()
       }
+      hasUnsavedChanges = content != lastSavedContent
     }
   }
+  @Published var hasUnsavedChanges: Bool = false
   // Version counter to force view refresh when content is loaded from disk
   @Published var version: Int = 0
 
   let textStorage = NSTextStorage()
   @Published var isFocused: Bool = false
 
-  private var cancellables: Set<AnyCancellable> = []
   private var lastSavedContent: String = ""
   private var isAccessingResource = false
 
@@ -58,10 +59,9 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     }
 
     setupTextStorageObserver()
+    setupSaveRequestObserver()
 
     NSFileCoordinator.addFilePresenter(self)
-
-    setupAutoSave()
   }
 
   private func setupTextStorageObserver() {
@@ -75,20 +75,19 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     }
   }
 
+  private func setupSaveRequestObserver() {
+    NotificationCenter.default.addObserver(
+      forName: .stickyNoteSaveRequested, object: nil, queue: .main
+    ) { [weak self] _ in
+      guard let self = self, self.isFocused else { return }
+      self.manualSave()
+    }
+  }
+
   deinit {
     if isAccessingResource {
       note.fileURL.stopAccessingSecurityScopedResource()
     }
-  }
-
-  private func setupAutoSave() {
-    $content
-      .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
-      .removeDuplicates()
-      .sink { [weak self] newContent in
-        self?.saveContent(newContent)
-      }
-      .store(in: &cancellables)
   }
 
   func saveContent(_ text: String) {
@@ -104,6 +103,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
       do {
         try text.write(to: url, atomically: true, encoding: .utf8)
         self.lastSavedContent = text
+        self.hasUnsavedChanges = false
       } catch {
         print("Failed to save content: \(error)")
       }
@@ -135,6 +135,7 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
             if text != self.lastSavedContent {
               self.content = text
               self.lastSavedContent = text
+              self.hasUnsavedChanges = false
               self.version += 1
             }
           }
@@ -258,4 +259,5 @@ extension Notification.Name {
   static let stickyNoteAlwaysOnTopChanged = Notification.Name("stickyNoteAlwaysOnTopChanged")
   static let stickyNoteFontColorChanged = Notification.Name("stickyNoteFontColorChanged")
   static let stickyNoteLineNumbersChanged = Notification.Name("stickyNoteLineNumbersChanged")
+  static let stickyNoteSaveRequested = Notification.Name("stickyNoteSaveRequested")
 }

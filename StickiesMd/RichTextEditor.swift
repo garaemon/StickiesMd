@@ -38,6 +38,8 @@ struct RichTextEditor: NSViewRepresentable {
   var isEditable: Bool
   var fontColor: String
   var showLineNumbers: Bool
+  // Incremented on external file reload to trigger updateNSView and re-highlight
+  var version: Int
   // This is optional because it might be a newly created, unsaved document.
   // It is also used as the base URL to resolve relative image paths.
   var fileURL: URL?
