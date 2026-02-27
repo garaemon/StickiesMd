@@ -23,7 +23,6 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
   let textStorage = NSTextStorage()
   @Published var isFocused: Bool = false
 
-  private var cancellables: Set<AnyCancellable> = []
   private var lastSavedContent: String = ""
   private var isAccessingResource = false
 
@@ -60,10 +59,9 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     }
 
     setupTextStorageObserver()
+    setupSaveRequestObserver()
 
     NSFileCoordinator.addFilePresenter(self)
-
-    setupAutoSave()
   }
 
   private func setupTextStorageObserver() {
@@ -77,20 +75,19 @@ class StickyNoteViewModel: NSObject, ObservableObject, NSFilePresenter {
     }
   }
 
+  private func setupSaveRequestObserver() {
+    NotificationCenter.default.addObserver(
+      forName: .stickyNoteSaveRequested, object: nil, queue: .main
+    ) { [weak self] _ in
+      guard let self = self, self.isFocused else { return }
+      self.manualSave()
+    }
+  }
+
   deinit {
     if isAccessingResource {
       note.fileURL.stopAccessingSecurityScopedResource()
     }
-  }
-
-  private func setupAutoSave() {
-    $content
-      .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
-      .removeDuplicates()
-      .sink { [weak self] newContent in
-        self?.saveContent(newContent)
-      }
-      .store(in: &cancellables)
   }
 
   func saveContent(_ text: String) {
@@ -262,4 +259,5 @@ extension Notification.Name {
   static let stickyNoteAlwaysOnTopChanged = Notification.Name("stickyNoteAlwaysOnTopChanged")
   static let stickyNoteFontColorChanged = Notification.Name("stickyNoteFontColorChanged")
   static let stickyNoteLineNumbersChanged = Notification.Name("stickyNoteLineNumbersChanged")
+  static let stickyNoteSaveRequested = Notification.Name("stickyNoteSaveRequested")
 }

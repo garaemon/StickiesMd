@@ -29,6 +29,13 @@ struct StickiesMdApp: App {
         .keyboardShortcut("o")
       }
 
+      CommandGroup(replacing: .saveItem) {
+        Button("Save") {
+          NotificationCenter.default.post(name: .stickyNoteSaveRequested, object: nil)
+        }
+        .keyboardShortcut("s")
+      }
+
       CommandGroup(after: .windowSize) {
         Button("Reset Mouse-Through") {
           StickyWindowManager.shared.resetAllMouseThrough()
