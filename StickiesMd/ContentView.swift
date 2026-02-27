@@ -78,6 +78,7 @@ struct ContentView: View {
           textStorage: viewModel.textStorage, format: viewModel.fileFormat,
           isEditable: viewModel.isFocused, fontColor: viewModel.note.fontColor,
           showLineNumbers: viewModel.note.showLineNumbers,
+          version: viewModel.version,
           fileURL: viewModel.note.fileURL
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
