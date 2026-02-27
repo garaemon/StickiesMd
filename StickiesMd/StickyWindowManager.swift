@@ -306,6 +306,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Enforce deterministic color for golden tests (yellow)
     window.setStickyColor("#FFF9C4")
 
+    // Hide scrollbars to avoid CI vs local differences caused by macOS scroller style settings.
+    // CI runners without a trackpad default to "always show" legacy scrollbars.
+    hideScrollBars(in: window)
+
     // Wait for rendering
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
       if let contentView = window.contentView {
@@ -333,6 +337,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           }
         }
       }
+    }
+  }
+
+  /// Recursively find and hide all scroll bars in the window's view hierarchy.
+  private func hideScrollBars(in window: NSWindow) {
+    guard let contentView = window.contentView else { return }
+    hideScrollBarsRecursively(in: contentView)
+  }
+
+  private func hideScrollBarsRecursively(in view: NSView) {
+    if let scrollView = view as? NSScrollView {
+      scrollView.hasVerticalScroller = false
+      scrollView.hasHorizontalScroller = false
+    }
+    for subview in view.subviews {
+      hideScrollBarsRecursively(in: subview)
     }
   }
 }

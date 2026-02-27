@@ -79,7 +79,7 @@ final class GoldenTests: XCTestCase {
 
     // Compare with golden
     if FileManager.default.fileExists(atPath: goldenImageURL.path) {
-      let match = compareImages(url1: goldenImageURL, url2: outputImageURL, tolerance: 0.10)
+      let match = compareImages(url1: goldenImageURL, url2: outputImageURL, tolerance: 0.01)
       XCTAssertTrue(
         match,
         "Screenshot does not match golden image within tolerance. Output: \(outputImageURL.path)")
