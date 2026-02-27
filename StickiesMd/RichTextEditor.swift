@@ -43,6 +43,7 @@ struct RichTextEditor: NSViewRepresentable {
   // This is optional because it might be a newly created, unsaved document.
   // It is also used as the base URL to resolve relative image paths.
   var fileURL: URL?
+  var showImages: Bool
 
   // NSViewRepresentable protocol requires makeNSView
   func makeNSView(context: Context) -> NSScrollView {
@@ -263,7 +264,15 @@ struct RichTextEditor: NSViewRepresentable {
         lm.ensureLayout(for: lm.documentRange)
       }
 
-      updateImageOverlays(images: collectedImages)
+      if parent.showImages {
+        updateImageOverlays(images: collectedImages)
+      } else {
+        // Remove existing overlays when images are toggled off
+        for overlay in imageOverlays {
+          overlay.removeFromSuperview()
+        }
+        imageOverlays.removeAll()
+      }
     }
 
     private func highlightNode(
