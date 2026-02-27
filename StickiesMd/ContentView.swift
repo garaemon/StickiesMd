@@ -15,61 +15,63 @@ struct ContentView: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      HStack {
-        Text(
-          viewModel.hasUnsavedChanges
-            ? "** " + viewModel.note.fileURL.lastPathComponent
-            : viewModel.note.fileURL.lastPathComponent
-        )
-        .font(.caption)
-        .foregroundColor(.secondary)
-        .lineLimit(1)
-        .truncationMode(.middle)
-        .help(viewModel.note.fileURL.path)
+      if !viewModel.screenshotMode {
+        HStack {
+          Text(
+            viewModel.hasUnsavedChanges
+              ? "** " + viewModel.note.fileURL.lastPathComponent
+              : viewModel.note.fileURL.lastPathComponent
+          )
+          .font(.caption)
+          .foregroundColor(.secondary)
+          .lineLimit(1)
+          .truncationMode(.middle)
+          .help(viewModel.note.fileURL.path)
 
-        Spacer()
+          Spacer()
 
-        Button(action: {
-          viewModel.manualSave()
-        }) {
-          Image(systemName: "opticaldisc")
-            .font(.caption)
-            .foregroundColor(.secondary)
-        }
-        .buttonStyle(.plain)
-        .help("Save content")
-        .accessibilityIdentifier("saveButton")
-        .padding(.trailing, 4)
+          Button(action: {
+            viewModel.manualSave()
+          }) {
+            Image(systemName: "opticaldisc")
+              .font(.caption)
+              .foregroundColor(.secondary)
+          }
+          .buttonStyle(.plain)
+          .help("Save content")
+          .accessibilityIdentifier("saveButton")
+          .padding(.trailing, 4)
 
-        Button(action: {
-          viewModel.toggleAlwaysOnTop()
-        }) {
-          Image(systemName: viewModel.note.isAlwaysOnTop ? "pin.fill" : "pin")
-            .font(.caption)
-            .foregroundColor(viewModel.note.isAlwaysOnTop ? .primary : .secondary)
-        }
-        .buttonStyle(.plain)
-        .help("Toggle Always on Top")
-        .accessibilityIdentifier("pinButton")
-        .padding(.trailing, 4)
+          Button(action: {
+            viewModel.toggleAlwaysOnTop()
+          }) {
+            Image(systemName: viewModel.note.isAlwaysOnTop ? "pin.fill" : "pin")
+              .font(.caption)
+              .foregroundColor(viewModel.note.isAlwaysOnTop ? .primary : .secondary)
+          }
+          .buttonStyle(.plain)
+          .help("Toggle Always on Top")
+          .accessibilityIdentifier("pinButton")
+          .padding(.trailing, 4)
 
-        Button(action: {
-          showSettings.toggle()
-        }) {
-          Image(systemName: "gearshape.fill")
-            .font(.caption)
-            .foregroundColor(.secondary)
+          Button(action: {
+            showSettings.toggle()
+          }) {
+            Image(systemName: "gearshape.fill")
+              .font(.caption)
+              .foregroundColor(.secondary)
+          }
+          .buttonStyle(.plain)
+          .accessibilityIdentifier("settingsButton")
+          .popover(isPresented: $showSettings) {
+            SettingsView(viewModel: viewModel)
+          }
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("settingsButton")
-        .popover(isPresented: $showSettings) {
-          SettingsView(viewModel: viewModel)
-        }
+        .padding(.leading, 110)  // Further increased space
+        .padding(.trailing, 10)
+        .frame(height: 32)  // Standard height
+        .padding(.top, 12)  // Push down to align with traffic lights center
       }
-      .padding(.leading, 110)  // Further increased space
-      .padding(.trailing, 10)
-      .frame(height: 32)  // Standard height
-      .padding(.top, 12)  // Push down to align with traffic lights center
 
       // Divider() removed for integrated look
 

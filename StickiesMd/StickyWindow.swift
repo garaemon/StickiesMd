@@ -5,6 +5,7 @@ class StickyWindow: NSPanel, NSWindowDelegate {
   var onFrameChange: ((NSRect) -> Void)?
   var onFocusChange: ((Bool) -> Void)?
   var onClose: (() -> Void)?
+  weak var viewModel: StickyNoteViewModel?
 
   private var isAlwaysOnTop: Bool = false
 
