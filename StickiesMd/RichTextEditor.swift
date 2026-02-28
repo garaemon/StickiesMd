@@ -147,6 +147,8 @@ struct RichTextEditor: NSViewRepresentable {
     case code
     // codeBlock is for code blocks
     case codeBlock
+    case codeBlockLanguage
+    case codeBlockDelimiter
     case image(path: String)
   }
 
@@ -278,6 +280,14 @@ struct RichTextEditor: NSViewRepresentable {
         if let range = nodeRange(node, in: sourceString) {
           applyElementStyle(element, in: textStorage, range: range)
         }
+
+        // For fenced code blocks, apply syntax highlighting to code content,
+        // style children (delimiter/info_string), then skip default recursion
+        if type == "fenced_code_block" {
+          highlightCodeBlockChildren(node, in: textStorage, sourceString: sourceString)
+          highlightCodeBlockContent(node, in: textStorage, sourceString: sourceString)
+          return
+        }
       }
 
       for i in 0..<node.childCount {
@@ -294,6 +304,59 @@ struct RichTextEditor: NSViewRepresentable {
           )
         }
       }
+    }
+
+    /// Styles delimiter and info_string children of a fenced_code_block.
+    private func highlightCodeBlockChildren(
+      _ node: Node,
+      in textStorage: NSTextStorage,
+      sourceString: String
+    ) {
+      for i in 0..<node.childCount {
+        guard let child = node.child(at: i), let type = child.nodeType else { continue }
+        if let element = classifyMarkdownNode(type: type, node: child),
+          let range = nodeRange(child, in: sourceString)
+        {
+          applyElementStyle(element, in: textStorage, range: range)
+        }
+      }
+    }
+
+    /// Extracts language and code content from a fenced_code_block node
+    /// and applies language-specific syntax highlighting.
+    private func highlightCodeBlockContent(
+      _ node: Node,
+      in textStorage: NSTextStorage,
+      sourceString: String
+    ) {
+      var languageName: String?
+      var codeContentRange: NSRange?
+      var codeContentString: String?
+
+      for i in 0..<node.childCount {
+        guard let child = node.child(at: i), let type = child.nodeType else { continue }
+        if type == "info_string", let range = nodeRange(child, in: sourceString) {
+          languageName = (sourceString as NSString).substring(with: range)
+        }
+        if type == "code_fence_content", let range = nodeRange(child, in: sourceString) {
+          codeContentRange = range
+          codeContentString = (sourceString as NSString).substring(with: range)
+        }
+      }
+
+      guard let langName = languageName,
+        let codeRange = codeContentRange,
+        let codeString = codeContentString,
+        !codeString.isEmpty,
+        let codeLanguage = CodeBlockHighlighter.findLanguage(infoString: langName)
+      else { return }
+
+      CodeBlockHighlighter.applyHighlighting(
+        codeContent: codeString,
+        language: codeLanguage,
+        documentOffset: codeRange.location,
+        textStorage: textStorage
+      )
     }
 
     /// Classifies a Tree-sitter node into a format-independent DocumentElement.
@@ -316,6 +379,12 @@ struct RichTextEditor: NSViewRepresentable {
       // indented_code_block: Code blocks indented by 4 spaces or a tab
       if type == "fenced_code_block" || type == "indented_code_block" {
         return .codeBlock
+      }
+      if type == "info_string" {
+        return .codeBlockLanguage
+      }
+      if type == "fenced_code_block_delimiter" {
+        return .codeBlockDelimiter
       }
       return nil
     }
@@ -359,10 +428,28 @@ struct RichTextEditor: NSViewRepresentable {
           .backgroundColor, value: NSColor.gray.withAlphaComponent(0.15), range: range)
       case .codeBlock:
         let monoFont = NSFont.monospacedSystemFont(
-          ofSize: RichTextEditor.defaultFontSize, weight: .regular)
+          ofSize: RichTextEditor.defaultFontSize - 1, weight: .regular)
         textStorage.addAttribute(.font, value: monoFont, range: range)
         textStorage.addAttribute(
-          .backgroundColor, value: NSColor.black.withAlphaComponent(0.06), range: range)
+          .backgroundColor, value: NSColor.black.withAlphaComponent(0.08), range: range)
+        // Indent code blocks slightly for visual separation from surrounding text
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.headIndent = 8
+        paragraphStyle.firstLineHeadIndent = 8
+        paragraphStyle.tailIndent = -8
+        textStorage.addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
+      case .codeBlockLanguage:
+        let monoFont = NSFont.monospacedSystemFont(
+          ofSize: RichTextEditor.defaultFontSize - 1, weight: .medium)
+        textStorage.addAttribute(.font, value: monoFont, range: range)
+        textStorage.addAttribute(
+          .foregroundColor, value: NSColor.systemBlue.withAlphaComponent(0.7), range: range)
+      case .codeBlockDelimiter:
+        let monoFont = NSFont.monospacedSystemFont(
+          ofSize: RichTextEditor.defaultFontSize - 1, weight: .regular)
+        textStorage.addAttribute(.font, value: monoFont, range: range)
+        textStorage.addAttribute(
+          .foregroundColor, value: NSColor.tertiaryLabelColor, range: range)
       case .image:
         textStorage.addAttribute(
           .foregroundColor, value: NSColor.systemBlue, range: range)
