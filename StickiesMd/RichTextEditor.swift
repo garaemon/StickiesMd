@@ -280,6 +280,14 @@ struct RichTextEditor: NSViewRepresentable {
         if let range = nodeRange(node, in: sourceString) {
           applyElementStyle(element, in: textStorage, range: range)
         }
+
+        // For fenced code blocks, apply syntax highlighting to code content,
+        // style children (delimiter/info_string), then skip default recursion
+        if type == "fenced_code_block" {
+          highlightCodeBlockChildren(node, in: textStorage, sourceString: sourceString)
+          highlightCodeBlockContent(node, in: textStorage, sourceString: sourceString)
+          return
+        }
       }
 
       for i in 0..<node.childCount {
@@ -296,6 +304,59 @@ struct RichTextEditor: NSViewRepresentable {
           )
         }
       }
+    }
+
+    /// Styles delimiter and info_string children of a fenced_code_block.
+    private func highlightCodeBlockChildren(
+      _ node: Node,
+      in textStorage: NSTextStorage,
+      sourceString: String
+    ) {
+      for i in 0..<node.childCount {
+        guard let child = node.child(at: i), let type = child.nodeType else { continue }
+        if let element = classifyMarkdownNode(type: type, node: child),
+          let range = nodeRange(child, in: sourceString)
+        {
+          applyElementStyle(element, in: textStorage, range: range)
+        }
+      }
+    }
+
+    /// Extracts language and code content from a fenced_code_block node
+    /// and applies language-specific syntax highlighting.
+    private func highlightCodeBlockContent(
+      _ node: Node,
+      in textStorage: NSTextStorage,
+      sourceString: String
+    ) {
+      var languageName: String?
+      var codeContentRange: NSRange?
+      var codeContentString: String?
+
+      for i in 0..<node.childCount {
+        guard let child = node.child(at: i), let type = child.nodeType else { continue }
+        if type == "info_string", let range = nodeRange(child, in: sourceString) {
+          languageName = (sourceString as NSString).substring(with: range)
+        }
+        if type == "code_fence_content", let range = nodeRange(child, in: sourceString) {
+          codeContentRange = range
+          codeContentString = (sourceString as NSString).substring(with: range)
+        }
+      }
+
+      guard let langName = languageName,
+        let codeRange = codeContentRange,
+        let codeString = codeContentString,
+        !codeString.isEmpty,
+        let codeLanguage = CodeBlockHighlighter.findLanguage(infoString: langName)
+      else { return }
+
+      CodeBlockHighlighter.applyHighlighting(
+        codeContent: codeString,
+        language: codeLanguage,
+        documentOffset: codeRange.location,
+        textStorage: textStorage
+      )
     }
 
     /// Classifies a Tree-sitter node into a format-independent DocumentElement.

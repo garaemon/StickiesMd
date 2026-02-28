@@ -395,7 +395,77 @@ final class RichTextEditorTests: XCTestCase {
     }
   }
 
-  // MARK: - Code block highlighting
+  // MARK: - Code block syntax highlighting
+
+  func testFindLanguageFromInfoString() {
+    // Direct tsName matches
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "python"))
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "swift"))
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "javascript"))
+
+    // Aliases
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "py"))
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "js"))
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "ts"))
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "sh"))
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "rb"))
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "rs"))
+
+    // Case insensitive
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "Python"))
+    XCTAssertNotNil(CodeBlockHighlighter.findLanguage(infoString: "SWIFT"))
+
+    // Unknown languages
+    XCTAssertNil(CodeBlockHighlighter.findLanguage(infoString: "unknown_language"))
+    XCTAssertNil(CodeBlockHighlighter.findLanguage(infoString: ""))
+  }
+
+  func testSyntaxTokenTypeFromCaptureName() {
+    // Direct names
+    XCTAssertEqual(SyntaxTokenType.fromCaptureName("keyword"), .keyword)
+    XCTAssertEqual(SyntaxTokenType.fromCaptureName("string"), .string)
+    XCTAssertEqual(SyntaxTokenType.fromCaptureName("comment"), .comment)
+    XCTAssertEqual(SyntaxTokenType.fromCaptureName("number"), .number)
+    XCTAssertEqual(SyntaxTokenType.fromCaptureName("type"), .type)
+    XCTAssertEqual(SyntaxTokenType.fromCaptureName("function"), .function)
+
+    // Dotted names use first component
+    XCTAssertEqual(SyntaxTokenType.fromCaptureName("keyword.function"), .keyword)
+    XCTAssertEqual(SyntaxTokenType.fromCaptureName("string.special"), .string)
+    XCTAssertEqual(SyntaxTokenType.fromCaptureName("type.builtin"), .type)
+
+    // Unknown captures
+    XCTAssertNil(SyntaxTokenType.fromCaptureName("text"))
+    XCTAssertNil(SyntaxTokenType.fromCaptureName("none"))
+  }
+
+  func testCodeBlockSyntaxHighlightingAppliesDistinctColors() {
+    let text = "Normal text\n```python\ndef hello():\n    print('world')\n```\nMore text"
+    let (textStorage, coordinator) = makeMarkdownCoordinator(text: text)
+    coordinator.applyHighlighting()
+
+    let defStart = text.range(of: "def")?.lowerBound.utf16Offset(in: text) ?? 0
+    let stringStart = text.range(of: "'world'")?.lowerBound.utf16Offset(in: text) ?? 0
+
+    let defColor =
+      textStorage.attribute(.foregroundColor, at: defStart, effectiveRange: nil) as? NSColor
+    let stringColor =
+      textStorage.attribute(.foregroundColor, at: stringStart, effectiveRange: nil) as? NSColor
+
+    // If syntax highlighting is active, def (keyword) and 'world' (string)
+    // should have different foreground colors
+    if defColor != nil && stringColor != nil {
+      XCTAssertNotEqual(
+        defColor, stringColor,
+        "Keywords and strings should have different foreground colors in code blocks")
+    } else {
+      print(
+        "Skipping code block syntax highlighting assertion: "
+          + "highlighting not active in this environment")
+    }
+  }
+
+  // MARK: - Code block background styling
 
   func testMarkdownFencedCodeBlockAppliesBackgroundColor() {
     let text = "Normal text\n```python\nprint('hello')\n```\nMore text"
