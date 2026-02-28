@@ -66,6 +66,8 @@ struct RichTextEditor: NSViewRepresentable {
     textView.isEditable = isEditable
     textView.isRichText = false
     textView.importsGraphics = false
+    // Disable automatic link detection so we apply .link attributes manually
+    textView.isAutomaticLinkDetectionEnabled = false
     textView.font = NSFont.monospacedSystemFont(ofSize: Self.defaultFontSize, weight: .regular)
     let color = NSColor(hex: fontColor) ?? .textColor
     textView.textColor = color
@@ -193,6 +195,19 @@ struct RichTextEditor: NSViewRepresentable {
       }
     }
 
+    /// Opens URLs in the default browser when the user clicks a link in the text view.
+    func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
+      if let url = link as? URL {
+        NSWorkspace.shared.open(url)
+        return true
+      }
+      if let urlString = link as? String, let url = URL(string: urlString) {
+        NSWorkspace.shared.open(url)
+        return true
+      }
+      return false
+    }
+
     func textDidChange(_ notification: Notification) {
       applyHighlighting()
       if let scrollView = (notification.object as? NSTextView)?.enclosingScrollView {
@@ -228,6 +243,7 @@ struct RichTextEditor: NSViewRepresentable {
       // following Org-mode's official PRE/POST emphasis rules.
       if parent.format == .org {
         highlightOrgInlineMarkup(in: textStorage, sourceString: string)
+        applyOrgLinks(sourceString: string, textStorage: textStorage)
         collectedImages.append(
           contentsOf: findOrgImageLinks(sourceString: string, textStorage: textStorage))
       }
@@ -244,7 +260,11 @@ struct RichTextEditor: NSViewRepresentable {
         collectedImages.append(
           contentsOf: findMarkdownImageLinks(
             inlineRootNode, sourceString: string, textStorage: textStorage))
+        applyMarkdownLinks(
+          inlineRootNode, sourceString: string, textStorage: textStorage)
       }
+
+      applyBareURLLinks(in: textStorage, sourceString: string)
 
       textStorage.endEditing()
 
@@ -356,6 +376,44 @@ struct RichTextEditor: NSViewRepresentable {
         textStorage.addAttribute(
           .foregroundColor, value: NSColor.systemBlue, range: range)
       }
+    }
+
+    /// Detects bare URLs (https?://...) and applies .link attributes.
+    ///
+    /// Skips ranges that already have a .link attribute to avoid overriding
+    /// structured links (e.g. Markdown inline links, Org-mode links).
+    private func applyBareURLLinks(
+      in textStorage: NSTextStorage,
+      sourceString: String
+    ) {
+      let pattern = "https?://[^\\s<>\\[\\]()\"]*[^\\s<>\\[\\]()\".,;:!?'\")}\\]]"
+      guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
+
+      let nsString = sourceString as NSString
+      let fullRange = NSRange(location: 0, length: nsString.length)
+
+      for match in regex.matches(in: sourceString, range: fullRange) {
+        let matchRange = match.range
+        // Skip if .link attribute is already applied (e.g. by Markdown/Org link detection)
+        let existingLink = textStorage.attribute(
+          .link, at: matchRange.location, effectiveRange: nil)
+        if existingLink != nil { continue }
+        let urlString = nsString.substring(with: matchRange)
+        guard let url = URL(string: urlString) else { continue }
+        applyLinkAttributes(url: url, in: textStorage, range: matchRange)
+      }
+    }
+
+    /// Applies .link, blue foreground color, and underline to make text clickable.
+    private func applyLinkAttributes(
+      url: URL,
+      in textStorage: NSTextStorage,
+      range: NSRange
+    ) {
+      textStorage.addAttribute(.link, value: url, range: range)
+      textStorage.addAttribute(.foregroundColor, value: NSColor.systemBlue, range: range)
+      textStorage.addAttribute(
+        .underlineStyle, value: NSUnderlineStyle.single.rawValue, range: range)
     }
 
     /// Determines org-mode heading level by counting "*" characters in the "stars" child node.
@@ -493,6 +551,71 @@ struct RichTextEditor: NSViewRepresentable {
       }
     }
 
+    /// Finds Markdown links (inline_link and uri_autolink) and applies .link attributes.
+    ///
+    /// Skips "image" nodes because they are handled separately for image display.
+    private func applyMarkdownLinks(
+      _ node: Node,
+      sourceString: String,
+      textStorage: NSTextStorage
+    ) {
+      applyMarkdownLinksRecursive(
+        node, sourceString: sourceString, textStorage: textStorage)
+    }
+
+    /// Recursively walks the inline AST to find link nodes and apply clickable attributes.
+    private func applyMarkdownLinksRecursive(
+      _ node: Node,
+      sourceString: String,
+      textStorage: NSTextStorage
+    ) {
+      if let type = node.nodeType {
+        // inline_link: [text](url)
+        if type == "inline_link" {
+          if let urlString = extractLinkDestination(node, sourceString: sourceString),
+            let url = URL(string: urlString),
+            let range = nodeRange(node, in: sourceString)
+          {
+            applyLinkAttributes(url: url, in: textStorage, range: range)
+          }
+        }
+        // uri_autolink: <https://example.com>
+        if type == "uri_autolink" {
+          if let range = nodeRange(node, in: sourceString) {
+            // Strip < and > from autolink content
+            let innerRange = NSRange(
+              location: range.location + 1, length: range.length - 2)
+            let urlText = (sourceString as NSString).substring(with: innerRange)
+            if let url = URL(string: urlText) {
+              applyLinkAttributes(url: url, in: textStorage, range: range)
+            }
+          }
+        }
+      }
+
+      for i in 0..<node.childCount {
+        if let child = node.child(at: i) {
+          // Skip image nodes as they are handled separately
+          if child.nodeType == "image" { continue }
+          applyMarkdownLinksRecursive(
+            child, sourceString: sourceString, textStorage: textStorage)
+        }
+      }
+    }
+
+    /// Extracts the URL from a Markdown inline_link node's link_destination child.
+    private func extractLinkDestination(_ node: Node, sourceString: String) -> String? {
+      for i in 0..<node.childCount {
+        guard let child = node.child(at: i), let type = child.nodeType else { continue }
+        if type == "link_destination" {
+          if let range = nodeRange(child, in: sourceString) {
+            return (sourceString as NSString).substring(with: range)
+          }
+        }
+      }
+      return nil
+    }
+
     /// Extracts the image path from a Markdown "image" inline node.
     private func extractMarkdownImagePath(_ node: Node, sourceString: String) -> String? {
       for i in 0..<node.childCount {
@@ -539,6 +662,31 @@ struct RichTextEditor: NSViewRepresentable {
       }
 
       return results
+    }
+
+    /// Finds Org-mode URL links and applies .link attributes.
+    ///
+    /// Detects `[[url][description]]` and `[[url]]` patterns where url starts with http(s).
+    /// Image paths are excluded because they are handled separately.
+    private func applyOrgLinks(
+      sourceString: String,
+      textStorage: NSTextStorage
+    ) {
+      // Match [[url][desc]] or [[url]] where url starts with http(s)
+      let pattern = "\\[\\[(https?://[^]]+?)(?:\\]\\[([^]]+))?\\]\\]"
+      guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
+
+      let nsString = sourceString as NSString
+      let fullRange = NSRange(location: 0, length: nsString.length)
+
+      for match in regex.matches(in: sourceString, range: fullRange) {
+        let matchRange = match.range
+        let urlRange = match.range(at: 1)
+        guard urlRange.location != NSNotFound else { continue }
+        let urlString = nsString.substring(with: urlRange)
+        guard let url = URL(string: urlString) else { continue }
+        applyLinkAttributes(url: url, in: textStorage, range: matchRange)
+      }
     }
 
     /// Entry point for Org-mode inline emphasis highlighting.
