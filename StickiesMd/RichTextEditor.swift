@@ -207,6 +207,7 @@ struct RichTextEditor: NSViewRepresentable {
     }
 
     /// Opens URLs in the default browser when the user clicks a link in the text view.
+    /// textView is called when a user clicks a .link text.
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
       if let url = link as? URL {
         NSWorkspace.shared.open(url)
@@ -275,6 +276,7 @@ struct RichTextEditor: NSViewRepresentable {
           inlineRootNode, sourceString: string, textStorage: textStorage)
       }
 
+      // Add clickable link to the URL which does not have link formats
       applyBareURLLinks(in: textStorage, sourceString: string)
 
       textStorage.endEditing()
