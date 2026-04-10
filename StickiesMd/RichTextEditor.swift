@@ -149,6 +149,8 @@ struct RichTextEditor: NSViewRepresentable {
     case code
     // codeBlock is for code blocks
     case codeBlock
+    // propertyDrawer is for org-mode :PROPERTIES: ... :END: blocks
+    case propertyDrawer
     case image(path: String)
   }
 
@@ -349,6 +351,9 @@ struct RichTextEditor: NSViewRepresentable {
       if type == "block" {
         return .codeBlock
       }
+      if type == "property_drawer" {
+        return .propertyDrawer
+      }
       return nil
     }
 
@@ -385,6 +390,14 @@ struct RichTextEditor: NSViewRepresentable {
         textStorage.addAttribute(.font, value: monoFont, range: range)
         textStorage.addAttribute(
           .backgroundColor, value: NSColor.black.withAlphaComponent(0.06), range: range)
+      case .propertyDrawer:
+        let monoFont = NSFont.monospacedSystemFont(
+          ofSize: RichTextEditor.defaultFontSize, weight: .regular)
+        textStorage.addAttribute(.font, value: monoFont, range: range)
+        textStorage.addAttribute(
+          .foregroundColor, value: NSColor.systemGray, range: range)
+        textStorage.addAttribute(
+          .backgroundColor, value: NSColor.black.withAlphaComponent(0.03), range: range)
       case .image:
         textStorage.addAttribute(
           .foregroundColor, value: NSColor.systemBlue, range: range)
