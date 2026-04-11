@@ -2,6 +2,7 @@
   "name": "stickies-md",
   "version": "1.0.0",
   "description": "File-linked sticky note app for Markdown and Org-mode",
+  "license": "MIT",
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
