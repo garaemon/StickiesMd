@@ -78,38 +78,15 @@ body {
   position: relative;
 }
 
+/* Base editor styles — font, colors, gutters, active line are set via
+   createFontColorTheme() in editor.ts so they can react to fontColor changes.
+   Only layout-level styles that don't change dynamically belong here. */
 #editor-container .cm-editor {
   height: 100%;
-  background: transparent;
-}
-
-#editor-container .cm-editor .cm-scroller {
-  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
-  font-size: 14px;
-  line-height: 1.5;
-  padding: 4px 12px;
 }
 
 #editor-container .cm-editor .cm-content {
   padding: 0;
-}
-
-#editor-container .cm-editor .cm-gutters {
-  background: transparent;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-#editor-container .cm-editor .cm-activeLineGutter {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-#editor-container .cm-editor .cm-activeLine {
-  background: rgba(0, 0, 0, 0.03);
-}
-
-/* Focus indicator */
-#editor-container .cm-editor.cm-focused {
-  outline: none;
 }
 
 /* Settings Panel */

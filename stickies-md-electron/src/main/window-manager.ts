@@ -18,7 +18,8 @@ interface ManagedWindow {
 
 const windows = new Map<string, ManagedWindow>();
 
-function getStorageDir(): string {
+/** Create the storage directory if it doesn't exist, and return its path. */
+function ensureStorageDir(): string {
   const dir = join(homedir(), '.stickies-md');
   mkdirSync(dir, { recursive: true });
   return dir;
@@ -83,8 +84,10 @@ export function createWindowForNote(note: StickyNote): void {
   win.on('move', saveFrame);
   win.on('resize', saveFrame);
 
-  win.on('closed', async () => {
-    await watcher.stop();
+  win.on('closed', () => {
+    watcher.stop().catch((err) => {
+      console.error(`Failed to stop watcher for ${note.filePath}:`, err);
+    });
     windows.delete(note.id);
   });
 }
@@ -110,7 +113,7 @@ export function restoreWindows(): void {
 
 /** Create a new .org note file and open a window for it. */
 export function createNewSticky(): void {
-  const dir = getStorageDir();
+  const dir = ensureStorageDir();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const filePath = join(dir, `note-${timestamp}.org`);
   writeFileSync(filePath, `* New Note\n\nStart writing here...\n`, 'utf-8');
@@ -144,7 +147,7 @@ export function resetAllMouseThrough(): void {
   }
 }
 
-export function findManagedWindowByWebContents(webContentsId: number): ManagedWindow | undefined {
+export function findManagedWindowByWebContentsId(webContentsId: number): ManagedWindow | undefined {
   for (const managed of windows.values()) {
     if (!managed.win.isDestroyed() && managed.win.webContents.id === webContentsId) {
       return managed;

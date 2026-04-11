@@ -1,6 +1,6 @@
 import { app, BrowserWindow, protocol } from 'electron';
 import { readFile } from 'fs/promises';
-import { dirname, resolve } from 'path';
+import { dirname, normalize, resolve } from 'path';
 import { registerIpcHandlers } from './ipc-handlers';
 import { buildAppMenu } from './menu';
 import { createNewSticky, openFile, resetAllMouseThrough, restoreWindows } from './window-manager';
@@ -26,13 +26,17 @@ app.whenReady().then(() => {
   // The renderer cannot access file:// URLs due to Chromium security restrictions,
   // so we serve images through this protocol with path validation.
   protocol.handle('local-image', async (request) => {
-    const filePath = resolve(decodeURIComponent(request.url.replace('local-image://', '')));
+    const filePath = normalize(
+      resolve(decodeURIComponent(request.url.replace('local-image://', ''))),
+    );
     const fileDir = dirname(filePath);
 
     // Validate the file is within an allowed directory (enforce boundary with trailing /)
+    // Both paths are normalized to prevent unicode NFC/NFD bypass on macOS
     let allowed = false;
     for (const dir of allowedImageDirs) {
-      if (fileDir === dir || fileDir.startsWith(dir + '/')) {
+      const normalizedDir = normalize(dir);
+      if (fileDir === normalizedDir || fileDir.startsWith(normalizedDir + '/')) {
         allowed = true;
         break;
       }

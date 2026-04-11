@@ -36,13 +36,18 @@ export class FileWatcher {
     // Debounce change events to avoid rapid-fire reloads during multi-step writes
     this.watcher.on('change', () => {
       if (this.debounceTimer) clearTimeout(this.debounceTimer);
-      this.debounceTimer = setTimeout(() => this.handleChange(), FILE_WATCH_DEBOUNCE_MS);
+      this.debounceTimer = setTimeout(() => this.checkForChanges(), FILE_WATCH_DEBOUNCE_MS);
     });
 
     return content;
   }
 
-  private async handleChange(): Promise<void> {
+  /**
+   * Re-read the file and fire the callback if content differs from lastSavedContent.
+   * Called by the chokidar watcher on 'change' events, and can be called directly
+   * in tests to verify the loop prevention logic without relying on inotify.
+   */
+  async checkForChanges(): Promise<void> {
     try {
       const content = await readFile(this.filePath, 'utf-8');
       if (content !== this.lastSavedContent) {

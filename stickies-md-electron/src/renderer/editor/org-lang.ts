@@ -72,6 +72,10 @@ const orgStreamParser = {
     return { inCodeBlock: false, inPropertyDrawer: false };
   },
 
+  // Return values map to Lezer highlight tags via StreamLanguage convention:
+  //   'heading headingN' -> tags.headingN, 'meta' -> tags.meta,
+  //   'processingInstruction' -> tags.processingInstruction,
+  //   'monospace' -> tags.monospace, 'keyword' -> tags.keyword, etc.
   token(stream: StringStream, state: OrgState): string | null {
     // Code block boundaries
     if (stream.match(/^#\+BEGIN_SRC\b.*/i)) {

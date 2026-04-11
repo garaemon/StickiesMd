@@ -55,6 +55,7 @@ export class Toolbar {
     // Settings button
     const settingsBtn = document.createElement('button');
     settingsBtn.className = 'toolbar-btn';
+    settingsBtn.dataset.testid = 'settings-button';
     settingsBtn.textContent = '\u2699'; // gear
     settingsBtn.title = 'Settings';
     settingsBtn.addEventListener('click', callbacks.onSettingsToggle);

@@ -23,8 +23,7 @@ interface LinkMatch {
   url: string;
 }
 
-// eslint-disable-next-line no-useless-escape
-const BARE_URL_REGEX = /https?:\/\/[^\s<>\[\]()"]*[^\s<>\[\]()".,;:!?'")\}]/g;
+const BARE_URL_REGEX = new RegExp('https?://[^\\s<>\\[\\]()"]*[^\\s<>\\[\\]()".,;:!?\'")}]', 'g');
 
 /** Find bare http(s) URLs in text. */
 function findBareUrls(text: string): LinkMatch[] {

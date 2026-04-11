@@ -17,8 +17,8 @@ test.describe('Settings Panel', () => {
     const hiddenPanel = await window.$('#settings-panel.hidden');
     expect(hiddenPanel).toBeTruthy();
 
-    // Click the settings (gear) button
-    const gearButton = await window.$('#toolbar .toolbar-btn:last-child');
+    // Click the settings button by data-testid
+    const gearButton = await window.$('[data-testid="settings-button"]');
     expect(gearButton).toBeTruthy();
     await gearButton!.click();
 
@@ -39,7 +39,7 @@ test.describe('Settings Panel', () => {
     await window.waitForSelector('#editor-container', { timeout: 10000 });
 
     // Open settings
-    const gearButton = await window.$('#toolbar .toolbar-btn:last-child');
+    const gearButton = await window.$('[data-testid="settings-button"]');
     expect(gearButton).toBeTruthy();
     await gearButton!.click();
     await window.waitForSelector('#settings-panel:not(.hidden)');

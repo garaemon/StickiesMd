@@ -16,6 +16,7 @@ import {
 import { RangeSetBuilder } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 
+/** Image formats supported by Chromium's <img> tag. */
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'tiff', 'bmp']);
 
 function isImagePath(path: string): boolean {

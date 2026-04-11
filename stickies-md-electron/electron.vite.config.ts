@@ -3,6 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   main: {
+    // electron-store v10 is ESM-only; must be bundled rather than externalized
     plugins: [externalizeDepsPlugin({ exclude: ['electron-store'] })],
     build: {
       outDir: 'dist/main',

@@ -29,7 +29,8 @@ const lineNumbersCompartment = new Compartment();
 const editableCompartment = new Compartment();
 const themeCompartment = new Compartment();
 
-function createBaseTheme(fontColor: string): Extension {
+/** Create a CodeMirror theme that applies the user's font color to text, cursor, and gutters. */
+function createFontColorTheme(fontColor: string): Extension {
   return EditorView.theme({
     '&': {
       height: '100%',
@@ -107,7 +108,7 @@ export class StickyEditor {
         languageCompartment.of(languageExtensions(config.format, config.fontColor, config.baseDir)),
         lineNumbersCompartment.of(config.showLineNumbers ? lineNumbers() : []),
         editableCompartment.of(EditorView.editable.of(true)),
-        themeCompartment.of(createBaseTheme(config.fontColor)),
+        themeCompartment.of(createFontColorTheme(config.fontColor)),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.isExternalUpdate) {
             this.debouncedSave();
@@ -130,6 +131,8 @@ export class StickyEditor {
   }
 
   setContent(content: string): void {
+    // Flag suppresses the updateListener from treating this as a user edit.
+    // Safe because CM6 dispatches update listeners synchronously within dispatch().
     this.isExternalUpdate = true;
     const currentContent = this.view.state.doc.toString();
     if (content !== currentContent) {
@@ -160,7 +163,7 @@ export class StickyEditor {
     this.config.fontColor = fontColor;
     this.view.dispatch({
       effects: [
-        themeCompartment.reconfigure(createBaseTheme(fontColor)),
+        themeCompartment.reconfigure(createFontColorTheme(fontColor)),
         languageCompartment.reconfigure(
           languageExtensions(this.config.format, fontColor, this.config.baseDir),
         ),
