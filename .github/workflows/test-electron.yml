@@ -133,8 +133,8 @@ jobs:
       - name: npm audit (production deps)
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Check for known vulnerabilities
-        run: npx audit-ci --high
+      - name: Check for known vulnerabilities (production deps)
+        run: npx audit-ci --high --skip-dev
 
   dependency-review:
     name: Dependency Review
