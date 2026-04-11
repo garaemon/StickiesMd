@@ -38,8 +38,7 @@ const api = {
   dropImage: (path: string) => ipcRenderer.send(IPC.DROP_IMAGE, path),
 
   // Renderer -> Main invoke (request-response)
-  getNoteSettings: (): Promise<StickyNote | null> =>
-    ipcRenderer.invoke(IPC.GET_NOTE_SETTINGS),
+  getNoteSettings: (): Promise<StickyNote | null> => ipcRenderer.invoke(IPC.GET_NOTE_SETTINGS),
 };
 
 export type ElectronAPI = typeof api;

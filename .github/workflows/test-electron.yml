@@ -1,23 +1,59 @@
-name: Test Electron App
+name: Electron CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
     paths:
       - 'stickies-md-electron/**'
+      - '.github/workflows/test-electron.yml'
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
     paths:
       - 'stickies-md-electron/**'
+      - '.github/workflows/test-electron.yml'
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
-  lint-and-test:
-    name: Lint & Unit Test
+  # ─── Lint & Format ────────────────────────────────────────────
+  lint:
+    name: Lint & Format
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: stickies-md-electron
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: stickies-md-electron/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npx eslint src/
+
+      - name: Prettier check
+        run: npx prettier --check 'src/**/*.{ts,html,css}'
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+  # ─── Unit Tests ───────────────────────────────────────────────
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: stickies-md-electron
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,3 +70,108 @@ jobs:
 
       - name: Run unit tests
         run: npm run test:unit
+
+  # ─── E2E Tests ────────────────────────────────────────────────
+  test-e2e:
+    name: E2E Tests
+    runs-on: macos-latest
+    needs: [lint, test-unit]
+    defaults:
+      run:
+        working-directory: stickies-md-electron
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: stickies-md-electron/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Electron app
+        run: npm run build
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Upload E2E artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            stickies-md-electron/test-results/
+            stickies-md-electron/playwright-report/
+          if-no-files-found: ignore
+
+  # ─── Security / DevSecOps ─────────────────────────────────────
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: stickies-md-electron
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: stickies-md-electron/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit (production deps)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
+      - name: Check for known vulnerabilities
+        run: npx audit-ci --high
+        continue-on-error: true
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, CC0-1.0, Unlicense
+
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          source-root: stickies-md-electron/src
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:javascript-typescript'

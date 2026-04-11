@@ -5,15 +5,35 @@ import {
   type StringStream,
 } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
-import { Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
+import {
+  Decoration,
+  type DecorationSet,
+  EditorView,
+  ViewPlugin,
+  type ViewUpdate,
+} from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 
 // Org-mode PRE/POST emphasis rules (from Swift lines 803-815)
 const PRE_CHARS = new Set([' ', '\t', '\n', '-', '(', "'", '"', '{', '\u200B']);
 const POST_CHARS = new Set([
-  ' ', '\t', '\n', '-', '.', ',', ';', ':', '!', '?',
-  "'", '"', ')', '}', ']', '\u200B',
+  ' ',
+  '\t',
+  '\n',
+  '-',
+  '.',
+  ',',
+  ';',
+  ':',
+  '!',
+  '?',
+  "'",
+  '"',
+  ')',
+  '}',
+  ']',
+  '\u200B',
 ]);
 
 function isOrgEmphasisPre(ch: string | undefined): boolean {

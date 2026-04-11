@@ -2,20 +2,13 @@ import { StickyEditor } from './editor/editor';
 import { Toolbar } from './ui/toolbar';
 import { SettingsPanel } from './ui/settings-panel';
 import { detectFileFormat } from '../shared/types';
-import type { ElectronAPI } from './preload';
 import type { StickyNote } from '../shared/types';
 import { dirname } from 'path';
-
-declare global {
-  interface Window {
-    electronAPI: ElectronAPI;
-  }
-}
 
 let editor: StickyEditor | null = null;
 let toolbar: Toolbar | null = null;
 let settingsPanel: SettingsPanel | null = null;
-let currentNote: StickyNote | null = null;
+let _currentNote: StickyNote | null = null;
 
 function applyBackgroundColor(color: string): void {
   document.body.style.backgroundColor = color;
@@ -59,7 +52,7 @@ function initSettings(note: StickyNote): void {
 
 // Listen for note settings (sent on load and when settings change)
 window.electronAPI.onNoteSettings((note: StickyNote) => {
-  currentNote = note;
+  _currentNote = note;
 
   if (!editor) {
     // First time: initialize everything

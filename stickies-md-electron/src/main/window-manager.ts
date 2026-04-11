@@ -1,4 +1,4 @@
-import { BrowserWindow, shell } from 'electron';
+import { BrowserWindow } from 'electron';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
@@ -101,11 +101,7 @@ export function createNewSticky(): void {
   const dir = getStorageDir();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const filePath = join(dir, `note-${timestamp}.org`);
-  writeFileSync(
-    filePath,
-    `* New Note\n\nStart writing here...\n`,
-    'utf-8',
-  );
+  writeFileSync(filePath, `* New Note\n\nStart writing here...\n`, 'utf-8');
   const note = createNote(filePath);
   createWindowForNote(note);
 }
@@ -141,9 +137,7 @@ export function getManagedWindow(noteId: string): ManagedWindow | undefined {
   return windows.get(noteId);
 }
 
-export function findManagedWindowByWebContents(
-  webContentsId: number,
-): ManagedWindow | undefined {
+export function findManagedWindowByWebContents(webContentsId: number): ManagedWindow | undefined {
   for (const managed of windows.values()) {
     if (!managed.win.isDestroyed() && managed.win.webContents.id === webContentsId) {
       return managed;

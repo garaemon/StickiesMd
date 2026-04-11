@@ -1,18 +1,16 @@
-import { Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
+import {
+  Decoration,
+  type DecorationSet,
+  EditorView,
+  ViewPlugin,
+  type ViewUpdate,
+} from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 
-declare global {
-  interface Window {
-    electronAPI: {
-      openUrl: (url: string) => void;
-    };
-  }
-}
-
 // Bare URL detection regex (matches http:// and https:// URLs)
-const BARE_URL_REGEX =
-  /https?:\/\/[^\s<>\[\]()"]*[^\s<>\[\]()".,;:!?'")}]/g;
+// eslint-disable-next-line no-useless-escape
+const BARE_URL_REGEX = /https?:\/\/[^\s<>\[\]()"]*[^\s<>\[\]()".,;:!?'")\}]/g;
 
 function findBareUrls(text: string): Array<{ from: number; to: number; url: string }> {
   const matches: Array<{ from: number; to: number; url: string }> = [];

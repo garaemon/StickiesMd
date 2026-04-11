@@ -1,6 +1,6 @@
 import { ipcMain, shell } from 'electron';
 import * as IPC from '../shared/ipc-channels';
-import { getNote, updateNote } from './store';
+import { updateNote } from './store';
 import { findManagedWindowByWebContents, openFile } from './window-manager';
 
 export function registerIpcHandlers(): void {

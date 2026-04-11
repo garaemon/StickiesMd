@@ -1,4 +1,11 @@
-import { Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType } from '@codemirror/view';
+import {
+  Decoration,
+  type DecorationSet,
+  EditorView,
+  ViewPlugin,
+  type ViewUpdate,
+  WidgetType,
+} from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 
@@ -98,10 +105,7 @@ function findOrgImages(text: string): ImageMatch[] {
   return matches;
 }
 
-export function imageWidgetExtension(
-  baseDir: string,
-  format: 'markdown' | 'org',
-): Extension {
+export function imageWidgetExtension(baseDir: string, format: 'markdown' | 'org'): Extension {
   return ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
@@ -120,9 +124,7 @@ export function imageWidgetExtension(
         const builder = new RangeSetBuilder<Decoration>();
         const text = view.state.doc.toString();
 
-        const images = format === 'markdown'
-          ? findMarkdownImages(text)
-          : findOrgImages(text);
+        const images = format === 'markdown' ? findMarkdownImages(text) : findOrgImages(text);
 
         // Deduplicate by lineEnd and sort
         const seen = new Set<number>();

@@ -1,17 +1,5 @@
 import { PALETTE } from '../../shared/constants';
 
-declare global {
-  interface Window {
-    electronAPI: {
-      updateColor: (color: string) => void;
-      updateFontColor: (color: string) => void;
-      updateOpacity: (opacity: number) => void;
-      toggleLineNumbers: () => void;
-      openFileDialog: () => void;
-    };
-  }
-}
-
 export class SettingsPanel {
   private element: HTMLElement;
   private colorSwatches: HTMLElement[] = [];

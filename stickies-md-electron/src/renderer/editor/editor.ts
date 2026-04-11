@@ -97,12 +97,8 @@ export class StickyEditor {
       extensions: [
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
-        languageCompartment.of(
-          languageExtensions(config.format, config.fontColor, config.baseDir),
-        ),
-        lineNumbersCompartment.of(
-          config.showLineNumbers ? lineNumbers() : [],
-        ),
+        languageCompartment.of(languageExtensions(config.format, config.fontColor, config.baseDir)),
+        lineNumbersCompartment.of(config.showLineNumbers ? lineNumbers() : []),
         editableCompartment.of(EditorView.editable.of(true)),
         themeCompartment.of(createBaseTheme(config.fontColor)),
         EditorView.updateListener.of((update) => {

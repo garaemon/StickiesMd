@@ -57,7 +57,9 @@ body {
   font-size: 14px;
   opacity: 0.6;
   color: inherit;
-  transition: opacity 0.15s, background 0.15s;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
 }
 
 #toolbar .toolbar-btn:hover {
@@ -152,7 +154,9 @@ body {
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s;
+  transition:
+    border-color 0.15s,
+    transform 0.1s;
 }
 
 .color-swatch:hover {
@@ -222,12 +226,30 @@ body {
 }
 
 /* Heading sizes in editor */
-.cm-editor .cm-heading-1 { font-size: 26px; font-weight: bold; }
-.cm-editor .cm-heading-2 { font-size: 22px; font-weight: bold; }
-.cm-editor .cm-heading-3 { font-size: 18px; font-weight: bold; }
-.cm-editor .cm-heading-4 { font-size: 16px; font-weight: bold; }
-.cm-editor .cm-heading-5 { font-size: 14px; font-weight: bold; }
-.cm-editor .cm-heading-6 { font-size: 14px; font-weight: bold; }
+.cm-editor .cm-heading-1 {
+  font-size: 26px;
+  font-weight: bold;
+}
+.cm-editor .cm-heading-2 {
+  font-size: 22px;
+  font-weight: bold;
+}
+.cm-editor .cm-heading-3 {
+  font-size: 18px;
+  font-weight: bold;
+}
+.cm-editor .cm-heading-4 {
+  font-size: 16px;
+  font-weight: bold;
+}
+.cm-editor .cm-heading-5 {
+  font-size: 14px;
+  font-weight: bold;
+}
+.cm-editor .cm-heading-6 {
+  font-size: 14px;
+  font-weight: bold;
+}
 
 /* Inline code */
 .cm-editor .cm-inline-code {

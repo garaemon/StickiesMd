@@ -1,14 +1,5 @@
 import { basename } from 'path';
 
-declare global {
-  interface Window {
-    electronAPI: {
-      toggleAlwaysOnTop: () => void;
-      setMouseThrough: (enabled: boolean) => void;
-    };
-  }
-}
-
 export interface ToolbarCallbacks {
   onSettingsToggle: () => void;
   onSave: () => void;
