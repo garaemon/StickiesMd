@@ -1,0 +1,36 @@
+name: Test Electron App
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'stickies-md-electron/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'stickies-md-electron/**'
+
+jobs:
+  lint-and-test:
+    name: Lint & Unit Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: stickies-md-electron
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: stickies-md-electron/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit

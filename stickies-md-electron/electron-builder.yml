@@ -1,0 +1,19 @@
+appId: com.stickiesmd.app
+productName: StickiesMd
+directories:
+  output: out
+mac:
+  category: public.app-category.productivity
+  target:
+    - dmg
+    - zip
+  icon: resources/icon.icns
+  hardenedRuntime: true
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
