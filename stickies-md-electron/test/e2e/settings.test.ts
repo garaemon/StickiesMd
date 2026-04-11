@@ -1,13 +1,12 @@
-import { test, expect } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import { resolve } from 'path';
+import { test, expect, _electron as electron } from '@playwright/test';
+import path from 'path';
 
-const appPath = resolve(__dirname, '../../');
+const appPath = path.resolve(__dirname, '../../');
 
 test.describe('Settings Panel', () => {
   test('should toggle settings panel on gear button click', async () => {
     const app = await electron.launch({
-      args: [resolve(appPath, 'dist/main/index.js')],
+      args: [path.resolve(appPath, 'dist/main/index.js')],
       cwd: appPath,
     });
 
@@ -33,7 +32,7 @@ test.describe('Settings Panel', () => {
 
   test('settings panel should have color palette with 6 colors', async () => {
     const app = await electron.launch({
-      args: [resolve(appPath, 'dist/main/index.js')],
+      args: [path.resolve(appPath, 'dist/main/index.js')],
       cwd: appPath,
     });
 

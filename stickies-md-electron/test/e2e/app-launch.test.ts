@@ -1,20 +1,18 @@
-import { test, expect } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import { resolve } from 'path';
+import { test, expect, _electron as electron } from '@playwright/test';
+import path from 'path';
 
-const appPath = resolve(__dirname, '../../');
+const appPath = path.resolve(__dirname, '../../');
 
 test.describe('App Launch', () => {
   test('should launch and show a window', async () => {
     const app = await electron.launch({
-      args: [resolve(appPath, 'dist/main/index.js')],
+      args: [path.resolve(appPath, 'dist/main/index.js')],
       cwd: appPath,
     });
 
     const window = await app.firstWindow();
     expect(window).toBeTruthy();
 
-    // Window should have content
     const title = await window.title();
     expect(typeof title).toBe('string');
 
@@ -23,7 +21,7 @@ test.describe('App Launch', () => {
 
   test('should create a default note file on first launch', async () => {
     const app = await electron.launch({
-      args: [resolve(appPath, 'dist/main/index.js')],
+      args: [path.resolve(appPath, 'dist/main/index.js')],
       cwd: appPath,
     });
 

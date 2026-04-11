@@ -96,11 +96,8 @@ jobs:
       - name: Build Electron app
         run: npm run build
 
-      - name: Install Playwright
-        run: npx playwright install --with-deps chromium
-
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: npx playwright test
 
       - name: Upload E2E artifacts
         if: failure()
