@@ -1,4 +1,7 @@
-import { basename } from 'path';
+function getBasename(filePath: string): string {
+  const lastSlash = filePath.lastIndexOf('/');
+  return lastSlash === -1 ? filePath : filePath.substring(lastSlash + 1);
+}
 
 export interface ToolbarCallbacks {
   onSettingsToggle: () => void;
@@ -54,7 +57,7 @@ export class Toolbar {
   }
 
   setFilePath(filePath: string): void {
-    this.filename = basename(filePath);
+    this.filename = getBasename(filePath);
     this.updateTitle();
   }
 

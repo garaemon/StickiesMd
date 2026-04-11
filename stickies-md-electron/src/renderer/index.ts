@@ -3,7 +3,11 @@ import { Toolbar } from './ui/toolbar';
 import { SettingsPanel } from './ui/settings-panel';
 import { detectFileFormat } from '../shared/types';
 import type { StickyNote } from '../shared/types';
-import { dirname } from 'path';
+
+function getDirname(filePath: string): string {
+  const lastSlash = filePath.lastIndexOf('/');
+  return lastSlash === -1 ? '.' : filePath.substring(0, lastSlash);
+}
 
 let editor: StickyEditor | null = null;
 let toolbar: Toolbar | null = null;
@@ -17,7 +21,7 @@ function applyBackgroundColor(color: string): void {
 function initEditor(note: StickyNote): void {
   const container = document.getElementById('editor-container')!;
   const format = detectFileFormat(note.filePath);
-  const baseDir = dirname(note.filePath);
+  const baseDir = getDirname(note.filePath);
 
   editor = new StickyEditor({
     container,

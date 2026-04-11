@@ -1,4 +1,5 @@
-import { app, protocol } from 'electron';
+import { app, BrowserWindow, protocol } from 'electron';
+import { readFileSync } from 'fs';
 import { registerIpcHandlers } from './ipc-handlers';
 import { buildAppMenu } from './menu';
 import { createNewSticky, openFile, resetAllMouseThrough, restoreWindows } from './window-manager';
@@ -12,7 +13,7 @@ app.whenReady().then(() => {
   // Register custom protocol for serving local images to renderer
   protocol.handle('local-image', (request) => {
     const filePath = decodeURIComponent(request.url.replace('local-image://', ''));
-    return new Response(require('fs').readFileSync(filePath), {
+    return new Response(readFileSync(filePath), {
       headers: { 'Content-Type': guessImageMimeType(filePath) },
     });
   });
@@ -29,7 +30,6 @@ app.whenReady().then(() => {
 });
 
 app.on('activate', () => {
-  const { BrowserWindow } = require('electron');
   if (BrowserWindow.getAllWindows().length === 0) {
     createNewSticky();
   }
