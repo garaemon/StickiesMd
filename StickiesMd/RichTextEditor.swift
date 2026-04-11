@@ -57,7 +57,7 @@ struct RichTextEditor: NSViewRepresentable {
     scrollView.contentView.drawsBackground = false
     scrollView.contentView.backgroundColor = .clear
 
-    let textView = NSTextView(usingTextLayoutManager: true)
+    let textView = ImageAwareTextView(usingTextLayoutManager: true)
     textView.autoresizingMask = [.width]
     textView.isVerticallyResizable = true
     textView.isHorizontallyResizable = false
@@ -755,7 +755,7 @@ struct RichTextEditor: NSViewRepresentable {
         )
         guard let rect = linkRect else { continue }
 
-        let imageView = ResizableImageView(
+        let resizableView = ResizableImageView(
           frame: NSRect(
             x: rect.origin.x,
             y: rect.origin.y + rect.height + 2,
@@ -764,9 +764,21 @@ struct RichTextEditor: NSViewRepresentable {
           ),
           image: entry.image
         )
+        resizableView.onResize = { [weak self] _, newHeight in
+          guard let self = self,
+            let textContentStorage = self.textContentStorage,
+            let textStorage = textContentStorage.textStorage,
+            let textLayoutManager = self.textLayoutManager
+          else { return }
+          textStorage.beginEditing()
+          self.addParagraphSpacing(
+            after: entry.range, spacing: newHeight + 4, in: textStorage)
+          textStorage.endEditing()
+          textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
+        }
 
-        textView.addSubview(imageView)
-        imageOverlays.append(imageView)
+        textView.addSubview(resizableView)
+        imageOverlays.append(resizableView)
       }
     }
 
@@ -820,6 +832,54 @@ struct RichTextEditor: NSViewRepresentable {
   }
 }
 
+/// NSTextView subclass that routes mouse events to ResizableImageView subviews
+/// before handling them as text editing events.
+class ImageAwareTextView: NSTextView {
+  private var imageTrackingArea: NSTrackingArea?
+
+  override func updateTrackingAreas() {
+    super.updateTrackingAreas()
+    if let existing = imageTrackingArea {
+      removeTrackingArea(existing)
+    }
+    let area = NSTrackingArea(
+      rect: bounds,
+      options: [.mouseMoved, .activeAlways, .inVisibleRect],
+      owner: self,
+      userInfo: nil)
+    addTrackingArea(area)
+    imageTrackingArea = area
+  }
+
+  override func mouseMoved(with event: NSEvent) {
+    let point = convert(event.locationInWindow, from: nil)
+    if findResizableImageView(at: point) != nil {
+      NSCursor.openHand.set()
+    } else {
+      super.mouseMoved(with: event)
+    }
+  }
+
+  override func hitTest(_ point: NSPoint) -> NSView? {
+    if let resizable = findResizableImageView(at: point) {
+      return resizable
+    }
+    return super.hitTest(point)
+  }
+
+  private func findResizableImageView(at point: NSPoint) -> ResizableImageView? {
+    for subview in subviews.reversed() {
+      if let resizable = subview as? ResizableImageView {
+        let localPoint = resizable.convert(point, from: self)
+        if resizable.bounds.contains(localPoint) {
+          return resizable
+        }
+      }
+    }
+    return nil
+  }
+}
+
 /// Allows the user to resize inline images by dragging the bottom-right corner.
 /// Aspect ratio is always maintained during resize.
 class ResizableImageView: NSView {
@@ -828,10 +888,14 @@ class ResizableImageView: NSView {
   private var isDragging = false
   private var dragStartPoint: NSPoint = .zero
   private var dragStartSize: NSSize = .zero
-  private let handleSize: CGFloat = 10
 
   // Callback to notify parent about size changes so paragraph spacing can be updated
   var onResize: ((CGFloat, CGFloat) -> Void)?
+
+  /// Match NSTextView's flipped coordinate system (y=0 at top).
+  override var isFlipped: Bool { true }
+
+  private var trackingArea: NSTrackingArea?
 
   init(frame: NSRect, image: NSImage) {
     self.aspectRatio = image.size.width / image.size.height
@@ -841,57 +905,64 @@ class ResizableImageView: NSView {
     imageView.imageScaling = .scaleProportionallyUpOrDown
     imageView.autoresizingMask = [.width, .height]
     addSubview(imageView)
+    setupTrackingArea()
   }
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
 
-  private func isInResizeHandle(_ point: NSPoint) -> Bool {
-    let handleRect = NSRect(
-      x: bounds.width - handleSize,
-      y: bounds.height - handleSize,
-      width: handleSize,
-      height: handleSize
-    )
-    return handleRect.contains(point)
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+    return true
   }
 
-  override func resetCursorRects() {
-    super.resetCursorRects()
-    let handleRect = NSRect(
-      x: bounds.width - handleSize,
-      y: bounds.height - handleSize,
-      width: handleSize,
-      height: handleSize
-    )
-    addCursorRect(handleRect, cursor: .crosshair)
+  private func setupTrackingArea() {
+    if let existing = trackingArea {
+      removeTrackingArea(existing)
+    }
+    let area = NSTrackingArea(
+      rect: bounds,
+      options: [.cursorUpdate, .mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+      owner: self,
+      userInfo: nil)
+    addTrackingArea(area)
+    trackingArea = area
+  }
+
+  override func updateTrackingAreas() {
+    super.updateTrackingAreas()
+    setupTrackingArea()
+  }
+
+  override func cursorUpdate(with event: NSEvent) {
+    NSCursor.openHand.set()
+  }
+
+  override func mouseExited(with event: NSEvent) {
+    super.mouseExited(with: event)
   }
 
   override func draw(_ dirtyRect: NSRect) {
     super.draw(dirtyRect)
-    // Draw diagonal lines as a visual resize-handle indicator
+    // Draw diagonal grip lines at the bottom-right corner
     let handlePath = NSBezierPath()
-    let x = bounds.width - handleSize
-    let y = bounds.height - handleSize
-    NSColor.secondaryLabelColor.withAlphaComponent(0.5).setStroke()
-    handlePath.lineWidth = 1.0
-    for offset in stride(from: 3.0, through: handleSize - 1, by: 3.0) {
-      handlePath.move(to: NSPoint(x: x + offset, y: bounds.height))
-      handlePath.line(to: NSPoint(x: bounds.width, y: y + offset))
+    let gripSize: CGFloat = 14
+    let originX = bounds.width - gripSize
+    let originY = bounds.height - gripSize
+    NSColor.secondaryLabelColor.withAlphaComponent(0.6).setStroke()
+    handlePath.lineWidth = 1.5
+    for offset in stride(from: 4.0, through: gripSize - 2, by: 4.0) {
+      handlePath.move(to: NSPoint(x: originX + offset, y: bounds.height))
+      handlePath.line(to: NSPoint(x: bounds.width, y: originY + offset))
     }
     handlePath.stroke()
   }
 
   override func mouseDown(with event: NSEvent) {
-    let localPoint = convert(event.locationInWindow, from: nil)
-    if isInResizeHandle(localPoint) {
-      isDragging = true
-      dragStartPoint = event.locationInWindow
-      dragStartSize = frame.size
-    } else {
-      super.mouseDown(with: event)
-    }
+    isDragging = true
+    dragStartPoint = event.locationInWindow
+    dragStartSize = frame.size
+    NSCursor.closedHand.set()
   }
 
   override func mouseDragged(with event: NSEvent) {
@@ -901,7 +972,6 @@ class ResizableImageView: NSView {
     }
     let currentPoint = event.locationInWindow
     let deltaX = currentPoint.x - dragStartPoint.x
-    // Use horizontal delta to determine new width, then derive height from aspect ratio
     let newWidth = max(50, dragStartSize.width + deltaX)
     let newHeight = newWidth / aspectRatio
     setFrameSize(NSSize(width: newWidth, height: newHeight))
@@ -911,7 +981,7 @@ class ResizableImageView: NSView {
 
   override func mouseUp(with event: NSEvent) {
     isDragging = false
-    super.mouseUp(with: event)
+    NSCursor.openHand.set()
   }
 }
 
