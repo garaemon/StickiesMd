@@ -1,3 +1,8 @@
+/**
+ * Settings panel popover for per-note appearance controls.
+ * Changes propagate via electronAPI -> IPC -> main process -> store,
+ * then back to the renderer via NOTE_SETTINGS callback.
+ */
 import { PALETTE } from '../../shared/constants';
 
 export class SettingsPanel {

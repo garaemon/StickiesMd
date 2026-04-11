@@ -24,6 +24,7 @@ import {
 } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
+import { FONT_SIZES } from '../../shared/constants';
 
 // Org-mode emphasis PRE/POST character sets.
 // Per the Org-mode spec, an emphasis marker is valid only if:
@@ -294,12 +295,12 @@ const orgInlineDecorations = ViewPlugin.fromClass(
 
 function createOrgHighlightStyle(fontColor: string): HighlightStyle {
   return HighlightStyle.define([
-    { tag: tags.heading1, fontSize: '26px', fontWeight: 'bold', color: fontColor },
-    { tag: tags.heading2, fontSize: '22px', fontWeight: 'bold', color: fontColor },
-    { tag: tags.heading3, fontSize: '18px', fontWeight: 'bold', color: fontColor },
-    { tag: tags.heading4, fontSize: '16px', fontWeight: 'bold', color: fontColor },
-    { tag: tags.heading5, fontSize: '14px', fontWeight: 'bold', color: fontColor },
-    { tag: tags.heading6, fontSize: '14px', fontWeight: 'bold', color: fontColor },
+    { tag: tags.heading1, fontSize: `${FONT_SIZES.h1}px`, fontWeight: 'bold', color: fontColor },
+    { tag: tags.heading2, fontSize: `${FONT_SIZES.h2}px`, fontWeight: 'bold', color: fontColor },
+    { tag: tags.heading3, fontSize: `${FONT_SIZES.h3}px`, fontWeight: 'bold', color: fontColor },
+    { tag: tags.heading4, fontSize: `${FONT_SIZES.h4}px`, fontWeight: 'bold', color: fontColor },
+    { tag: tags.heading5, fontSize: `${FONT_SIZES.h5}px`, fontWeight: 'bold', color: fontColor },
+    { tag: tags.heading6, fontSize: `${FONT_SIZES.h6}px`, fontWeight: 'bold', color: fontColor },
     { tag: tags.monospace, class: 'cm-inline-code' },
     { tag: tags.meta, class: 'cm-property-drawer' },
     { tag: tags.processingInstruction, class: 'cm-code-block' },

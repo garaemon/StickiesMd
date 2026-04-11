@@ -142,3 +142,6 @@ const linkClickHandler = EditorView.domEventHandlers({
 export function linkHandlerExtension(): Extension[] {
   return [bareUrlDecorations, linkClickHandler];
 }
+
+// Export for testing
+export { findBareUrls, findMarkdownLinks, findOrgStructuredLinks };

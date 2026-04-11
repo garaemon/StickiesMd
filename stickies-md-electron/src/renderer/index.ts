@@ -1,3 +1,10 @@
+/**
+ * Renderer entry point for each sticky note window.
+ *
+ * Listens for NOTE_SETTINGS (initial load + settings changes) to initialize
+ * or update the editor, toolbar, and settings panel. Listens for FILE_CHANGED
+ * to update editor content on external file modifications.
+ */
 import { StickyEditor } from './editor/editor';
 import { Toolbar } from './ui/toolbar';
 import { SettingsPanel } from './ui/settings-panel';

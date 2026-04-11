@@ -29,10 +29,10 @@ app.whenReady().then(() => {
     const filePath = resolve(decodeURIComponent(request.url.replace('local-image://', '')));
     const fileDir = dirname(filePath);
 
-    // Validate the file is within an allowed directory
+    // Validate the file is within an allowed directory (enforce boundary with trailing /)
     let allowed = false;
     for (const dir of allowedImageDirs) {
-      if (fileDir.startsWith(dir)) {
+      if (fileDir === dir || fileDir.startsWith(dir + '/')) {
         allowed = true;
         break;
       }

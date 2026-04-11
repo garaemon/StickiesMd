@@ -39,7 +39,7 @@ jobs:
         run: npm ci
 
       - name: ESLint
-        run: npx eslint src/
+        run: npx eslint src/ test/
 
       - name: Prettier check
         run: npx prettier --check 'src/**/*.{ts,html,css}'
@@ -132,11 +132,9 @@ jobs:
 
       - name: npm audit (production deps)
         run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true
 
       - name: Check for known vulnerabilities
         run: npx audit-ci --high
-        continue-on-error: true
 
   dependency-review:
     name: Dependency Review

@@ -1,3 +1,10 @@
+/**
+ * Custom toolbar rendered inside each sticky note window.
+ * Displays filename, save/pin/settings buttons.
+ * Drag-enabled via CSS `-webkit-app-region: drag` on the container.
+ */
+
+/** Extract filename from a POSIX path (renderer has no Node path module). */
 function getBasename(filePath: string): string {
   const lastSlash = filePath.lastIndexOf('/');
   return lastSlash === -1 ? filePath : filePath.substring(lastSlash + 1);
