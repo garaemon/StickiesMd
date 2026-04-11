@@ -3,6 +3,18 @@ import * as IPC from '../shared/ipc-channels';
 import { updateNote } from './store';
 import { findManagedWindowByWebContents, openFile } from './window-manager';
 
+/**
+ * Register all IPC handlers for main<->renderer communication.
+ *
+ * Handles:
+ * - SAVE_CONTENT: persist editor content to disk via FileWatcher
+ * - UPDATE_COLOR / UPDATE_FONT_COLOR / UPDATE_OPACITY: appearance settings
+ * - TOGGLE_LINE_NUMBERS / TOGGLE_ALWAYS_ON_TOP: per-window toggles
+ * - SET_MOUSE_THROUGH: click-through mode
+ * - OPEN_FILE_DIALOG: show native file picker
+ * - OPEN_URL: open URL in system browser
+ * - GET_NOTE_SETTINGS: return current note settings (invoke/handle pattern)
+ */
 export function registerIpcHandlers(): void {
   ipcMain.on(IPC.SAVE_CONTENT, async (event, content: string) => {
     const managed = findManagedWindowByWebContents(event.sender.id);
@@ -17,46 +29,54 @@ export function registerIpcHandlers(): void {
   ipcMain.on(IPC.UPDATE_COLOR, (event, color: string) => {
     const managed = findManagedWindowByWebContents(event.sender.id);
     if (!managed) return;
-    updateNote(managed.note.id, { backgroundColor: color });
-    managed.note.backgroundColor = color;
-    // Color is applied via CSS in the renderer, so just send updated settings
-    managed.win.webContents.send(IPC.NOTE_SETTINGS, managed.note);
+    const updated = updateNote(managed.note.id, { backgroundColor: color });
+    if (updated) {
+      managed.note = updated;
+      managed.win.webContents.send(IPC.NOTE_SETTINGS, updated);
+    }
   });
 
   ipcMain.on(IPC.UPDATE_FONT_COLOR, (event, color: string) => {
     const managed = findManagedWindowByWebContents(event.sender.id);
     if (!managed) return;
-    updateNote(managed.note.id, { fontColor: color });
-    managed.note.fontColor = color;
-    managed.win.webContents.send(IPC.NOTE_SETTINGS, managed.note);
+    const updated = updateNote(managed.note.id, { fontColor: color });
+    if (updated) {
+      managed.note = updated;
+      managed.win.webContents.send(IPC.NOTE_SETTINGS, updated);
+    }
   });
 
   ipcMain.on(IPC.UPDATE_OPACITY, (event, opacity: number) => {
     const managed = findManagedWindowByWebContents(event.sender.id);
     if (!managed) return;
     const clamped = Math.max(0.1, Math.min(1.0, opacity));
-    updateNote(managed.note.id, { opacity: clamped });
-    managed.note.opacity = clamped;
-    managed.win.setOpacity(clamped);
+    const updated = updateNote(managed.note.id, { opacity: clamped });
+    if (updated) {
+      managed.note = updated;
+      managed.win.setOpacity(clamped);
+    }
   });
 
   ipcMain.on(IPC.TOGGLE_LINE_NUMBERS, (event) => {
     const managed = findManagedWindowByWebContents(event.sender.id);
     if (!managed) return;
-    const show = !managed.note.showLineNumbers;
-    updateNote(managed.note.id, { showLineNumbers: show });
-    managed.note.showLineNumbers = show;
-    managed.win.webContents.send(IPC.NOTE_SETTINGS, managed.note);
+    const updated = updateNote(managed.note.id, { showLineNumbers: !managed.note.showLineNumbers });
+    if (updated) {
+      managed.note = updated;
+      managed.win.webContents.send(IPC.NOTE_SETTINGS, updated);
+    }
   });
 
   ipcMain.on(IPC.TOGGLE_ALWAYS_ON_TOP, (event) => {
     const managed = findManagedWindowByWebContents(event.sender.id);
     if (!managed) return;
     const onTop = !managed.note.isAlwaysOnTop;
-    updateNote(managed.note.id, { isAlwaysOnTop: onTop });
-    managed.note.isAlwaysOnTop = onTop;
-    managed.win.setAlwaysOnTop(onTop, onTop ? 'floating' : undefined);
-    managed.win.webContents.send(IPC.NOTE_SETTINGS, managed.note);
+    const updated = updateNote(managed.note.id, { isAlwaysOnTop: onTop });
+    if (updated) {
+      managed.note = updated;
+      managed.win.setAlwaysOnTop(onTop, onTop ? 'floating' : undefined);
+      managed.win.webContents.send(IPC.NOTE_SETTINGS, updated);
+    }
   });
 
   ipcMain.on(IPC.SET_MOUSE_THROUGH, (event, enabled: boolean) => {
@@ -84,12 +104,5 @@ export function registerIpcHandlers(): void {
     const managed = findManagedWindowByWebContents(event.sender.id);
     if (!managed) return null;
     return managed.note;
-  });
-
-  ipcMain.handle(IPC.GET_FILE_CONTENT, async (event) => {
-    const managed = findManagedWindowByWebContents(event.sender.id);
-    if (!managed) return null;
-    // Content is sent via FILE_CHANGED on load, this is a fallback
-    return null;
   });
 }

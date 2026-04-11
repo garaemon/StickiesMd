@@ -1,8 +1,16 @@
 import { watch, type FSWatcher } from 'chokidar';
-import { readFile, writeFile, rename } from 'fs/promises';
+import { readFile, writeFile, rename, unlink } from 'fs/promises';
 import { dirname, join } from 'path';
 import { FILE_WATCH_DEBOUNCE_MS } from '../shared/constants';
 
+/**
+ * Watches a file for external changes and provides atomic save.
+ *
+ * Uses `lastSavedContent` to implement save-reload loop prevention:
+ * when we save content ourselves, the watcher will fire a change event,
+ * but we skip the reload because the content matches what we just wrote.
+ * This is the same pattern used in the original Swift NSFilePresenter implementation.
+ */
 export class FileWatcher {
   private watcher: FSWatcher | null = null;
   private lastSavedContent: string = '';
@@ -16,17 +24,16 @@ export class FileWatcher {
     this.onExternalChange = onExternalChange;
   }
 
+  /** Start watching the file. Returns the initial file content. */
   async start(): Promise<string> {
     const content = await readFile(this.filePath, 'utf-8');
     this.lastSavedContent = content;
 
     this.watcher = watch(this.filePath, {
       persistent: true,
-      awaitWriteFinish: {
-        stabilityThreshold: FILE_WATCH_DEBOUNCE_MS,
-      },
     });
 
+    // Debounce change events to avoid rapid-fire reloads during multi-step writes
     this.watcher.on('change', () => {
       if (this.debounceTimer) clearTimeout(this.debounceTimer);
       this.debounceTimer = setTimeout(() => this.handleChange(), FILE_WATCH_DEBOUNCE_MS);
@@ -47,14 +54,28 @@ export class FileWatcher {
     }
   }
 
+  /**
+   * Save content to the file atomically (write temp file, then rename).
+   * Sets lastSavedContent before writing to prevent the watcher from
+   * treating our own save as an external change.
+   */
   async saveContent(content: string): Promise<void> {
     if (content === this.lastSavedContent) return;
     this.lastSavedContent = content;
 
-    // Atomic write: write to temp file, then rename
     const tempPath = join(dirname(this.filePath), `.${Date.now()}.tmp`);
-    await writeFile(tempPath, content, 'utf-8');
-    await rename(tempPath, this.filePath);
+    try {
+      await writeFile(tempPath, content, 'utf-8');
+      await rename(tempPath, this.filePath);
+    } catch (err) {
+      // Clean up orphaned temp file on rename failure
+      try {
+        await unlink(tempPath);
+      } catch {
+        // Temp file may not exist if writeFile failed
+      }
+      throw err;
+    }
   }
 
   async stop(): Promise<void> {

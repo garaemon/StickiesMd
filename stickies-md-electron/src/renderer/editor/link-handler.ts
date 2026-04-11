@@ -1,3 +1,12 @@
+/**
+ * Link handling extension for CodeMirror 6.
+ *
+ * Provides two features:
+ * 1. Bare URL decoration: detects http(s) URLs and marks them with .cm-link class
+ * 2. Cmd/Ctrl+click: opens URLs in system browser via electronAPI
+ *
+ * Supports bare URLs, Markdown [text](url) links, and Org [[url][desc]] links.
+ */
 import {
   Decoration,
   type DecorationSet,
@@ -8,14 +17,20 @@ import {
 import { RangeSetBuilder } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 
-// Bare URL detection regex (matches http:// and https:// URLs)
+interface LinkMatch {
+  from: number;
+  to: number;
+  url: string;
+}
+
 // eslint-disable-next-line no-useless-escape
 const BARE_URL_REGEX = /https?:\/\/[^\s<>\[\]()"]*[^\s<>\[\]()".,;:!?'")\}]/g;
 
-function findBareUrls(text: string): Array<{ from: number; to: number; url: string }> {
-  const matches: Array<{ from: number; to: number; url: string }> = [];
-  let match;
+/** Find bare http(s) URLs in text. */
+function findBareUrls(text: string): LinkMatch[] {
+  const matches: LinkMatch[] = [];
   BARE_URL_REGEX.lastIndex = 0;
+  let match;
   while ((match = BARE_URL_REGEX.exec(text)) !== null) {
     matches.push({
       from: match.index,
@@ -24,6 +39,45 @@ function findBareUrls(text: string): Array<{ from: number; to: number; url: stri
     });
   }
   return matches;
+}
+
+/** Find Markdown [text](url) links in text. */
+function findMarkdownLinks(text: string): LinkMatch[] {
+  const matches: LinkMatch[] = [];
+  const regex = /\[([^\]]*)\]\(([^)]+)\)/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    matches.push({
+      from: match.index,
+      to: match.index + match[0].length,
+      url: match[2],
+    });
+  }
+  return matches;
+}
+
+/** Find Org [[url][desc]] and [[url]] links in text. */
+function findOrgStructuredLinks(text: string): LinkMatch[] {
+  const matches: LinkMatch[] = [];
+  const regex = /\[\[([^\]]+?)(?:\]\[([^\]]*?))?\]\]/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const url = match[1];
+    // Only include links that look like URLs (not file: links)
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      matches.push({
+        from: match.index,
+        to: match.index + match[0].length,
+        url,
+      });
+    }
+  }
+  return matches;
+}
+
+/** Find all clickable links (bare URLs + structured links) in the document. */
+function findAllLinks(text: string): LinkMatch[] {
+  return [...findBareUrls(text), ...findMarkdownLinks(text), ...findOrgStructuredLinks(text)];
 }
 
 const bareUrlDecorations = ViewPlugin.fromClass(
@@ -56,7 +110,6 @@ const bareUrlDecorations = ViewPlugin.fromClass(
   },
 );
 
-// Click handler for links
 const linkClickHandler = EditorView.domEventHandlers({
   click(event: MouseEvent, view: EditorView) {
     if (!event.metaKey && !event.ctrlKey) return false;
@@ -68,9 +121,9 @@ const linkClickHandler = EditorView.domEventHandlers({
     if (pos === null) return false;
 
     const text = view.state.doc.toString();
-    const urls = findBareUrls(text);
+    const links = findAllLinks(text);
 
-    for (const { from, to, url } of urls) {
+    for (const { from, to, url } of links) {
       if (pos >= from && pos <= to) {
         window.electronAPI.openUrl(url);
         event.preventDefault();
@@ -82,6 +135,10 @@ const linkClickHandler = EditorView.domEventHandlers({
   },
 });
 
+/**
+ * CodeMirror extension that decorates bare URLs and handles Cmd/Ctrl+click
+ * to open links (bare URLs, Markdown links, Org links) in system browser.
+ */
 export function linkHandlerExtension(): Extension[] {
   return [bareUrlDecorations, linkClickHandler];
 }

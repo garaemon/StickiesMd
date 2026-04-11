@@ -1,3 +1,13 @@
+/**
+ * Org-mode language support for CodeMirror 6.
+ *
+ * Block-level elements (headings, code blocks, property drawers) are handled
+ * by a StreamLanguage line tokenizer. Inline emphasis (*bold*, /italic/, etc.)
+ * is handled by a ViewPlugin that creates Decoration.mark ranges.
+ *
+ * The PRE/POST character validation rules for emphasis markers are ported from
+ * the Org-mode specification (Section 16.1 "Emphasis and Monospace").
+ */
 import {
   StreamLanguage,
   HighlightStyle,
@@ -15,7 +25,11 @@ import {
 import { RangeSetBuilder } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 
-// Org-mode PRE/POST emphasis rules (from Swift lines 803-815)
+// Org-mode emphasis PRE/POST character sets.
+// Per the Org-mode spec, an emphasis marker is valid only if:
+//   - The character before the opening marker is a PRE char (or start of text)
+//   - The character after the closing marker is a POST char (or end of text)
+// See: https://orgmode.org/worg/dev/org-syntax.html#Emphasis_Markers
 const PRE_CHARS = new Set([' ', '\t', '\n', '-', '(', "'", '"', '{', '\u200B']);
 const POST_CHARS = new Set([
   ' ',
@@ -147,6 +161,14 @@ interface EmphasisRange {
   class: string;
 }
 
+/**
+ * Scan text for Org-mode inline emphasis ranges.
+ *
+ * Algorithm: for each marker type, scan for an opening marker character
+ * that passes PRE validation, then find the matching closing marker that
+ * passes POST validation. Content must not start/end with whitespace
+ * and must not cross line boundaries.
+ */
 function findOrgEmphasisRanges(text: string): EmphasisRange[] {
   const ranges: EmphasisRange[] = [];
 

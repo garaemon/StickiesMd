@@ -17,15 +17,14 @@ test.describe('Settings Panel', () => {
     const hiddenPanel = await window.$('#settings-panel.hidden');
     expect(hiddenPanel).toBeTruthy();
 
-    // Click the settings (gear) button - it's the last toolbar button
+    // Click the settings (gear) button
     const gearButton = await window.$('#toolbar .toolbar-btn:last-child');
-    if (gearButton) {
-      await gearButton.click();
+    expect(gearButton).toBeTruthy();
+    await gearButton!.click();
 
-      // Settings panel should now be visible
-      const visiblePanel = await window.$('#settings-panel:not(.hidden)');
-      expect(visiblePanel).toBeTruthy();
-    }
+    // Settings panel should now be visible
+    const visiblePanel = await window.$('#settings-panel:not(.hidden)');
+    expect(visiblePanel).toBeTruthy();
 
     await app.close();
   });
@@ -41,14 +40,13 @@ test.describe('Settings Panel', () => {
 
     // Open settings
     const gearButton = await window.$('#toolbar .toolbar-btn:last-child');
-    if (gearButton) {
-      await gearButton.click();
-      await window.waitForSelector('#settings-panel:not(.hidden)');
+    expect(gearButton).toBeTruthy();
+    await gearButton!.click();
+    await window.waitForSelector('#settings-panel:not(.hidden)');
 
-      // Should have 6 color swatches
-      const swatches = await window.$$('.color-swatch');
-      expect(swatches.length).toBe(6);
-    }
+    // Should have 6 color swatches
+    const swatches = await window.$$('.color-swatch');
+    expect(swatches.length).toBe(6);
 
     await app.close();
   });

@@ -4,6 +4,7 @@ import { SettingsPanel } from './ui/settings-panel';
 import { detectFileFormat } from '../shared/types';
 import type { StickyNote } from '../shared/types';
 
+/** Extract directory from a POSIX file path (renderer has no access to Node path module). */
 function getDirname(filePath: string): string {
   const lastSlash = filePath.lastIndexOf('/');
   return lastSlash === -1 ? '.' : filePath.substring(0, lastSlash);
@@ -12,7 +13,6 @@ function getDirname(filePath: string): string {
 let editor: StickyEditor | null = null;
 let toolbar: Toolbar | null = null;
 let settingsPanel: SettingsPanel | null = null;
-let _currentNote: StickyNote | null = null;
 
 function applyBackgroundColor(color: string): void {
   document.body.style.backgroundColor = color;
@@ -54,17 +54,12 @@ function initSettings(note: StickyNote): void {
   settingsPanel.updateLineNumbers(note.showLineNumbers);
 }
 
-// Listen for note settings (sent on load and when settings change)
 window.electronAPI.onNoteSettings((note: StickyNote) => {
-  _currentNote = note;
-
   if (!editor) {
-    // First time: initialize everything
     initEditor(note);
     initToolbar(note);
     initSettings(note);
   } else {
-    // Update settings
     editor.setShowLineNumbers(note.showLineNumbers);
     editor.setFontColor(note.fontColor);
     toolbar?.setAlwaysOnTop(note.isAlwaysOnTop);
@@ -77,17 +72,14 @@ window.electronAPI.onNoteSettings((note: StickyNote) => {
   applyBackgroundColor(note.backgroundColor);
 });
 
-// Listen for file content changes (initial load + external editor changes)
 window.electronAPI.onFileChanged((content: string) => {
   editor?.setContent(content);
 });
 
-// Listen for focus changes
 window.electronAPI.onFocusChanged((focused: boolean) => {
   editor?.setEditable(focused);
 });
 
-// Listen for save trigger (from menu Cmd+S)
 window.electronAPI.onTriggerSave(() => {
   editor?.forceSave();
 });

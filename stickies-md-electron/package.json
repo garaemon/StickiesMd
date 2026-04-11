@@ -11,7 +11,7 @@
     "test:unit:watch": "vitest",
     "test:e2e": "playwright test",
     "test": "npm run test:unit && npm run test:e2e",
-    "lint": "eslint src/",
+    "lint": "eslint src/ test/",
     "format": "prettier --write 'src/**/*.{ts,html,css}'",
     "format:check": "prettier --check 'src/**/*.{ts,html,css}'",
     "typecheck": "tsc --noEmit"

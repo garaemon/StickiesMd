@@ -1,3 +1,10 @@
+/**
+ * Inline image preview extension for CodeMirror 6.
+ *
+ * Renders <img> elements below lines containing image links.
+ * Supports Markdown ![alt](path) and Org [[file:path]] syntax.
+ * Local images are served via the custom local-image:// protocol.
+ */
 import {
   Decoration,
   type DecorationSet,

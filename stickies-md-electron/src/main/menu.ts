@@ -1,6 +1,10 @@
 import { app, BrowserWindow, dialog, Menu } from 'electron';
 import * as IPC from '../shared/ipc-channels';
 
+/**
+ * Build and set the application menu.
+ * Callbacks are injected to avoid circular imports with window-manager.
+ */
 export function buildAppMenu(callbacks: {
   onNewSticky: () => void;
   onOpenFile: () => void;

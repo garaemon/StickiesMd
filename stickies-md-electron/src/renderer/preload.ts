@@ -1,9 +1,16 @@
+/**
+ * Preload script: the security boundary between main and renderer processes.
+ *
+ * Exposes a typed API via contextBridge so the renderer can communicate
+ * with the main process without direct access to Node.js or Electron APIs.
+ * Only the methods listed here are available to renderer code.
+ */
 import { contextBridge, ipcRenderer } from 'electron';
 import type { StickyNote } from '../shared/types';
 import * as IPC from '../shared/ipc-channels';
 
 const api = {
-  // Main -> Renderer listeners
+  // Main -> Renderer listeners (return unsubscribe function)
   onFileChanged: (callback: (content: string) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, content: string) => callback(content);
     ipcRenderer.on(IPC.FILE_CHANGED, handler);
@@ -35,7 +42,6 @@ const api = {
   setMouseThrough: (enabled: boolean) => ipcRenderer.send(IPC.SET_MOUSE_THROUGH, enabled),
   openFileDialog: () => ipcRenderer.send(IPC.OPEN_FILE_DIALOG),
   openUrl: (url: string) => ipcRenderer.send(IPC.OPEN_URL, url),
-  dropImage: (path: string) => ipcRenderer.send(IPC.DROP_IMAGE, path),
 
   // Renderer -> Main invoke (request-response)
   getNoteSettings: (): Promise<StickyNote | null> => ipcRenderer.invoke(IPC.GET_NOTE_SETTINGS),

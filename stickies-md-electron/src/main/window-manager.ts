@@ -1,10 +1,11 @@
 import { BrowserWindow } from 'electron';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import * as IPC from '../shared/ipc-channels';
 import type { StickyNote, WindowFrame } from '../shared/types';
 import { FileWatcher } from './file-watcher';
+import { allowImageDir } from './index';
 import { showOpenDialog } from './menu';
 import { createNote, findNoteByPath, getAllNotes, removeNote, updateNote } from './store';
 import { createStickyWindow } from './sticky-window';
@@ -19,14 +20,23 @@ const windows = new Map<string, ManagedWindow>();
 
 function getStorageDir(): string {
   const dir = join(homedir(), '.stickies-md');
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
+  mkdirSync(dir, { recursive: true });
   return dir;
 }
 
+/**
+ * Create a BrowserWindow for a note and wire up all side effects:
+ * - Start a FileWatcher for external change detection
+ * - Send initial note settings and content when renderer is ready
+ * - Track focus changes to toggle editor editability
+ * - Persist window position/size on move/resize (debounced)
+ * - Clean up watcher and tracking on window close
+ */
 export function createWindowForNote(note: StickyNote): void {
   const win = createStickyWindow(note);
+
+  // Allow the note's directory for local-image:// protocol
+  allowImageDir(dirname(note.filePath));
 
   const watcher = new FileWatcher(note.filePath, (content: string) => {
     if (!win.isDestroyed()) {
@@ -37,7 +47,6 @@ export function createWindowForNote(note: StickyNote): void {
   const managed: ManagedWindow = { win, note, watcher };
   windows.set(note.id, managed);
 
-  // Send note settings when renderer is ready
   win.webContents.on('did-finish-load', async () => {
     win.webContents.send(IPC.NOTE_SETTINGS, note);
     try {
@@ -48,7 +57,6 @@ export function createWindowForNote(note: StickyNote): void {
     }
   });
 
-  // Focus tracking
   win.on('focus', () => {
     win.webContents.send(IPC.FOCUS_CHANGED, true);
   });
@@ -56,7 +64,7 @@ export function createWindowForNote(note: StickyNote): void {
     win.webContents.send(IPC.FOCUS_CHANGED, false);
   });
 
-  // Window position/size persistence (debounced)
+  // Debounced window frame persistence
   let frameTimer: ReturnType<typeof setTimeout> | null = null;
   const saveFrame = () => {
     if (frameTimer) clearTimeout(frameTimer);
@@ -75,13 +83,16 @@ export function createWindowForNote(note: StickyNote): void {
   win.on('move', saveFrame);
   win.on('resize', saveFrame);
 
-  // Handle close
   win.on('closed', async () => {
     await watcher.stop();
     windows.delete(note.id);
   });
 }
 
+/**
+ * Restore all persisted notes on app launch.
+ * Notes whose files no longer exist on disk are removed from the store.
+ */
 export function restoreWindows(): void {
   const notes = getAllNotes();
   if (notes.length === 0) {
@@ -97,6 +108,7 @@ export function restoreWindows(): void {
   }
 }
 
+/** Create a new .org note file and open a window for it. */
 export function createNewSticky(): void {
   const dir = getStorageDir();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -110,7 +122,6 @@ export async function openFile(): Promise<void> {
   const filePath = await showOpenDialog();
   if (!filePath) return;
 
-  // Check if already open
   const existing = findNoteByPath(filePath);
   if (existing) {
     const managed = windows.get(existing.id);
@@ -133,10 +144,6 @@ export function resetAllMouseThrough(): void {
   }
 }
 
-export function getManagedWindow(noteId: string): ManagedWindow | undefined {
-  return windows.get(noteId);
-}
-
 export function findManagedWindowByWebContents(webContentsId: number): ManagedWindow | undefined {
   for (const managed of windows.values()) {
     if (!managed.win.isDestroyed() && managed.win.webContents.id === webContentsId) {
@@ -144,10 +151,4 @@ export function findManagedWindowByWebContents(webContentsId: number): ManagedWi
     }
   }
   return undefined;
-}
-
-export function getAllWindows(): BrowserWindow[] {
-  return Array.from(windows.values())
-    .filter((m) => !m.win.isDestroyed())
-    .map((m) => m.win);
 }

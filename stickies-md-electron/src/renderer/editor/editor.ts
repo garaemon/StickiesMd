@@ -1,3 +1,10 @@
+/**
+ * CodeMirror 6 editor wrapper for sticky notes.
+ *
+ * Uses Compartments for dynamic reconfiguration of language mode,
+ * line numbers, editability, and theme. Each renderer process has
+ * one StickyEditor instance (one editor per Electron window).
+ */
 import { EditorState, type Extension, Compartment } from '@codemirror/state';
 import { EditorView, lineNumbers, keymap } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
