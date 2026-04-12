@@ -49,10 +49,6 @@ class ImageWidget extends WidgetType {
 
     img.src = src;
     img.alt = this.imagePath;
-    img.style.maxHeight = '200px';
-    img.style.maxWidth = 'calc(100% - 20px)';
-    img.style.borderRadius = '4px';
-    img.style.display = 'block';
 
     img.onerror = () => {
       wrapper.style.display = 'none';

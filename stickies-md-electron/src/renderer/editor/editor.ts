@@ -93,7 +93,7 @@ function languageExtensions(format: FileFormat, fontColor: string, baseDir: stri
 
 export class StickyEditor {
   private view: EditorView;
-  private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  private saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private isExternalUpdate = false;
   private config: EditorConfig;
 
@@ -124,8 +124,8 @@ export class StickyEditor {
   }
 
   private debouncedSave(): void {
-    if (this.saveTimer) clearTimeout(this.saveTimer);
-    this.saveTimer = setTimeout(() => {
+    if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
+    this.saveDebounceTimer = setTimeout(() => {
       this.config.onContentChange(this.view.state.doc.toString());
     }, SAVE_DEBOUNCE_MS);
   }
@@ -172,12 +172,12 @@ export class StickyEditor {
   }
 
   forceSave(): void {
-    if (this.saveTimer) clearTimeout(this.saveTimer);
+    if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
     this.config.onContentChange(this.view.state.doc.toString());
   }
 
   destroy(): void {
-    if (this.saveTimer) clearTimeout(this.saveTimer);
+    if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
     this.view.destroy();
   }
 }

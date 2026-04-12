@@ -125,6 +125,20 @@ body {
   flex-wrap: wrap;
 }
 
+.settings-open-btn {
+  width: 100%;
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.settings-open-btn:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
 .color-swatch {
   width: 28px;
   height: 28px;

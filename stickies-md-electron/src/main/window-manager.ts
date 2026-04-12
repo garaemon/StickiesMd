@@ -1,4 +1,5 @@
 import { BrowserWindow } from 'electron';
+import { randomUUID } from 'crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { homedir } from 'os';
 import { dirname, join } from 'path';
@@ -66,10 +67,10 @@ export function createWindowForNote(note: StickyNote): void {
   });
 
   // Debounced window frame persistence
-  let frameTimer: ReturnType<typeof setTimeout> | null = null;
-  const saveFrame = () => {
-    if (frameTimer) clearTimeout(frameTimer);
-    frameTimer = setTimeout(() => {
+  let framePersistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  const persistWindowFrame = () => {
+    if (framePersistDebounceTimer) clearTimeout(framePersistDebounceTimer);
+    framePersistDebounceTimer = setTimeout(() => {
       if (win.isDestroyed()) return;
       const bounds = win.getBounds();
       const frame: WindowFrame = {
@@ -81,10 +82,11 @@ export function createWindowForNote(note: StickyNote): void {
       updateNote(note.id, { frame });
     }, 500);
   };
-  win.on('move', saveFrame);
-  win.on('resize', saveFrame);
+  win.on('move', persistWindowFrame);
+  win.on('resize', persistWindowFrame);
 
   win.on('closed', () => {
+    if (framePersistDebounceTimer) clearTimeout(framePersistDebounceTimer);
     watcher.stop().catch((err) => {
       console.error(`Failed to stop watcher for ${note.filePath}:`, err);
     });
@@ -115,7 +117,7 @@ export function restoreWindows(): void {
 export function createNewSticky(): void {
   const dir = ensureStorageDir();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const filePath = join(dir, `note-${timestamp}.org`);
+  const filePath = join(dir, `note-${timestamp}-${randomUUID().slice(0, 8)}.org`);
   writeFileSync(filePath, `* New Note\n\nStart writing here...\n`, 'utf-8');
   const note = createNote(filePath);
   createWindowForNote(note);

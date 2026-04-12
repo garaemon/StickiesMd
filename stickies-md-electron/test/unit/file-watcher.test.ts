@@ -34,11 +34,15 @@ describe('FileWatcher', () => {
     await watcher.stop();
   });
 
-  it('does not save identical content', async () => {
+  it('does not save identical content (file mtime unchanged)', async () => {
+    const { statSync } = await import('fs');
     const watcher = new FileWatcher(testFile, () => {});
     await watcher.start();
+    const mtimeBefore = statSync(testFile).mtimeMs;
     // Save same content as initial — should be a no-op
     await watcher.saveContent('initial content');
+    const mtimeAfter = statSync(testFile).mtimeMs;
+    expect(mtimeAfter).toBe(mtimeBefore);
     await watcher.stop();
   });
 

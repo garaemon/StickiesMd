@@ -21,6 +21,7 @@ export function registerIpcHandlers(): void {
   ipcMain.on(IPC.SAVE_CONTENT, async (event, content: string) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
     if (!managed) return;
+    if (typeof content !== 'string' || content.length > 10 * 1024 * 1024) return;
     try {
       await managed.watcher.saveContent(content);
     } catch (err) {
@@ -89,6 +90,7 @@ export function registerIpcHandlers(): void {
   ipcMain.on(IPC.SET_MOUSE_THROUGH, (event, enabled: boolean) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
     if (!managed) return;
+    if (typeof enabled !== 'boolean') return;
     managed.win.setIgnoreMouseEvents(enabled);
     if (enabled) {
       managed.win.setOpacity(0.5);

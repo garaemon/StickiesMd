@@ -92,9 +92,8 @@ export class SettingsPanel {
 
     // Open Another File button
     const openBtn = document.createElement('button');
+    openBtn.className = 'settings-open-btn';
     openBtn.textContent = 'Open Another File...';
-    openBtn.style.cssText =
-      'width:100%;padding:6px;border:none;border-radius:4px;background:rgba(0,0,0,0.08);cursor:pointer;font-size:12px;';
     openBtn.addEventListener('click', () => {
       window.electronAPI.openFileDialog();
     });

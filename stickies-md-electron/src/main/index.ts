@@ -29,6 +29,13 @@ app.whenReady().then(() => {
     const filePath = normalize(
       resolve(decodeURIComponent(request.url.replace('local-image://', ''))),
     );
+
+    // Defense-in-depth: reject paths with '..' segments even after normalization,
+    // guards against future changes that might introduce double-decoding
+    if (filePath.includes('..')) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
     const fileDir = dirname(filePath);
 
     // Validate the file is within an allowed directory (enforce boundary with trailing /)
