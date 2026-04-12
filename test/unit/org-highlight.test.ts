@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { StringStream } from '@codemirror/language';
 import {
   findOrgEmphasisRanges,
   findOrgLinks,
   isOrgEmphasisPre,
   isOrgEmphasisPost,
+  orgStreamParser,
 } from '../../src/renderer/editor/org-lang';
 
 describe('Org-mode inline emphasis', () => {
@@ -162,6 +164,65 @@ describe('Org-mode inline emphasis', () => {
       const ranges = findOrgEmphasisRanges(text);
       const bold = ranges.find((r) => r.class === 'cm-strong');
       expect(bold).toBeDefined();
+    });
+  });
+
+  describe('orgStreamParser property drawers', () => {
+    /** Helper: tokenize a sequence of lines through the stream parser. */
+    function tokenizeLines(lines: string[]): { line: string; token: string | null }[] {
+      const state = orgStreamParser.startState();
+      const results: { line: string; token: string | null }[] = [];
+      for (const line of lines) {
+        const stream = new StringStream(line, 2, 0);
+        // Consume all tokens on this line; take the first non-null token as the line's token.
+        let lineToken: string | null = null;
+        while (!stream.eol()) {
+          const t = orgStreamParser.token(stream, state);
+          if (t !== null && lineToken === null) {
+            lineToken = t;
+          }
+        }
+        results.push({ line, token: lineToken });
+      }
+      return results;
+    }
+
+    it('detects :PROPERTIES: and :END: without indentation', () => {
+      const results = tokenizeLines([':PROPERTIES:', ':ID: some-id', ':END:', 'normal text']);
+      expect(results[0].token).toBe('meta');
+      expect(results[1].token).toBe('meta');
+      expect(results[2].token).toBe('meta');
+      expect(results[3].token).toBeNull();
+    });
+
+    it('detects :END: with leading whitespace', () => {
+      const results = tokenizeLines([':PROPERTIES:', ':ID: some-id', '  :END:', 'normal text']);
+      expect(results[0].token).toBe('meta');
+      expect(results[1].token).toBe('meta');
+      expect(results[2].token).toBe('meta');
+      // Line after :END: should NOT be highlighted as property drawer
+      expect(results[3].token).toBeNull();
+    });
+
+    it('detects :PROPERTIES: with leading whitespace', () => {
+      const results = tokenizeLines(['  :PROPERTIES:', ':ID: some-id', ':END:', 'normal text']);
+      expect(results[0].token).toBe('meta');
+      expect(results[1].token).toBe('meta');
+      expect(results[2].token).toBe('meta');
+      expect(results[3].token).toBeNull();
+    });
+
+    it('detects both :PROPERTIES: and :END: with leading whitespace', () => {
+      const results = tokenizeLines([
+        '  :PROPERTIES:',
+        '  :ID: some-id',
+        '  :END:',
+        'normal text',
+      ]);
+      expect(results[0].token).toBe('meta');
+      expect(results[1].token).toBe('meta');
+      expect(results[2].token).toBe('meta');
+      expect(results[3].token).toBeNull();
     });
   });
 
