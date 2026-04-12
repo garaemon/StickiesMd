@@ -9,6 +9,19 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.stickiesmd.app');
 }
 
+// Must be called before app.whenReady(). Without this registration,
+// Chromium will not load <img> resources from the custom protocol.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'local-image',
+    privileges: {
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+    },
+  },
+]);
+
 /**
  * Allowed base directories for the local-image:// protocol.
  * Updated when windows are created. Prevents path traversal attacks

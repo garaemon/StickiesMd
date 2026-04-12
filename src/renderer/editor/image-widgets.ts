@@ -19,7 +19,7 @@ import type { Extension } from '@codemirror/state';
 /** Image formats supported by Chromium's <img> tag. */
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'tiff', 'bmp']);
 
-function isImagePath(path: string): boolean {
+export function isImagePath(path: string): boolean {
   const ext = path.split('.').pop()?.toLowerCase() ?? '';
   return IMAGE_EXTENSIONS.has(ext);
 }
@@ -73,7 +73,7 @@ interface ImageMatch {
 }
 
 // Find Markdown images: ![alt](path)
-function findMarkdownImages(text: string): ImageMatch[] {
+export function findMarkdownImages(text: string): ImageMatch[] {
   const matches: ImageMatch[] = [];
   const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
   let match;
@@ -92,7 +92,7 @@ function findMarkdownImages(text: string): ImageMatch[] {
 }
 
 // Find Org images: [[file:path]] or [[./path.ext]]
-function findOrgImages(text: string): ImageMatch[] {
+export function findOrgImages(text: string): ImageMatch[] {
   const matches: ImageMatch[] = [];
   const regex = /\[\[(?:file:)?([^\]]+?)\]\]/g;
   let match;
