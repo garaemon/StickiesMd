@@ -78,6 +78,30 @@ body {
   position: relative;
 }
 
+/* Scrollbar styling — make the track transparent so the sticky note's
+   background color shows through, keeping the scrollbar visually cohesive. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Base editor styles — font, colors, gutters, active line are set via
    createFontColorTheme() in editor.ts so they can react to fontColor changes.
    Only layout-level styles that don't change dynamically belong here. */
