@@ -102,11 +102,6 @@ export function registerIpcHandlers(): void {
       return;
     }
     managed.win.setIgnoreMouseEvents(enabled);
-    if (enabled) {
-      managed.win.setOpacity(0.5);
-    } else {
-      managed.win.setOpacity(managed.note.opacity);
-    }
   });
 
   ipcMain.on(IPC.OPEN_FILE_DIALOG, () => {

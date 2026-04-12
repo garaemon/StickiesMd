@@ -31,6 +31,11 @@ const api = {
     ipcRenderer.on(IPC.TRIGGER_SAVE, handler);
     return () => ipcRenderer.removeListener(IPC.TRIGGER_SAVE, handler);
   },
+  onMouseThroughReset: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on(IPC.MOUSE_THROUGH_RESET, handler);
+    return () => ipcRenderer.removeListener(IPC.MOUSE_THROUGH_RESET, handler);
+  },
 
   // Renderer -> Main actions
   saveContent: (content: string) => ipcRenderer.send(IPC.SAVE_CONTENT, content),

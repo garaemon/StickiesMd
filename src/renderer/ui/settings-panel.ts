@@ -159,6 +159,12 @@ export class SettingsPanel {
     }
   }
 
+  updateMouseThrough(enabled: boolean): void {
+    if (this.mouseThroughCheckbox) {
+      this.mouseThroughCheckbox.checked = enabled;
+    }
+  }
+
   toggle(): void {
     this.element.classList.toggle('hidden');
   }

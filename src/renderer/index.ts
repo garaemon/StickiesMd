@@ -90,3 +90,7 @@ window.electronAPI.onFocusChanged((focused: boolean) => {
 window.electronAPI.onTriggerSave(() => {
   editor?.forceSave();
 });
+
+window.electronAPI.onMouseThroughReset(() => {
+  settingsPanel?.updateMouseThrough(false);
+});

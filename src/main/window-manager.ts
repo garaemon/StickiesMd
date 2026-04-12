@@ -149,10 +149,10 @@ export async function openFile(): Promise<void> {
 }
 
 export function resetAllMouseThrough(): void {
-  for (const { win, note } of windows.values()) {
+  for (const { win } of windows.values()) {
     if (!win.isDestroyed()) {
       win.setIgnoreMouseEvents(false);
-      win.setOpacity(note.opacity);
+      win.webContents.send(IPC.MOUSE_THROUGH_RESET);
     }
   }
 }
