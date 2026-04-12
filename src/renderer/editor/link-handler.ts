@@ -116,13 +116,19 @@ const bareUrlDecorations = ViewPlugin.fromClass(
 
 const linkClickHandler = EditorView.domEventHandlers({
   click(event: MouseEvent, view: EditorView) {
-    if (!event.metaKey && !event.ctrlKey) return false;
+    if (!event.metaKey && !event.ctrlKey) {
+      return false;
+    }
 
     const target = event.target as HTMLElement;
-    if (!target.classList.contains('cm-link') && !target.closest('.cm-link')) return false;
+    if (!target.classList.contains('cm-link') && !target.closest('.cm-link')) {
+      return false;
+    }
 
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
-    if (pos === null) return false;
+    if (pos === null) {
+      return false;
+    }
 
     const text = view.state.doc.toString();
     const links = findAllLinks(text);

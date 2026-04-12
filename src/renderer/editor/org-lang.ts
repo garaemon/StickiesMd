@@ -203,7 +203,9 @@ function findOrgEmphasisRanges(text: string): EmphasisRange[] {
                 }
               }
               // Don't cross line boundaries for emphasis
-              if (text[j] === '\n') break;
+              if (text[j] === '\n') {
+                break;
+              }
               j++;
             }
             if (j >= text.length || text[j] === '\n') {

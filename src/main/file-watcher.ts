@@ -35,7 +35,9 @@ export class FileWatcher {
 
     // Debounce change events to avoid rapid-fire reloads during multi-step writes
     this.watcher.on('change', () => {
-      if (this.debounceTimer) clearTimeout(this.debounceTimer);
+      if (this.debounceTimer) {
+        clearTimeout(this.debounceTimer);
+      }
       this.debounceTimer = setTimeout(() => this.checkForChanges(), FILE_WATCH_DEBOUNCE_MS);
     });
 
@@ -65,7 +67,9 @@ export class FileWatcher {
    * treating our own save as an external change.
    */
   async saveContent(content: string): Promise<void> {
-    if (content === this.lastSavedContent) return;
+    if (content === this.lastSavedContent) {
+      return;
+    }
     this.lastSavedContent = content;
 
     const tempPath = join(dirname(this.filePath), `.${Date.now()}.tmp`);
@@ -84,7 +88,9 @@ export class FileWatcher {
   }
 
   async stop(): Promise<void> {
-    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
     if (this.watcher) {
       await this.watcher.close();
       this.watcher = null;

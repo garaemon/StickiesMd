@@ -135,7 +135,9 @@ export function imageWidgetExtension(baseDir: string, format: 'markdown' | 'org'
         // Deduplicate by lineEnd and sort
         const seen = new Set<number>();
         const unique = images.filter((img) => {
-          if (seen.has(img.lineEnd)) return false;
+          if (seen.has(img.lineEnd)) {
+            return false;
+          }
           seen.add(img.lineEnd);
           return true;
         });
