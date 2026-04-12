@@ -2,6 +2,15 @@
  * Custom toolbar rendered inside each sticky note window.
  * Displays filename, save/pin/settings buttons.
  * Drag-enabled via CSS `-webkit-app-region: drag` on the container.
+ *
+ * Technical decision: UI components (this file and settings-panel.ts) use vanilla
+ * TypeScript DOM manipulation instead of React/Vue/Svelte because:
+ *   1. The UI surface is small (toolbar ~86 lines, settings panel ~147 lines)
+ *   2. CodeMirror 6 manages its own DOM, so a framework adds boundary management
+ *      burden with no benefit for the editor layer
+ *   3. Avoids ~40KB gzip bundle overhead (React + ReactDOM) for a lightweight desktop app
+ * If the UI grows significantly more complex (e.g., note list panel, search UI),
+ * this decision should be revisited.
  */
 
 /** Extract filename from a POSIX path (renderer has no Node path module). */

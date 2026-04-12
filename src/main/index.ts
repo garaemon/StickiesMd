@@ -25,7 +25,7 @@ app.whenReady().then(() => {
   // Custom protocol for serving local images to the renderer.
   // The renderer cannot access file:// URLs due to Chromium security restrictions,
   // so we serve images through this protocol with path validation.
-  protocol.handle('local-image', async (request) => {
+  protocol.handle('local-image', async (request: Request) => {
     const filePath = normalize(
       resolve(decodeURIComponent(request.url.replace('local-image://', ''))),
     );
@@ -85,6 +85,8 @@ app.on('window-all-closed', () => {
   }
 });
 
+// Hand-rolled instead of a library (e.g., mime-types) to avoid adding a dependency
+// for a fixed set of image formats that Chromium's <img> tag supports.
 function guessImageMimeType(filePath: string): string {
   const ext = filePath.split('.').pop()?.toLowerCase();
   const mimeTypes: Record<string, string> = {

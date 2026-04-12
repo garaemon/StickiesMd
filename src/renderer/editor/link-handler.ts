@@ -109,7 +109,8 @@ const bareUrlDecorations = ViewPlugin.fromClass(
     }
   },
   {
-    decorations: (v) => v.decorations,
+    // Accessor that tells CodeMirror where to read the DecorationSet from the plugin instance
+    decorations: (plugin) => plugin.decorations,
   },
 );
 

@@ -1,3 +1,4 @@
+
 /**
  * Inline image preview extension for CodeMirror 6.
  *
@@ -156,7 +157,8 @@ export function imageWidgetExtension(baseDir: string, format: 'markdown' | 'org'
       }
     },
     {
-      decorations: (v) => v.decorations,
+      // Accessor that tells CodeMirror where to read the DecorationSet from the plugin instance
+      decorations: (plugin) => plugin.decorations,
     },
   );
 }

@@ -17,7 +17,7 @@ const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
  * - GET_NOTE_SETTINGS: return current note settings (invoke/handle pattern)
  */
 export function registerIpcHandlers(): void {
-  ipcMain.on(IPC.SAVE_CONTENT, async (event, content: string) => {
+  ipcMain.on(IPC.SAVE_CONTENT, async (event: Electron.IpcMainEvent, content: string) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
     if (!managed) return;
     if (typeof content !== 'string' || content.length > 10 * 1024 * 1024) return;
