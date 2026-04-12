@@ -92,11 +92,11 @@ const orgStreamParser = {
     }
 
     // Property drawer boundaries
-    if (stream.match(/^:PROPERTIES:\s*$/)) {
+    if (stream.match(/^\s*:PROPERTIES:\s*$/)) {
       state.inPropertyDrawer = true;
       return 'meta';
     }
-    if (stream.match(/^:END:\s*$/)) {
+    if (stream.match(/^\s*:END:\s*$/)) {
       state.inPropertyDrawer = false;
       return 'meta';
     }
@@ -331,5 +331,6 @@ export {
   findOrgLinks,
   isOrgEmphasisPre,
   isOrgEmphasisPost,
+  orgStreamParser,
   type EmphasisRange,
 };
