@@ -69,9 +69,13 @@ export function createWindowForNote(note: StickyNote): void {
   // Debounced window frame persistence
   let framePersistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   const persistWindowFrame = () => {
-    if (framePersistDebounceTimer) clearTimeout(framePersistDebounceTimer);
+    if (framePersistDebounceTimer) {
+      clearTimeout(framePersistDebounceTimer);
+    }
     framePersistDebounceTimer = setTimeout(() => {
-      if (win.isDestroyed()) return;
+      if (win.isDestroyed()) {
+        return;
+      }
       const bounds = win.getBounds();
       const frame: WindowFrame = {
         x: bounds.x,
@@ -86,7 +90,9 @@ export function createWindowForNote(note: StickyNote): void {
   win.on('resize', persistWindowFrame);
 
   win.on('closed', () => {
-    if (framePersistDebounceTimer) clearTimeout(framePersistDebounceTimer);
+    if (framePersistDebounceTimer) {
+      clearTimeout(framePersistDebounceTimer);
+    }
     watcher.stop().catch((err) => {
       console.error(`Failed to stop watcher for ${note.filePath}:`, err);
     });
@@ -125,7 +131,9 @@ export function createNewSticky(): void {
 
 export async function openFile(): Promise<void> {
   const filePath = await showOpenDialog();
-  if (!filePath) return;
+  if (!filePath) {
+    return;
+  }
 
   const existing = findNoteByPath(filePath);
   if (existing) {
@@ -158,9 +166,13 @@ export function updateManagedNote(
   updates: Partial<Omit<StickyNote, 'id'>>,
 ): StickyNote | undefined {
   const managed = findManagedWindowByWebContentsId(webContentsId);
-  if (!managed) return undefined;
+  if (!managed) {
+    return undefined;
+  }
   const updated = updateNote(managed.note.id, updates);
-  if (updated) managed.note = updated;
+  if (updated) {
+    managed.note = updated;
+  }
   return updated;
 }
 

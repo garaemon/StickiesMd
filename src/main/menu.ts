@@ -90,6 +90,8 @@ export async function showOpenDialog(): Promise<string | undefined> {
     ],
   });
 
-  if (result.canceled || result.filePaths.length === 0) return undefined;
+  if (result.canceled || result.filePaths.length === 0) {
+    return undefined;
+  }
   return result.filePaths[0];
 }

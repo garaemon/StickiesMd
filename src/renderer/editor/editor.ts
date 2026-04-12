@@ -124,7 +124,9 @@ export class StickyEditor {
   }
 
   private debouncedSave(): void {
-    if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+    }
     this.saveDebounceTimer = setTimeout(() => {
       this.config.onContentChange(this.view.state.doc.toString());
     }, SAVE_DEBOUNCE_MS);
@@ -172,12 +174,16 @@ export class StickyEditor {
   }
 
   forceSave(): void {
-    if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+    }
     this.config.onContentChange(this.view.state.doc.toString());
   }
 
   destroy(): void {
-    if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+    }
     this.view.destroy();
   }
 }

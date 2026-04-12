@@ -58,7 +58,9 @@ export function updateNote(
 ): StickyNote | undefined {
   const notes = getAllNotes();
   const index = notes.findIndex((n) => n.id === id);
-  if (index === -1) return undefined;
+  if (index === -1) {
+    return undefined;
+  }
   notes[index] = { ...notes[index], ...updates };
   store.set('notes', notes);
   return notes[index];
