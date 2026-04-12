@@ -1,10 +1,6 @@
 import { ipcMain, shell } from 'electron';
 import * as IPC from '../shared/ipc-channels';
-import {
-  findManagedWindowByWebContentsId,
-  openFile,
-  updateManagedNote,
-} from './window-manager';
+import { findManagedWindowByWebContentsId, openFile, updateManagedNote } from './window-manager';
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
