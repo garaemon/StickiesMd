@@ -1,0 +1,47 @@
+{
+  "name": "stickies-md",
+  "version": "1.0.0",
+  "description": "File-linked sticky note app for Markdown and Org-mode",
+  "license": "MIT",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
+    "lint": "eslint src/ test/",
+    "format": "prettier --write 'src/**/*.{ts,html,css}'",
+    "format:check": "prettier --check 'src/**/*.{ts,html,css}'",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/lang-markdown": "^6.3.0",
+    "@codemirror/language": "^6.10.0",
+    "@codemirror/state": "^6.5.0",
+    "@codemirror/view": "^6.35.0",
+    "@lezer/highlight": "^1.2.0",
+    "chokidar": "^4.0.0",
+    "electron-store": "^10.0.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "electron-vite": "^5.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^17.4.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.58.1",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.0"
+  }
+}

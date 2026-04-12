@@ -1,51 +1,68 @@
 # StickiesMd
 
+A file-linked sticky note app for Markdown and Org-mode, built with Electron + TypeScript + CodeMirror 6.
+
+## Features
+
+- **Frameless transparent windows** with always-on-top and mouse-through mode
+- **Markdown & Org-mode** syntax highlighting with inline image display
+- **File synchronization** — edit in Emacs/VS Code and see changes instantly
+- **Per-note settings** — background color, font color, opacity, line numbers
+- **6 classic sticky colors** — Yellow, Blue, Green, Pink, Purple, Gray
+
 ## Development
 
-### Formatter
+### Prerequisites
 
-This project uses `swift-format`.
-CI checks for formatting, and it will fail if any violations are found.
+- Node.js 22+
+- npm
 
-#### Installation
+### Setup
 
 ```bash
-brew install swift-format
+npm install
 ```
 
-#### Usage
-
-Run the following command to format the code for the entire project:
+### Run in development mode
 
 ```bash
-swift-format --in-place --recursive .
+npm run dev
+```
+
+### Lint & Format
+
+```bash
+npm run lint          # ESLint
+npm run format:check  # Prettier check
+npm run format        # Prettier fix
+npm run typecheck     # TypeScript strict check
 ```
 
 ### Testing
 
-Run the following command to execute tests via CLI:
-
 ```bash
-xcodebuild test -scheme StickiesMd -destination 'platform=macOS'
+npm run test:unit   # Vitest unit tests (60 tests)
+npm run test:e2e    # Playwright E2E tests (requires display)
 ```
 
-### Golden Tests
-
-We use golden tests (snapshot tests) to verify the rendering of markdown files.
-The reference image is located at `StickiesMdUITests/ReferenceImages/sample.png`.
-
-#### Running Golden Tests
-
-Golden tests are included in the standard test suite. You can run them with `xcodebuild` as shown above.
-
-#### Updating Golden Images
-
-If the golden test fails due to intentional changes in rendering, you need to update the golden image.
-Run the following script to regenerate the reference image:
+### Build
 
 ```bash
-./scripts/generate-golden.sh
+npm run build       # Build for production
 ```
 
-This script builds the application in Debug configuration and uses the CLI to generate a new screenshot.
+## Tech Stack
 
+| Layer | Technology |
+|-------|-----------|
+| Framework | Electron |
+| Build | electron-vite |
+| Language | TypeScript (strict) |
+| Editor | CodeMirror 6 |
+| Markdown | @codemirror/lang-markdown |
+| Org-mode | StreamLanguage + ViewPlugin |
+| File Watch | chokidar |
+| Persistence | electron-store |
+| Unit Tests | Vitest |
+| E2E Tests | Playwright |
+| Lint | ESLint + Prettier |

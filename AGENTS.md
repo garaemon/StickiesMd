@@ -10,168 +10,197 @@ Stickies.md is a file-linked sticky note application that combines the lightness
 
 ## **2. Core Functional Requirements**
 
-1. **Native macOS Implementation**: Lightweight and fast operation using Swift/SwiftUI.
+1. **Electron Desktop App**: Cross-platform capable, built with TypeScript/HTML/CSS.
 2. **Stickies UI and Customization**:
-   * **Minimal Title Bar**: Minimal area for window operations, allowing changes to color and transparency.
+   * **Frameless Window**: Minimal titlebar with custom toolbar for window operations, color and transparency controls.
    * Always on Top (Floating Window).
    * **Per-Window Appearance Settings**: Background color (theme color), font color, and opacity can be set individually for each sticky note.
-     * **Title Bar Controls**: Color can be changed via icons on the title bar, and opacity can be adjusted via buttons.
+     * **Toolbar Controls**: Color can be changed via settings panel, opacity via slider.
    * **Editor Customization**:
-     * **Minimap**: Hidden by default.
      * **Line Numbers**: Toggleable visibility, saved per window.
-     * **Heading Styles**: Headings should be displayed with larger font sizes for better structure visibility.
+     * **Heading Styles**: Headings displayed with larger font sizes for structure visibility.
    * **Initial Value Randomization**: When opening a new file, a color is randomly selected from a classic stickies palette.
    * **Menu Operations**: New files can be opened from the application menu.
 3. **Multi-format Support**: Parsing and rendering of Markdown and Org-mode.
    * **Direct Editing**: Text can be edited directly on the sticky note and saved as a Markdown/Org file.
 4. **Full File Linking and Persistence**:
    * One-to-one correspondence with local .md or .org files.
-   * Detect changes in external editors (Emacs, etc.) and reflect them immediately (Hot Reload).
-   * **Save Appearance Settings**: Save the association between file paths and settings to restore the same appearance on the next launch.
+   * Detect changes in external editors (Emacs, etc.) and reflect them immediately (Hot Reload via chokidar).
+   * **Save Appearance Settings**: Save per-note settings via electron-store to restore on next launch.
      * **Stored Properties**:
        * `backgroundColor`: Hex String
-       * `fontColor`: Hex String (New)
-       * `opacity`: Double
-       * `windowFrame`: NSRect (String representation)
-       * `showLineNumbers`: Bool (New)
+       * `fontColor`: Hex String
+       * `opacity`: Number (0.0-1.0)
+       * `frame`: `{ x, y, width, height }`
+       * `showLineNumbers`: Boolean
+       * `isAlwaysOnTop`: Boolean
 5. **Rich Content and Interactivity**:
-   * Inline image display ([[path/to/img]] or ![]()).
-   * **Image Drag & Drop (D&D)**: Automatically save files and insert links when images are dragged and dropped onto a sticky note window.
-   * **Customizable Image Storage**: Directory for saving attached images can be set via relative or absolute paths.
-   * Highlight TODO status.
+   * Inline image display (`[[file:path]]` or `![](path)`) via CodeMirror Decoration widgets.
+   * **Image Drag & Drop (D&D)**: Automatically save files and insert links.
+   * Clickable links (bare URLs and structured links).
 
 ## **3. System Architecture**
 
-The project adopts a simple single-target structure, leveraging powerful native frameworks and libraries.
+### **Technology Stack**
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Electron |
+| Build Tool | electron-vite (Vite-based) |
+| Language | TypeScript (strict mode) |
+| Editor | CodeMirror 6 |
+| Markdown | @codemirror/lang-markdown (Lezer) |
+| Org-mode | StreamLanguage tokenizer + ViewPlugin decorations |
+| File Watch | chokidar v4 |
+| Persistence | electron-store |
+| Test (unit) | Vitest |
+| Test (E2E) | Playwright |
+| Lint | ESLint v9 flat config + typescript-eslint |
+| Format | Prettier |
+| Distribution | electron-builder |
 
 ### **Project Structure**
 
-* **StickiesMd (App)**: macOS application layer. Responsible for window management, file monitoring, UI rendering, user interface (settings screen, etc.), and **Persistence of appearance settings**.
-  * **Editor Engine**: Uses **TextKit 2** for high-performance text rendering and editing, backed by **OrgKit** for parsing and syntax highlighting.
-* **OrgKit (Package)**: A standalone Swift Package responsible for document parsing and structure analysis.
-  * **Core**: Integrates **SwiftTreeSitter** to provide a unified interface for Markdown and Org-mode parsing.
-  * **Functionality**: Provides structured data (AST nodes, styling ranges) to the app, decoupling the editor from specific Tree-sitter details.
+```
+├── src/
+│   ├── main/                     # Main process (Node.js)
+│   │   ├── index.ts              # App lifecycle
+│   │   ├── window-manager.ts     # Multi-window management
+│   │   ├── sticky-window.ts      # BrowserWindow factory
+│   │   ├── file-watcher.ts       # chokidar file watching
+│   │   ├── store.ts              # electron-store persistence
+│   │   ├── menu.ts               # Application menu
+│   │   └── ipc-handlers.ts       # IPC channel handlers
+│   ├── renderer/                 # Renderer process (Web)
+│   │   ├── editor/               # CodeMirror 6 editor
+│   │   ├── ui/                   # Toolbar, settings panel
+│   │   ├── styles/               # CSS
+│   │   └── preload.ts            # Context bridge
+│   └── shared/                   # Shared types and constants
+├── test/
+│   ├── unit/                     # Vitest unit tests
+│   └── e2e/                      # Playwright E2E tests
+└── .github/workflows/            # CI/CD
+```
 
 ### **Persistence Strategy**
 
-* Use `UserDefaults` to store a dictionary where the key is the absolute path of the file URL, and the value is a struct (JSON) containing all per-window settings defined in Section 2.
+* Use `electron-store` to persist an array of `StickyNote` objects as JSON. Each note stores file path, appearance settings, and window position.
 
 ## **4. Text Processing Strategy**
 
-The app utilizes **SwiftTreeSitter** for robust parsing of Markdown and Org-mode files, and **TextKit 2** for high-performance rendering and editing.
-
-* **Parsing**: Use **SwiftTreeSitter** to generate an Abstract Syntax Tree (AST) from the text. This allows for accurate detection of document structure (headers, lists, links, etc.) for both Markdown and Org-mode.
-* **Rendering & Editing**: Use **TextKit 2** (`NSTextLayoutManager`, `NSTextContentStorage`, `NSTextViewportLayoutController`) to render the text. Syntax highlighting and rich text attributes (font size for headers, colors) are applied based on the AST provided by SwiftTreeSitter.
+* **Markdown**: `@codemirror/lang-markdown` with Lezer incremental parser. Handles headings, bold, italic, code, links, images natively.
+* **Org-mode**: Custom `StreamLanguage` tokenizer for block-level elements (headings, code blocks, property drawers) + `ViewPlugin` with `Decoration.mark` for inline emphasis (`*bold*`, `/italic/`, `_underline_`, `+strike+`, `~code~`, `=verbatim=`). PRE/POST character validation rules ported from Org-mode spec.
+* **Images**: CodeMirror `Decoration.widget` inserts `<img>` elements below image link lines. Local images served via custom `local-image://` protocol.
 
 ## **5. Implementation Roadmap**
 
-### **Phase 1: Infrastructure**
+### **Phase 1: Infrastructure** ✅
 
-* [x] **Window Customization**: Use `NSPanel` (subclass of `NSWindow`). Implement title bar hiding and transparent backgrounds.
-* [x] **File Watcher**: Monitor specific files using `NSFilePresenter`.
-* [x] **Persistence**: Implement `StickiesStore` class. Save/load settings via `UserDefaults`.
+* [x] Electron project scaffold with electron-vite
+* [x] BrowserWindow: frameless, transparent, always-on-top, traffic light positioning
+* [x] Shared types: StickyNote interface, FileFormat, palette constants, IPC channels
 
-### **Phase 2: Core Text Editing (Transition to TextKit 2)**
+### **Phase 2: Persistence & Multi-Window** ✅
 
-* [ ] **Dependency Setup**: Add `SwiftTreeSitter` and relevant language grammars (Markdown, Org-mode) to the project.
-* [ ] **TextKit 2 Integration**: Implement a custom text editor view using `NSTextLayoutManager`, `NSTextContentStorage`, and `NSTextView`.
-* [ ] **Syntax Highlighting**: Implement a mechanism to query `SwiftTreeSitter` for syntax nodes and apply attributes to the `NSTextContentStorage`.
-* [ ] **Org-mode Support**: Ensure proper parsing of Org-mode files using Tree-sitter.
-* [ ] **Markdown Support**: Ensure proper parsing of Markdown files using Tree-sitter.
+* [x] electron-store persistence (notes array)
+* [x] WindowManager: createWindow, restoreWindows, window tracking
+* [x] Window position/size persistence (debounced move/resize)
+* [x] Application menu: New Sticky (Cmd+N), Open (Cmd+O), Save (Cmd+S)
 
-### **Phase 3: Interaction & Features**
+### **Phase 3: Markdown Editor** ✅
 
-* [x] **Drag & Drop**: Handle image acceptance and saving via `FileManager`.
-* [x] **Menu Operations**: Implement functionality to open files from the menu bar.
-* [x] **Appearance UI**: Implement color change and opacity adjustment buttons on the title bar.
-* [x] **Window Configuration**: Per-window settings for color, opacity, and file association.
-* [x] **Editor Cleanup**: 
-  * [x] Remove Minimap (right-side mini editor).
-  * [x] Implement toggle for Line Numbers.
-* [x] **Styling**:
-  * [x] Implement Per-window Font Color (UI & Persistence).
-  * [ ] **Heading Size**: Implement dynamic font sizing for headings based on Tree-sitter AST.
+* [x] CodeMirror 6 with @codemirror/lang-markdown
+* [x] Heading sizes (h1:26px through h6:14px), bold, italic, strikethrough, code
+* [x] Link handler: Markdown links + bare URL detection
+* [x] Line numbers toggle (CodeMirror Compartment)
 
-### **Phase 4: Refactoring & OrgKit Enhancement (Org-mode Integration)**
+### **Phase 4: Org-mode Editor** ✅
 
-* **[x] Integrate tree-sitter-org Grammar**:
-  * [x] Create `TreeSitterOrg` C target within the `OrgKit` package.
-  * [x] Add `parser.c`, `scanner.c`, and necessary headers from `milisims/tree-sitter-org`.
-  * [x] Expose `tree_sitter_org()` function to Swift via `publicHeadersPath`.
-* **Enhance OrgKit API**:
-  * [x] Define `OrgLanguage` providing a `SwiftTreeSitter.Language` instance.
-  * [ ] Move Tree-sitter setup and highlighting logic from `RichTextEditor` into `OrgKit`.
-  * [ ] Implement a unified `DocumentParser` in `OrgKit` that returns abstract style attributes/ranges.
-* **Update RichTextEditor for Multi-format Support**:
-  * [x] Refactor `Coordinator` to switch between Markdown and Org parsers based on the file extension.
-  * [ ] Abstract highlighting logic to handle generic document elements (Heading, Bold, Italic, etc.).
-  * [ ] Refactor `RichTextEditor` to use the high-level API provided by `OrgKit`.
-* **Implement Org-mode Syntax Highlighting**:
-  * [x] Headings (`*`).
-  * [ ] Bold (`*text*`), Italic (`/text/`), Underline (`_text_`), Code (`~text~`, `=text=`), Strike (`+text+`).
-  * [ ] Lists: Unordered (`-`, `+`) and Ordered (`1.`).
-* **Testing & Cleanup**:
-  * [x] Add comprehensive tests in `OrgKitTests` for various Org-mode structures and multi-byte characters.
-  * [ ] Remove the `CodeEditSourceEditor` dependency and associated code once TextKit 2 implementation is stable.
-  * [ ] Cleanup `StickyNoteViewModel` by removing unused legacy parser calls.
+* [x] StreamLanguage tokenizer (headings, code blocks, property drawers, lists)
+* [x] ViewPlugin inline emphasis with PRE/POST rules
+* [x] Org links: `[[url][desc]]`, `[[url]]`
+* [x] Format auto-detect (file extension)
 
-### **Phase 5: UX Enhancement**
+### **Phase 5: File Synchronization** ✅
 
-* [ ] **Mouse-through Mode**: Click-through functionality under specific conditions (modifier keys, etc.).
-* [ ] **App Sandbox & Security**: Handle file access rights considering security restrictions.
+* [x] chokidar watcher per note
+* [x] Save flow: editor -> debounce -> IPC -> atomic write (temp + rename)
+* [x] Reload flow: chokidar -> readFile -> compare lastSavedContent -> IPC
+* [x] Save-reload loop prevention
 
-### **Phase 6: Advanced Features (Future)**
+### **Phase 6: Image Display & Drag-and-Drop** ✅
 
-* [ ] **Inline Image Preview**: Display images directly within the editor using `NSTextAttachment`.
+* [x] CodeMirror Decoration.widget for inline images
+* [x] Custom protocol (local-image://) for serving local images
+* [x] Image size constraints (max-height 200px)
+
+### **Phase 7: UI Controls & Settings** ✅
+
+* [x] Custom toolbar: filename, save/pin/settings buttons
+* [x] Settings panel: color palette (6 colors), opacity slider, font color picker, line numbers toggle
+* [x] Always-on-top toggle, mouse-through mode
+
+### **Phase 8: Quality & CI** ✅
+
+* [x] ESLint + Prettier + TypeScript strict type checking
+* [x] Vitest unit tests (47 tests)
+* [x] Playwright E2E tests
+* [x] GitHub Actions: lint, unit test, E2E, security audit, CodeQL, dependency review
+
+### **Phase 9: Future Enhancements**
+
 * [ ] **Bi-directional Linking**: Navigate between notes via links.
+* [ ] **TODO highlighting**: Highlight TODO/DONE status in Org-mode.
+* [ ] **Lezer grammar for Org-mode**: Replace StreamLanguage with proper incremental Lezer grammar.
 
-## **6. Technical Challenges and Investment Value**
+## **6. Development Policy**
 
-* **Modern Text Handling**: Leveraging TextKit 2 ensures the app is future-proof and performant on modern macOS.
-* **Robust Parsing**: Tree-sitter provides industry-standard parsing capabilities, making support for complex formats like Org-mode more reliable.
-
-## **7. Implementation and Development Policy**
-
-### **7.1. Language Standard**
+### **6.1. Language Standard**
 
 * **Code & Documentation**: All identifiers, comments, and documentation must be in **English**.
 
-### **7.2. Automated Testing (CI)**
+### **6.2. Automated Testing (CI)**
 
-* **GitHub Actions**: Automatically run `swift test` on macOS runners upon Push/PR.
+* **GitHub Actions**: Runs lint, format check, type check, unit tests, E2E tests, and security scanning on Push/PR.
 
-### **7.3. Test-Driven Development (TDD)**
+### **6.3. Test-Driven Development (TDD)**
 
 * **Workflow**: Write tests first (Red), then proceed with implementation (Green).
 
-### **7.4. Pull Request Workflow**
+### **6.4. Pull Request Workflow**
 
 * **Pre-requisites**: Always run linter, formatter, and tests before creating a Pull Request.
-  * **Formatter**: `swift-format --recursive --in-place .`
-  * **Tests**: `xcodebuild test -project StickiesMd.xcodeproj -scheme StickiesMd -destination 'platform=macOS'`
+  * **Lint**: `npm run lint`
+  * **Format**: `npm run format:check`
+  * **Type Check**: `npm run typecheck`
+  * **Tests**: `npm run test:unit`
 
-## **8. Technical Deep Dives**
+## **7. Technical Deep Dives**
 
-### **8.1. Window Behavior**
+### **7.1. Window Behavior (Electron)**
 
-* level = .floating: Always on top.
-* isMovableByWindowBackground = true: Move by dragging the background.
-* styleMask.insert(.nonactivatingPanel): Operable without taking focus.
+* `alwaysOnTop: true` with `level: 'floating'`: Always on top.
+* CSS `-webkit-app-region: drag`: Move by dragging the toolbar.
+* `frame: false` + `titleBarStyle: 'hidden'`: Frameless with macOS traffic lights.
+* `transparent: true`: Transparent window, color applied via CSS.
+* `win.setIgnoreMouseEvents(true)`: Mouse-through mode.
 
-### **8.2. File Synchronization**
+### **7.2. File Synchronization**
 
-Adopt `NSFilePresenter` to detect changes while preventing conflicts with external editors.
+Uses `chokidar` to detect external file changes. Save-reload loop prevention via `lastSavedContent` comparison (same pattern as the original NSFilePresenter implementation).
 
-### **8.3. Initial Color Palette (Sticky Classics)**
+### **7.3. Initial Color Palette (Sticky Classics)**
 
-Adopt the following 6 colors as the default random rotation set:
+6 colors as the default random rotation set:
 
-1. **Yellow**: #FFF9C4 (Classic Sticky Yellow)
+1. **Yellow**: #FFF9C4
 2. **Blue**: #E1F5FE
 3. **Green**: #F1F8E9
 4. **Pink**: #FCE4EC
 5. **Purple**: #F3E5F5
 6. **Gray**: #F5F5F5
 
-### **8.4. Initial Opacity**
+### **7.4. Initial Opacity**
+
 The initial value for opacity is 1, meaning non-transparent.
