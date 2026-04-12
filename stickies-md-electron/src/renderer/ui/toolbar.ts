@@ -15,6 +15,11 @@ export interface ToolbarCallbacks {
   onSave: () => void;
 }
 
+/**
+ * Custom toolbar UI component for a sticky note window.
+ * Displays the filename (with `** ` dirty indicator), save/pin/settings buttons.
+ * The toolbar area is draggable to allow window repositioning.
+ */
 export class Toolbar {
   private element: HTMLElement;
   private filenameEl: HTMLElement;

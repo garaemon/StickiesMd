@@ -149,6 +149,21 @@ export function resetAllMouseThrough(): void {
   }
 }
 
+/**
+ * Update a managed note's settings: persists to store and updates in-memory state.
+ * Centralizes note mutation to prevent drift between in-memory and persisted state.
+ */
+export function updateManagedNote(
+  webContentsId: number,
+  updates: Partial<Omit<StickyNote, 'id'>>,
+): StickyNote | undefined {
+  const managed = findManagedWindowByWebContentsId(webContentsId);
+  if (!managed) return undefined;
+  const updated = updateNote(managed.note.id, updates);
+  if (updated) managed.note = updated;
+  return updated;
+}
+
 export function findManagedWindowByWebContentsId(webContentsId: number): ManagedWindow | undefined {
   for (const managed of windows.values()) {
     if (!managed.win.isDestroyed() && managed.win.webContents.id === webContentsId) {

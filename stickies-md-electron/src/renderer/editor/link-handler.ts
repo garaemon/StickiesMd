@@ -28,6 +28,8 @@ const BARE_URL_REGEX = new RegExp('https?://[^\\s<>\\[\\]()"]*[^\\s<>\\[\\]()".,
 /** Find bare http(s) URLs in text. */
 function findBareUrls(text: string): LinkMatch[] {
   const matches: LinkMatch[] = [];
+  // Reset lastIndex because this regex has the `g` flag and is reused across calls;
+  // without this, subsequent calls would resume matching from the prior call's position.
   BARE_URL_REGEX.lastIndex = 0;
   let match;
   while ((match = BARE_URL_REGEX.exec(text)) !== null) {
@@ -93,6 +95,8 @@ const bareUrlDecorations = ViewPlugin.fromClass(
       }
     }
 
+    // TODO: For large documents, consider limiting scanning to visible viewport lines
+    // via view.visibleRanges instead of converting the full document to string.
     buildDecorations(view: EditorView): DecorationSet {
       const builder = new RangeSetBuilder<Decoration>();
       const text = view.state.doc.toString();

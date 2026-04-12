@@ -1,7 +1,10 @@
 import { ipcMain, shell } from 'electron';
 import * as IPC from '../shared/ipc-channels';
-import { updateNote } from './store';
-import { findManagedWindowByWebContentsId, openFile } from './window-manager';
+import {
+  findManagedWindowByWebContentsId,
+  openFile,
+  updateManagedNote,
+} from './window-manager';
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
@@ -30,24 +33,18 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.on(IPC.UPDATE_COLOR, (event, color: string) => {
-    const managed = findManagedWindowByWebContentsId(event.sender.id);
-    if (!managed) return;
     if (typeof color !== 'string' || !HEX_COLOR_REGEX.test(color)) return;
-    const updated = updateNote(managed.note.id, { backgroundColor: color });
+    const updated = updateManagedNote(event.sender.id, { backgroundColor: color });
     if (updated) {
-      managed.note = updated;
-      managed.win.webContents.send(IPC.NOTE_SETTINGS, updated);
+      event.sender.send(IPC.NOTE_SETTINGS, updated);
     }
   });
 
   ipcMain.on(IPC.UPDATE_FONT_COLOR, (event, color: string) => {
-    const managed = findManagedWindowByWebContentsId(event.sender.id);
-    if (!managed) return;
     if (typeof color !== 'string' || !HEX_COLOR_REGEX.test(color)) return;
-    const updated = updateNote(managed.note.id, { fontColor: color });
+    const updated = updateManagedNote(event.sender.id, { fontColor: color });
     if (updated) {
-      managed.note = updated;
-      managed.win.webContents.send(IPC.NOTE_SETTINGS, updated);
+      event.sender.send(IPC.NOTE_SETTINGS, updated);
     }
   });
 
@@ -56,9 +53,8 @@ export function registerIpcHandlers(): void {
     if (!managed) return;
     if (typeof opacity !== 'number' || isNaN(opacity)) return;
     const clamped = Math.max(0.1, Math.min(1.0, opacity));
-    const updated = updateNote(managed.note.id, { opacity: clamped });
+    const updated = updateManagedNote(event.sender.id, { opacity: clamped });
     if (updated) {
-      managed.note = updated;
       managed.win.setOpacity(clamped);
     }
   });
@@ -66,12 +62,11 @@ export function registerIpcHandlers(): void {
   ipcMain.on(IPC.TOGGLE_LINE_NUMBERS, (event) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
     if (!managed) return;
-    const updated = updateNote(managed.note.id, {
+    const updated = updateManagedNote(event.sender.id, {
       showLineNumbers: !managed.note.showLineNumbers,
     });
     if (updated) {
-      managed.note = updated;
-      managed.win.webContents.send(IPC.NOTE_SETTINGS, updated);
+      event.sender.send(IPC.NOTE_SETTINGS, updated);
     }
   });
 
@@ -79,11 +74,10 @@ export function registerIpcHandlers(): void {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
     if (!managed) return;
     const onTop = !managed.note.isAlwaysOnTop;
-    const updated = updateNote(managed.note.id, { isAlwaysOnTop: onTop });
+    const updated = updateManagedNote(event.sender.id, { isAlwaysOnTop: onTop });
     if (updated) {
-      managed.note = updated;
       managed.win.setAlwaysOnTop(onTop, onTop ? 'floating' : undefined);
-      managed.win.webContents.send(IPC.NOTE_SETTINGS, updated);
+      event.sender.send(IPC.NOTE_SETTINGS, updated);
     }
   });
 

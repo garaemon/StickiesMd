@@ -124,6 +124,8 @@ export function imageWidgetExtension(baseDir: string, format: 'markdown' | 'org'
         }
       }
 
+      // TODO: For large documents, consider limiting scanning to visible viewport lines
+      // via view.visibleRanges instead of converting the full document to string.
       buildDecorations(view: EditorView): DecorationSet {
         const builder = new RangeSetBuilder<Decoration>();
         const text = view.state.doc.toString();
