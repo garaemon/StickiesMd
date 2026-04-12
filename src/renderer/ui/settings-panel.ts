@@ -11,6 +11,7 @@ export class SettingsPanel {
   private opacitySlider: HTMLInputElement | null = null;
   private fontColorInput: HTMLInputElement | null = null;
   private lineNumbersCheckbox: HTMLInputElement | null = null;
+  private mouseThroughCheckbox: HTMLInputElement | null = null;
 
   constructor(container: HTMLElement) {
     this.element = container;
@@ -89,6 +90,28 @@ export class SettingsPanel {
     toggleRow.appendChild(toggleSwitch);
     lineNumSection.appendChild(toggleRow);
     this.element.appendChild(lineNumSection);
+
+    // Mouse Through toggle
+    const mouseThroughSection = this.createSection('');
+    const mtToggleRow = document.createElement('div');
+    mtToggleRow.className = 'toggle-row';
+    const mtLabel = document.createElement('span');
+    mtLabel.textContent = 'Mouse Through';
+    mtToggleRow.appendChild(mtLabel);
+    const mtToggleSwitch = document.createElement('label');
+    mtToggleSwitch.className = 'toggle-switch';
+    this.mouseThroughCheckbox = document.createElement('input');
+    this.mouseThroughCheckbox.type = 'checkbox';
+    this.mouseThroughCheckbox.addEventListener('change', () => {
+      window.electronAPI.setMouseThrough(this.mouseThroughCheckbox!.checked);
+    });
+    const mtSlider = document.createElement('span');
+    mtSlider.className = 'toggle-slider';
+    mtToggleSwitch.appendChild(this.mouseThroughCheckbox);
+    mtToggleSwitch.appendChild(mtSlider);
+    mtToggleRow.appendChild(mtToggleSwitch);
+    mouseThroughSection.appendChild(mtToggleRow);
+    this.element.appendChild(mouseThroughSection);
 
     // Open Another File button
     const openBtn = document.createElement('button');
