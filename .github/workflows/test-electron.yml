@@ -1,16 +1,10 @@
-name: Electron CI
+name: CI
 
 on:
   push:
     branches: ['main']
-    paths:
-      - 'stickies-md-electron/**'
-      - '.github/workflows/test-electron.yml'
   pull_request:
     branches: ['main']
-    paths:
-      - 'stickies-md-electron/**'
-      - '.github/workflows/test-electron.yml'
 
 permissions:
   contents: read
@@ -21,9 +15,6 @@ jobs:
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: stickies-md-electron
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,7 +24,6 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: stickies-md-electron/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -51,9 +41,6 @@ jobs:
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: stickies-md-electron
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,7 +50,6 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: stickies-md-electron/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -76,9 +62,6 @@ jobs:
     name: E2E Tests
     runs-on: macos-latest
     needs: [lint, test-unit]
-    defaults:
-      run:
-        working-directory: stickies-md-electron
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -88,7 +71,6 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: stickies-md-electron/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -105,17 +87,14 @@ jobs:
         with:
           name: e2e-results
           path: |
-            stickies-md-electron/test-results/
-            stickies-md-electron/playwright-report/
+            test-results/
+            playwright-report/
           if-no-files-found: ignore
 
   # ─── Security / DevSecOps ─────────────────────────────────────
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: stickies-md-electron
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -125,7 +104,6 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: stickies-md-electron/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -148,7 +126,6 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
-          # Deny copyleft licenses; all permissive licenses are allowed
           deny-licenses: GPL-2.0-only, GPL-3.0-only, AGPL-3.0-only, LGPL-2.1-only, LGPL-3.0-only
 
   codeql:
@@ -162,7 +139,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
-          source-root: stickies-md-electron/src
+          source-root: src
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3

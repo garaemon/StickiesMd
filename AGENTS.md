@@ -62,7 +62,6 @@ Stickies.md is a file-linked sticky note application that combines the lightness
 ### **Project Structure**
 
 ```
-stickies-md-electron/
 ├── src/
 │   ├── main/                     # Main process (Node.js)
 │   │   ├── index.ts              # App lifecycle

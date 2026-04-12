@@ -20,7 +20,6 @@ A file-linked sticky note app for Markdown and Org-mode, built with Electron + T
 ### Setup
 
 ```bash
-cd stickies-md-electron
 npm install
 ```
 
@@ -42,7 +41,7 @@ npm run typecheck     # TypeScript strict check
 ### Testing
 
 ```bash
-npm run test:unit   # Vitest unit tests (47 tests)
+npm run test:unit   # Vitest unit tests (60 tests)
 npm run test:e2e    # Playwright E2E tests (requires display)
 ```
 
