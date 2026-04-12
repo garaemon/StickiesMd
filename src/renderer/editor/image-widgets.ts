@@ -1,4 +1,3 @@
-
 /**
  * Inline image preview extension for CodeMirror 6.
  *
