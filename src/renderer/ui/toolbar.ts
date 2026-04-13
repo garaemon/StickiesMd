@@ -71,7 +71,7 @@ export class Toolbar {
     // Mouse Through button
     this.mouseThroughBtn = document.createElement('button');
     this.mouseThroughBtn.className = 'toolbar-btn';
-    this.mouseThroughBtn.textContent = '\u{1F441}'; // eye
+    this.mouseThroughBtn.textContent = '\u{1F5B1}'; // mouse
     this.mouseThroughBtn.title = 'Mouse Through';
     this.mouseThroughBtn.addEventListener('click', () => {
       this.isMouseThrough = !this.isMouseThrough;
