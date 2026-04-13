@@ -74,9 +74,7 @@ export class Toolbar {
     this.mouseThroughBtn.textContent = '\u{1F5B1}'; // mouse
     this.mouseThroughBtn.title = 'Mouse Through';
     this.mouseThroughBtn.addEventListener('click', () => {
-      this.isMouseThrough = !this.isMouseThrough;
-      this.mouseThroughBtn.classList.toggle('active', this.isMouseThrough);
-      window.electronAPI.setMouseThrough(this.isMouseThrough);
+      window.electronAPI.setMouseThrough(!this.isMouseThrough);
     });
     this.mouseThroughBtn.addEventListener('mouseenter', () => {
       if (this.isMouseThrough) {

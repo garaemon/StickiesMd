@@ -5,7 +5,7 @@ export const FILE_CHANGED = 'stickies:file-changed';
 export const FOCUS_CHANGED = 'stickies:focus-changed';
 export const NOTE_SETTINGS = 'stickies:note-settings';
 export const TRIGGER_SAVE = 'stickies:trigger-save';
-export const MOUSE_THROUGH_RESET = 'stickies:mouse-through-reset';
+export const MOUSE_THROUGH_CHANGED = 'stickies:mouse-through-changed';
 
 // Renderer -> Main
 export const SAVE_CONTENT = 'stickies:save-content';

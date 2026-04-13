@@ -101,16 +101,18 @@ export function registerIpcHandlers(): void {
     if (typeof enabled !== 'boolean') {
       return;
     }
+    managed.isMouseThrough = enabled;
     if (enabled) {
       managed.win.setIgnoreMouseEvents(true, { forward: true });
     } else {
       managed.win.setIgnoreMouseEvents(false);
     }
+    event.sender.send(IPC.MOUSE_THROUGH_CHANGED, enabled);
   });
 
   ipcMain.on(IPC.PAUSE_MOUSE_THROUGH, (event) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
-    if (!managed) {
+    if (!managed || !managed.isMouseThrough) {
       return;
     }
     managed.win.setIgnoreMouseEvents(false);
@@ -118,7 +120,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.on(IPC.RESUME_MOUSE_THROUGH, (event) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
-    if (!managed) {
+    if (!managed || !managed.isMouseThrough) {
       return;
     }
     managed.win.setIgnoreMouseEvents(true, { forward: true });

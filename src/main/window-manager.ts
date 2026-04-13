@@ -15,6 +15,7 @@ interface ManagedWindow {
   win: BrowserWindow;
   note: StickyNote;
   watcher: FileWatcher;
+  isMouseThrough: boolean;
 }
 
 const windows = new Map<string, ManagedWindow>();
@@ -46,7 +47,7 @@ export function createWindowForNote(note: StickyNote): void {
     }
   });
 
-  const managed: ManagedWindow = { win, note, watcher };
+  const managed: ManagedWindow = { win, note, watcher, isMouseThrough: false };
   windows.set(note.id, managed);
 
   win.webContents.on('did-finish-load', async () => {
@@ -149,10 +150,11 @@ export async function openFile(): Promise<void> {
 }
 
 export function resetAllMouseThrough(): void {
-  for (const { win } of windows.values()) {
-    if (!win.isDestroyed()) {
-      win.setIgnoreMouseEvents(false);
-      win.webContents.send(IPC.MOUSE_THROUGH_RESET);
+  for (const managed of windows.values()) {
+    if (!managed.win.isDestroyed()) {
+      managed.isMouseThrough = false;
+      managed.win.setIgnoreMouseEvents(false);
+      managed.win.webContents.send(IPC.MOUSE_THROUGH_CHANGED, false);
     }
   }
 }

@@ -31,10 +31,10 @@ const api = {
     ipcRenderer.on(IPC.TRIGGER_SAVE, handler);
     return () => ipcRenderer.removeListener(IPC.TRIGGER_SAVE, handler);
   },
-  onMouseThroughReset: (callback: () => void) => {
-    const handler = () => callback();
-    ipcRenderer.on(IPC.MOUSE_THROUGH_RESET, handler);
-    return () => ipcRenderer.removeListener(IPC.MOUSE_THROUGH_RESET, handler);
+  onMouseThroughChanged: (callback: (enabled: boolean) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, enabled: boolean) => callback(enabled);
+    ipcRenderer.on(IPC.MOUSE_THROUGH_CHANGED, handler);
+    return () => ipcRenderer.removeListener(IPC.MOUSE_THROUGH_CHANGED, handler);
   },
 
   // Renderer -> Main actions

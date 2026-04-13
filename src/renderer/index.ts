@@ -91,7 +91,7 @@ window.electronAPI.onTriggerSave(() => {
   editor?.forceSave();
 });
 
-window.electronAPI.onMouseThroughReset(() => {
-  toolbar?.setMouseThrough(false);
-  settingsPanel?.updateMouseThrough(false);
+window.electronAPI.onMouseThroughChanged((enabled: boolean) => {
+  toolbar?.setMouseThrough(enabled);
+  settingsPanel?.updateMouseThrough(enabled);
 });

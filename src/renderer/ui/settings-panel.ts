@@ -70,51 +70,47 @@ export class SettingsPanel {
     this.element.appendChild(fontColorSection);
 
     // Line Numbers toggle
-    const lineNumSection = this.createSection('');
-    const toggleRow = document.createElement('div');
-    toggleRow.className = 'toggle-row';
-    const label = document.createElement('span');
-    label.textContent = 'Line Numbers';
-    toggleRow.appendChild(label);
-    const toggleSwitch = document.createElement('label');
-    toggleSwitch.className = 'toggle-switch';
+    const lineNumberSection = this.createSection('');
+    const lineNumberToggleRow = document.createElement('div');
+    lineNumberToggleRow.className = 'toggle-row';
+    const lineNumberLabel = document.createElement('span');
+    lineNumberLabel.textContent = 'Line Numbers';
+    lineNumberToggleRow.appendChild(lineNumberLabel);
+    const lineNumberToggleSwitch = document.createElement('label');
+    lineNumberToggleSwitch.className = 'toggle-switch';
     this.lineNumbersCheckbox = document.createElement('input');
     this.lineNumbersCheckbox.type = 'checkbox';
     this.lineNumbersCheckbox.addEventListener('change', () => {
       window.electronAPI.toggleLineNumbers();
     });
-    const slider = document.createElement('span');
-    slider.className = 'toggle-slider';
-    toggleSwitch.appendChild(this.lineNumbersCheckbox);
-    toggleSwitch.appendChild(slider);
-    toggleRow.appendChild(toggleSwitch);
-    lineNumSection.appendChild(toggleRow);
-    this.element.appendChild(lineNumSection);
+    const lineNumberSlider = document.createElement('span');
+    lineNumberSlider.className = 'toggle-slider';
+    lineNumberToggleSwitch.appendChild(this.lineNumbersCheckbox);
+    lineNumberToggleSwitch.appendChild(lineNumberSlider);
+    lineNumberToggleRow.appendChild(lineNumberToggleSwitch);
+    lineNumberSection.appendChild(lineNumberToggleRow);
+    this.element.appendChild(lineNumberSection);
 
     // Mouse Through toggle
     const mouseThroughSection = this.createSection('');
-    const mtToggleRow = document.createElement('div');
-    mtToggleRow.className = 'toggle-row';
-    const mtLabel = document.createElement('span');
-    mtLabel.textContent = 'Mouse Through';
-    mtToggleRow.appendChild(mtLabel);
-    const mtToggleSwitch = document.createElement('label');
-    mtToggleSwitch.className = 'toggle-switch';
+    const mouseThroughToggleRow = document.createElement('div');
+    mouseThroughToggleRow.className = 'toggle-row';
+    const mouseThroughLabel = document.createElement('span');
+    mouseThroughLabel.textContent = 'Mouse Through';
+    mouseThroughToggleRow.appendChild(mouseThroughLabel);
+    const mouseThroughToggleSwitch = document.createElement('label');
+    mouseThroughToggleSwitch.className = 'toggle-switch';
     this.mouseThroughCheckbox = document.createElement('input');
     this.mouseThroughCheckbox.type = 'checkbox';
     this.mouseThroughCheckbox.addEventListener('change', () => {
-      const enabled = this.mouseThroughCheckbox!.checked;
-      window.electronAPI.setMouseThrough(enabled);
-      if (enabled) {
-        this.hide();
-      }
+      window.electronAPI.setMouseThrough(this.mouseThroughCheckbox!.checked);
     });
-    const mtSlider = document.createElement('span');
-    mtSlider.className = 'toggle-slider';
-    mtToggleSwitch.appendChild(this.mouseThroughCheckbox);
-    mtToggleSwitch.appendChild(mtSlider);
-    mtToggleRow.appendChild(mtToggleSwitch);
-    mouseThroughSection.appendChild(mtToggleRow);
+    const mouseThroughSlider = document.createElement('span');
+    mouseThroughSlider.className = 'toggle-slider';
+    mouseThroughToggleSwitch.appendChild(this.mouseThroughCheckbox);
+    mouseThroughToggleSwitch.appendChild(mouseThroughSlider);
+    mouseThroughToggleRow.appendChild(mouseThroughToggleSwitch);
+    mouseThroughSection.appendChild(mouseThroughToggleRow);
     this.element.appendChild(mouseThroughSection);
 
     // Open Another File button
@@ -166,6 +162,9 @@ export class SettingsPanel {
   updateMouseThrough(enabled: boolean): void {
     if (this.mouseThroughCheckbox) {
       this.mouseThroughCheckbox.checked = enabled;
+    }
+    if (enabled) {
+      this.hide();
     }
   }
 
