@@ -1,0 +1,248 @@
+/**
+ * Code block decorations for CodeMirror 6.
+ *
+ * Provides:
+ * 1. Line decorations that create a GitHub-style box around code blocks
+ *    (works for both Markdown and Org-mode)
+ * 2. Syntax highlighting for code inside Org-mode #+BEGIN_SRC blocks
+ *    (Markdown handles this natively via codeLanguages)
+ */
+import {
+  Decoration,
+  type DecorationSet,
+  EditorView,
+  ViewPlugin,
+  type ViewUpdate,
+} from '@codemirror/view';
+import { RangeSetBuilder, type Text, type Extension } from '@codemirror/state';
+import { LanguageDescription } from '@codemirror/language';
+import { languages } from '@codemirror/language-data';
+import { highlightTree } from '@lezer/highlight';
+import { codeTokenHighlightStyle } from './code-highlight-theme';
+import type { FileFormat } from '../../shared/types';
+
+// ---------------------------------------------------------------------------
+// Code block detection
+// ---------------------------------------------------------------------------
+
+export interface CodeBlockInfo {
+  /** 1-based line number of the opening fence / #+BEGIN_SRC */
+  startLineNum: number;
+  /** 1-based line number of the closing fence / #+END_SRC */
+  endLineNum: number;
+  /** Language specifier (empty string if none) */
+  language: string;
+}
+
+/** Find Markdown fenced code blocks (``` or ~~~). */
+export function findMarkdownCodeBlocks(doc: Text): CodeBlockInfo[] {
+  const blocks: CodeBlockInfo[] = [];
+  let inBlock = false;
+  let startLineNum = 0;
+  let language = '';
+  let fenceChar = '';
+  let fenceCount = 0;
+
+  for (let i = 1; i <= doc.lines; i++) {
+    const lineText = doc.line(i).text;
+    const trimmed = lineText.trimStart();
+
+    if (!inBlock) {
+      const match = trimmed.match(/^(`{3,}|~{3,})(.*)$/);
+      if (match) {
+        inBlock = true;
+        startLineNum = i;
+        fenceChar = match[1][0];
+        fenceCount = match[1].length;
+        language = match[2].trim().split(/\s/)[0] || '';
+      }
+    } else {
+      const match = trimmed.match(/^(`{3,}|~{3,})\s*$/);
+      if (match && match[1][0] === fenceChar && match[1].length >= fenceCount) {
+        blocks.push({ startLineNum, endLineNum: i, language });
+        inBlock = false;
+      }
+    }
+  }
+
+  return blocks;
+}
+
+/** Find Org-mode code blocks (#+BEGIN_SRC ... #+END_SRC). */
+export function findOrgCodeBlocks(doc: Text): CodeBlockInfo[] {
+  const blocks: CodeBlockInfo[] = [];
+  let inBlock = false;
+  let startLineNum = 0;
+  let language = '';
+
+  for (let i = 1; i <= doc.lines; i++) {
+    const lineText = doc.line(i).text;
+
+    if (!inBlock) {
+      const match = lineText.match(/^#\+BEGIN_SRC\s*(\S*)/i);
+      if (match) {
+        inBlock = true;
+        startLineNum = i;
+        language = match[1] || '';
+      }
+    } else {
+      if (/^#\+END_SRC\b/i.test(lineText)) {
+        blocks.push({ startLineNum, endLineNum: i, language });
+        inBlock = false;
+      }
+    }
+  }
+
+  return blocks;
+}
+
+// ---------------------------------------------------------------------------
+// Line decorations for the code block box
+// ---------------------------------------------------------------------------
+
+const codeblockLine = Decoration.line({ class: 'cm-codeblock-line' });
+const codeblockFirst = Decoration.line({ class: 'cm-codeblock-line cm-codeblock-first' });
+const codeblockLast = Decoration.line({ class: 'cm-codeblock-line cm-codeblock-last' });
+const codeblockSingle = Decoration.line({
+  class: 'cm-codeblock-line cm-codeblock-first cm-codeblock-last',
+});
+
+/** ViewPlugin that adds line decorations to code block lines for box styling. */
+function codeBlockBoxPlugin(format: FileFormat) {
+  return ViewPlugin.fromClass(
+    class {
+      decorations: DecorationSet;
+
+      constructor(view: EditorView) {
+        this.decorations = this.buildDecorations(view);
+      }
+
+      update(update: ViewUpdate) {
+        if (update.docChanged) {
+          this.decorations = this.buildDecorations(update.view);
+        }
+      }
+
+      buildDecorations(view: EditorView): DecorationSet {
+        const builder = new RangeSetBuilder<Decoration>();
+        const doc = view.state.doc;
+        const blocks = format === 'markdown' ? findMarkdownCodeBlocks(doc) : findOrgCodeBlocks(doc);
+
+        for (const block of blocks) {
+          for (let lineNum = block.startLineNum; lineNum <= block.endLineNum; lineNum++) {
+            const line = doc.line(lineNum);
+            let deco: Decoration;
+            if (block.startLineNum === block.endLineNum) {
+              deco = codeblockSingle;
+            } else if (lineNum === block.startLineNum) {
+              deco = codeblockFirst;
+            } else if (lineNum === block.endLineNum) {
+              deco = codeblockLast;
+            } else {
+              deco = codeblockLine;
+            }
+            builder.add(line.from, line.from, deco);
+          }
+        }
+
+        return builder.finish();
+      }
+    },
+    { decorations: (v) => v.decorations },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Org-mode code block syntax highlighting
+// ---------------------------------------------------------------------------
+
+/** ViewPlugin that applies syntax highlighting to Org-mode code block contents. */
+function orgCodeHighlightPlugin() {
+  return ViewPlugin.fromClass(
+    class {
+      decorations: DecorationSet;
+      private loadingLanguages = new Set<string>();
+      private view: EditorView;
+      private destroyed = false;
+
+      constructor(view: EditorView) {
+        this.view = view;
+        this.decorations = this.buildDecorations();
+      }
+
+      update(update: ViewUpdate) {
+        if (update.docChanged || update.viewportChanged) {
+          this.decorations = this.buildDecorations();
+        }
+      }
+
+      destroy() {
+        this.destroyed = true;
+      }
+
+      buildDecorations(): DecorationSet {
+        const builder = new RangeSetBuilder<Decoration>();
+        const doc = this.view.state.doc;
+        const blocks = findOrgCodeBlocks(doc);
+
+        for (const block of blocks) {
+          if (!block.language) {
+            continue;
+          }
+
+          const langDesc = LanguageDescription.matchLanguageName(languages, block.language);
+          if (!langDesc) {
+            continue;
+          }
+
+          if (langDesc.support) {
+            // Language loaded — parse and highlight the content
+            const contentStartLine = block.startLineNum + 1;
+            const contentEndLine = block.endLineNum - 1;
+            if (contentStartLine > contentEndLine) {
+              continue;
+            }
+
+            const contentFrom = doc.line(contentStartLine).from;
+            const contentTo = doc.line(contentEndLine).to;
+            const code = doc.sliceString(contentFrom, contentTo);
+
+            const tree = langDesc.support.language.parser.parse(code);
+            highlightTree(tree, codeTokenHighlightStyle, (from, to, classes) => {
+              builder.add(
+                contentFrom + from,
+                contentFrom + to,
+                Decoration.mark({ class: classes }),
+              );
+            });
+          } else if (!this.loadingLanguages.has(block.language)) {
+            // Start loading the language; re-render when ready
+            this.loadingLanguages.add(block.language);
+            langDesc.load().then(() => {
+              this.loadingLanguages.delete(block.language);
+              if (!this.destroyed) {
+                this.view.dispatch({});
+              }
+            });
+          }
+        }
+
+        return builder.finish();
+      }
+    },
+    { decorations: (v) => v.decorations },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/** Create code block extensions (box decorations + syntax highlighting) for the given format. */
+export function codeBlockExtensions(format: FileFormat): Extension[] {
+  const exts: Extension[] = [codeBlockBoxPlugin(format)];
+  if (format === 'org') {
+    exts.push(orgCodeHighlightPlugin());
+  }
+  return exts;
+}

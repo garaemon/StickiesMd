@@ -270,14 +270,47 @@ body {
 .cm-editor .cm-inline-code {
   font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
   background: rgba(128, 128, 128, 0.15);
-  border-radius: 3px;
-  padding: 1px 4px;
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 0.9em;
 }
 
-/* Code block */
+/* Code block fence markers (```, #+BEGIN_SRC, etc.) */
 .cm-editor .cm-code-block {
   font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
-  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ---- Code block box (line-level decorations) ---- */
+#editor-container .cm-editor .cm-line.cm-codeblock-line {
+  background: rgba(0, 0, 0, 0.04);
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+#editor-container .cm-editor .cm-line.cm-codeblock-first {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+#editor-container .cm-editor .cm-line.cm-codeblock-last {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+}
+
+/* Suppress inline-code background inside code block boxes */
+#editor-container .cm-editor .cm-line.cm-codeblock-line .cm-inline-code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
 }
 
 /* Links */
