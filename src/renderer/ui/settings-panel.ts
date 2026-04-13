@@ -103,7 +103,11 @@ export class SettingsPanel {
     this.mouseThroughCheckbox = document.createElement('input');
     this.mouseThroughCheckbox.type = 'checkbox';
     this.mouseThroughCheckbox.addEventListener('change', () => {
-      window.electronAPI.setMouseThrough(this.mouseThroughCheckbox!.checked);
+      const enabled = this.mouseThroughCheckbox!.checked;
+      window.electronAPI.setMouseThrough(enabled);
+      if (enabled) {
+        this.hide();
+      }
     });
     const mtSlider = document.createElement('span');
     mtSlider.className = 'toggle-slider';
