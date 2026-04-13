@@ -92,5 +92,6 @@ window.electronAPI.onTriggerSave(() => {
 });
 
 window.electronAPI.onMouseThroughReset(() => {
+  toolbar?.setMouseThrough(false);
   settingsPanel?.updateMouseThrough(false);
 });

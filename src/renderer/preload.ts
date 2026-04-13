@@ -45,6 +45,8 @@ const api = {
   toggleLineNumbers: () => ipcRenderer.send(IPC.TOGGLE_LINE_NUMBERS),
   toggleAlwaysOnTop: () => ipcRenderer.send(IPC.TOGGLE_ALWAYS_ON_TOP),
   setMouseThrough: (enabled: boolean) => ipcRenderer.send(IPC.SET_MOUSE_THROUGH, enabled),
+  pauseMouseThrough: () => ipcRenderer.send(IPC.PAUSE_MOUSE_THROUGH),
+  resumeMouseThrough: () => ipcRenderer.send(IPC.RESUME_MOUSE_THROUGH),
   openFileDialog: () => ipcRenderer.send(IPC.OPEN_FILE_DIALOG),
   openUrl: (url: string) => ipcRenderer.send(IPC.OPEN_URL, url),
 

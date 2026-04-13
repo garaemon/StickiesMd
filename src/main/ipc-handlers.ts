@@ -101,7 +101,27 @@ export function registerIpcHandlers(): void {
     if (typeof enabled !== 'boolean') {
       return;
     }
-    managed.win.setIgnoreMouseEvents(enabled);
+    if (enabled) {
+      managed.win.setIgnoreMouseEvents(true, { forward: true });
+    } else {
+      managed.win.setIgnoreMouseEvents(false);
+    }
+  });
+
+  ipcMain.on(IPC.PAUSE_MOUSE_THROUGH, (event) => {
+    const managed = findManagedWindowByWebContentsId(event.sender.id);
+    if (!managed) {
+      return;
+    }
+    managed.win.setIgnoreMouseEvents(false);
+  });
+
+  ipcMain.on(IPC.RESUME_MOUSE_THROUGH, (event) => {
+    const managed = findManagedWindowByWebContentsId(event.sender.id);
+    if (!managed) {
+      return;
+    }
+    managed.win.setIgnoreMouseEvents(true, { forward: true });
   });
 
   ipcMain.on(IPC.OPEN_FILE_DIALOG, () => {

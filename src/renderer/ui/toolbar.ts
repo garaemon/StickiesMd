@@ -33,7 +33,9 @@ export class Toolbar {
   private element: HTMLElement;
   private filenameEl: HTMLElement;
   private pinBtn: HTMLButtonElement;
+  private mouseThroughBtn: HTMLButtonElement;
   private isAlwaysOnTop = false;
+  private isMouseThrough = false;
   private isDirty = false;
   private filename = '';
 
@@ -66,6 +68,28 @@ export class Toolbar {
     });
     buttonsDiv.appendChild(this.pinBtn);
 
+    // Mouse Through button
+    this.mouseThroughBtn = document.createElement('button');
+    this.mouseThroughBtn.className = 'toolbar-btn';
+    this.mouseThroughBtn.textContent = '\u{1F441}'; // eye
+    this.mouseThroughBtn.title = 'Mouse Through';
+    this.mouseThroughBtn.addEventListener('click', () => {
+      this.isMouseThrough = !this.isMouseThrough;
+      this.mouseThroughBtn.classList.toggle('active', this.isMouseThrough);
+      window.electronAPI.setMouseThrough(this.isMouseThrough);
+    });
+    this.mouseThroughBtn.addEventListener('mouseenter', () => {
+      if (this.isMouseThrough) {
+        window.electronAPI.pauseMouseThrough();
+      }
+    });
+    this.mouseThroughBtn.addEventListener('mouseleave', () => {
+      if (this.isMouseThrough) {
+        window.electronAPI.resumeMouseThrough();
+      }
+    });
+    buttonsDiv.appendChild(this.mouseThroughBtn);
+
     // Settings button
     const settingsBtn = document.createElement('button');
     settingsBtn.className = 'toolbar-btn';
@@ -91,6 +115,11 @@ export class Toolbar {
   setAlwaysOnTop(onTop: boolean): void {
     this.isAlwaysOnTop = onTop;
     this.pinBtn.classList.toggle('active', onTop);
+  }
+
+  setMouseThrough(enabled: boolean): void {
+    this.isMouseThrough = enabled;
+    this.mouseThroughBtn.classList.toggle('active', enabled);
   }
 
   private updateTitle(): void {
