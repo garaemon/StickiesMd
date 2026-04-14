@@ -3,6 +3,7 @@ import {
   isImagePath,
   findMarkdownImages,
   findOrgImages,
+  resolveImageUrl,
 } from '../../src/renderer/editor/image-widgets';
 
 describe('isImagePath', () => {
@@ -102,6 +103,48 @@ describe('findMarkdownImages', () => {
     const images = findMarkdownImages(text);
     expect(images).toHaveLength(1);
     expect(images[0].path).toBe('image.png');
+  });
+});
+
+describe('resolveImageUrl', () => {
+  it('prepends baseDir for relative paths', () => {
+    const url = resolveImageUrl('image.png', '/Users/garaemon/notes');
+    expect(url).toBe('local-image://localhost/Users/garaemon/notes/image.png');
+  });
+
+  it('prepends baseDir for dot-relative paths', () => {
+    const url = resolveImageUrl('./images/photo.jpg', '/Users/garaemon/notes');
+    expect(url).toBe('local-image://localhost/Users/garaemon/notes/./images/photo.jpg');
+  });
+
+  it('uses absolute path directly without baseDir', () => {
+    const url = resolveImageUrl('/other/dir/image.png', '/Users/garaemon/notes');
+    expect(url).toBe('local-image://localhost/other/dir/image.png');
+  });
+
+  it('passes through http URLs unchanged', () => {
+    const url = resolveImageUrl('https://example.com/image.png', '/any/dir');
+    expect(url).toBe('https://example.com/image.png');
+  });
+
+  it('passes through http URLs unchanged', () => {
+    const url = resolveImageUrl('http://example.com/image.png', '/any/dir');
+    expect(url).toBe('http://example.com/image.png');
+  });
+
+  it('encodes spaces in file paths', () => {
+    const url = resolveImageUrl('my image.png', '/Users/garaemon/My Documents');
+    expect(url).toBe('local-image://localhost/Users/garaemon/My%20Documents/my%20image.png');
+  });
+
+  it('encodes special characters in file paths', () => {
+    const url = resolveImageUrl('photo (1).png', '/Users/garaemon/notes');
+    expect(url).toBe('local-image://localhost/Users/garaemon/notes/photo%20(1).png');
+  });
+
+  it('preserves case in path components', () => {
+    const url = resolveImageUrl('Image.PNG', '/Users/Garaemon/Notes');
+    expect(url).toBe('local-image://localhost/Users/Garaemon/Notes/Image.PNG');
   });
 });
 

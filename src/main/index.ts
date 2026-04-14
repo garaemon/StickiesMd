@@ -1,6 +1,7 @@
 import { app, BrowserWindow, protocol } from 'electron';
 import { readFile } from 'fs/promises';
-import { dirname, normalize, resolve } from 'path';
+import { normalize, resolve } from 'path';
+import { guessImageMimeType, isPathAllowed } from './image-protocol';
 import { registerIpcHandlers } from './ipc-handlers';
 import { buildAppMenu } from './menu';
 import { createNewSticky, openFile, resetAllMouseThrough, restoreWindows } from './window-manager';
@@ -48,25 +49,7 @@ app.whenReady().then(() => {
     const parsed = new URL(request.url);
     const filePath = normalize(resolve(decodeURIComponent(parsed.pathname)));
 
-    // Defense-in-depth: reject paths with '..' segments even after normalization,
-    // guards against future changes that might introduce double-decoding
-    if (filePath.includes('..')) {
-      return new Response('Forbidden', { status: 403 });
-    }
-
-    const fileDir = dirname(filePath);
-
-    // Validate the file is within an allowed directory (enforce boundary with trailing /)
-    // Both paths are normalized to prevent unicode NFC/NFD bypass on macOS
-    let allowed = false;
-    for (const dir of allowedImageDirs) {
-      const normalizedDir = normalize(dir);
-      if (fileDir === normalizedDir || fileDir.startsWith(normalizedDir + '/')) {
-        allowed = true;
-        break;
-      }
-    }
-    if (!allowed) {
+    if (!isPathAllowed(filePath, allowedImageDirs)) {
       return new Response('Forbidden', { status: 403 });
     }
 
@@ -102,20 +85,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
-// Hand-rolled instead of a library (e.g., mime-types) to avoid adding a dependency
-// for a fixed set of image formats that Chromium's <img> tag supports.
-function guessImageMimeType(filePath: string): string {
-  const ext = filePath.split('.').pop()?.toLowerCase();
-  const mimeTypes: Record<string, string> = {
-    png: 'image/png',
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    gif: 'image/gif',
-    svg: 'image/svg+xml',
-    webp: 'image/webp',
-    tiff: 'image/tiff',
-    bmp: 'image/bmp',
-  };
-  return mimeTypes[ext ?? ''] ?? 'application/octet-stream';
-}

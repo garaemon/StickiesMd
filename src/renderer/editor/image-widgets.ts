@@ -24,6 +24,23 @@ export function isImagePath(path: string): boolean {
   return IMAGE_EXTENSIONS.has(ext);
 }
 
+/**
+ * Build the src URL for an image path.
+ * Relative paths are resolved against baseDir. HTTP(S) URLs pass through.
+ * Local paths use the local-image://localhost scheme with encodeURI to
+ * handle spaces and special characters.
+ */
+export function resolveImageUrl(imagePath: string, baseDir: string): string {
+  let absolutePath = imagePath;
+  if (!absolutePath.startsWith('/') && !absolutePath.startsWith('http')) {
+    absolutePath = `${baseDir}/${absolutePath}`;
+  }
+  if (absolutePath.startsWith('http')) {
+    return absolutePath;
+  }
+  return `local-image://localhost${encodeURI(absolutePath)}`;
+}
+
 class ImageWidget extends WidgetType {
   constructor(
     private readonly imagePath: string,
@@ -39,16 +56,7 @@ class ImageWidget extends WidgetType {
     const img = document.createElement('img');
     img.className = 'cm-image-widget';
 
-    // Resolve path - if relative, prepend baseDir.
-    // Use localhost as host to prevent Chromium from consuming the first
-    // path component (e.g. /Users) as a hostname and lowercasing it.
-    let absolutePath = this.imagePath;
-    if (!absolutePath.startsWith('/') && !absolutePath.startsWith('http')) {
-      absolutePath = `${this.baseDir}/${absolutePath}`;
-    }
-    const src = absolutePath.startsWith('http')
-      ? absolutePath
-      : `local-image://localhost${encodeURI(absolutePath)}`;
+    const src = resolveImageUrl(this.imagePath, this.baseDir);
 
     img.src = src;
     img.alt = this.imagePath;
