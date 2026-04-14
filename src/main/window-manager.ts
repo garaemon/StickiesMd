@@ -7,6 +7,7 @@ import * as IPC from '../shared/ipc-channels';
 import type { StickyNote, WindowFrame } from '../shared/types';
 import { FileWatcher } from './file-watcher';
 import { allowImageDir } from './index';
+import type { MouseThroughState } from './mouse-through';
 import { showOpenDialog } from './menu';
 import { createNote, findNoteByPath, getAllNotes, removeNote, updateNote } from './store';
 import { createStickyWindow } from './sticky-window';
@@ -15,7 +16,7 @@ interface ManagedWindow {
   win: BrowserWindow;
   note: StickyNote;
   watcher: FileWatcher;
-  isMouseThrough: boolean;
+  mouseThrough: MouseThroughState;
 }
 
 const windows = new Map<string, ManagedWindow>();
@@ -47,7 +48,7 @@ export function createWindowForNote(note: StickyNote): void {
     }
   });
 
-  const managed: ManagedWindow = { win, note, watcher, isMouseThrough: false };
+  const managed: ManagedWindow = { win, note, watcher, mouseThrough: { isMouseThrough: false } };
   windows.set(note.id, managed);
 
   win.webContents.on('did-finish-load', async () => {
@@ -152,7 +153,7 @@ export async function openFile(): Promise<void> {
 export function resetAllMouseThrough(): void {
   for (const managed of windows.values()) {
     if (!managed.win.isDestroyed()) {
-      managed.isMouseThrough = false;
+      managed.mouseThrough.isMouseThrough = false;
       managed.win.setIgnoreMouseEvents(false);
       managed.win.webContents.send(IPC.MOUSE_THROUGH_CHANGED, false);
     }

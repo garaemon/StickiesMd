@@ -1,7 +1,7 @@
 import { ipcMain, shell } from 'electron';
 import * as IPC from '../shared/ipc-channels';
 import {
-  computeSetMouseThrough,
+  applySetMouseThrough,
   shouldPauseMouseThrough,
   shouldResumeMouseThrough,
 } from './mouse-through';
@@ -107,10 +107,8 @@ export function registerIpcHandlers(): void {
     if (typeof enabled !== 'boolean') {
       return;
     }
-    const result = computeSetMouseThrough(managed, enabled);
-    if (result.shouldUpdate) {
-      managed.win.setIgnoreMouseEvents(result.ignoreMouseEvents, { forward: result.forward });
-    }
+    const result = applySetMouseThrough(managed.mouseThrough, enabled);
+    managed.win.setIgnoreMouseEvents(result.ignoreMouseEvents, { forward: result.forward });
     event.sender.send(IPC.MOUSE_THROUGH_CHANGED, enabled);
   });
 
@@ -119,7 +117,7 @@ export function registerIpcHandlers(): void {
   // and resumes it on mouseleave.
   ipcMain.on(IPC.PAUSE_MOUSE_THROUGH, (event) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
-    if (!managed || !shouldPauseMouseThrough(managed)) {
+    if (!managed || !shouldPauseMouseThrough(managed.mouseThrough)) {
       return;
     }
     managed.win.setIgnoreMouseEvents(false);
@@ -127,7 +125,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.on(IPC.RESUME_MOUSE_THROUGH, (event) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
-    if (!managed || !shouldResumeMouseThrough(managed)) {
+    if (!managed || !shouldResumeMouseThrough(managed.mouseThrough)) {
       return;
     }
     managed.win.setIgnoreMouseEvents(true, { forward: true });

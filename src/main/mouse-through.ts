@@ -1,9 +1,13 @@
 /**
  * Mouse-through state management logic.
  *
+ * Mouse-through allows clicks to pass through the window to applications below.
+ * When enabled, Electron's setIgnoreMouseEvents(true, { forward: true }) is used
+ * so that mousemove events are still forwarded to the renderer -- this lets the
+ * toolbar button detect mouseenter/mouseleave to temporarily pause mouse-through
+ * (so the user can click the button to disable it).
+ *
  * Extracted as pure functions to enable unit testing without Electron mocks.
- * Each function returns a description of the side effects to apply,
- * rather than performing them directly.
  */
 
 export interface MouseThroughState {
@@ -11,24 +15,20 @@ export interface MouseThroughState {
 }
 
 export interface SetMouseThroughResult {
-  shouldUpdate: boolean;
   ignoreMouseEvents: boolean;
   forward: boolean;
 }
 
-/**
- * Determine the side effects for enabling/disabling mouse-through.
- * Returns null if the request should be ignored.
- */
-export function computeSetMouseThrough(
+/** Update the mouse-through state and return the Electron side effects to apply. */
+export function applySetMouseThrough(
   state: MouseThroughState,
   enabled: boolean,
 ): SetMouseThroughResult {
   state.isMouseThrough = enabled;
   if (enabled) {
-    return { shouldUpdate: true, ignoreMouseEvents: true, forward: true };
+    return { ignoreMouseEvents: true, forward: true };
   }
-  return { shouldUpdate: true, ignoreMouseEvents: false, forward: false };
+  return { ignoreMouseEvents: false, forward: false };
 }
 
 /**
