@@ -90,3 +90,8 @@ window.electronAPI.onFocusChanged((focused: boolean) => {
 window.electronAPI.onTriggerSave(() => {
   editor?.forceSave();
 });
+
+window.electronAPI.onMouseThroughChanged((enabled: boolean) => {
+  toolbar?.setMouseThrough(enabled);
+  settingsPanel?.updateMouseThrough(enabled);
+});

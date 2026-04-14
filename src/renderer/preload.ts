@@ -31,6 +31,11 @@ const api = {
     ipcRenderer.on(IPC.TRIGGER_SAVE, handler);
     return () => ipcRenderer.removeListener(IPC.TRIGGER_SAVE, handler);
   },
+  onMouseThroughChanged: (callback: (enabled: boolean) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, enabled: boolean) => callback(enabled);
+    ipcRenderer.on(IPC.MOUSE_THROUGH_CHANGED, handler);
+    return () => ipcRenderer.removeListener(IPC.MOUSE_THROUGH_CHANGED, handler);
+  },
 
   // Renderer -> Main actions
   saveContent: (content: string) => ipcRenderer.send(IPC.SAVE_CONTENT, content),
@@ -40,6 +45,8 @@ const api = {
   toggleLineNumbers: () => ipcRenderer.send(IPC.TOGGLE_LINE_NUMBERS),
   toggleAlwaysOnTop: () => ipcRenderer.send(IPC.TOGGLE_ALWAYS_ON_TOP),
   setMouseThrough: (enabled: boolean) => ipcRenderer.send(IPC.SET_MOUSE_THROUGH, enabled),
+  pauseMouseThrough: () => ipcRenderer.send(IPC.PAUSE_MOUSE_THROUGH),
+  resumeMouseThrough: () => ipcRenderer.send(IPC.RESUME_MOUSE_THROUGH),
   openFileDialog: () => ipcRenderer.send(IPC.OPEN_FILE_DIALOG),
   openUrl: (url: string) => ipcRenderer.send(IPC.OPEN_URL, url),
 

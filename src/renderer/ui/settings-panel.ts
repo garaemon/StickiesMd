@@ -11,6 +11,7 @@ export class SettingsPanel {
   private opacitySlider: HTMLInputElement | null = null;
   private fontColorInput: HTMLInputElement | null = null;
   private lineNumbersCheckbox: HTMLInputElement | null = null;
+  private mouseThroughCheckbox: HTMLInputElement | null = null;
 
   constructor(container: HTMLElement) {
     this.element = container;
@@ -69,26 +70,20 @@ export class SettingsPanel {
     this.element.appendChild(fontColorSection);
 
     // Line Numbers toggle
-    const lineNumSection = this.createSection('');
-    const toggleRow = document.createElement('div');
-    toggleRow.className = 'toggle-row';
-    const label = document.createElement('span');
-    label.textContent = 'Line Numbers';
-    toggleRow.appendChild(label);
-    const toggleSwitch = document.createElement('label');
-    toggleSwitch.className = 'toggle-switch';
-    this.lineNumbersCheckbox = document.createElement('input');
-    this.lineNumbersCheckbox.type = 'checkbox';
-    this.lineNumbersCheckbox.addEventListener('change', () => {
-      window.electronAPI.toggleLineNumbers();
-    });
-    const slider = document.createElement('span');
-    slider.className = 'toggle-slider';
-    toggleSwitch.appendChild(this.lineNumbersCheckbox);
-    toggleSwitch.appendChild(slider);
-    toggleRow.appendChild(toggleSwitch);
-    lineNumSection.appendChild(toggleRow);
-    this.element.appendChild(lineNumSection);
+    const { section: lineNumberSection, checkbox: lineNumberCheckbox } = this.createToggleRow(
+      'Line Numbers',
+      () => window.electronAPI.toggleLineNumbers(),
+    );
+    this.lineNumbersCheckbox = lineNumberCheckbox;
+    this.element.appendChild(lineNumberSection);
+
+    // Mouse Through toggle
+    const { section: mouseThroughSection, checkbox: mouseThroughCheckbox } = this.createToggleRow(
+      'Mouse Through',
+      (checked) => window.electronAPI.setMouseThrough(checked),
+    );
+    this.mouseThroughCheckbox = mouseThroughCheckbox;
+    this.element.appendChild(mouseThroughSection);
 
     // Open Another File button
     const openBtn = document.createElement('button');
@@ -98,6 +93,30 @@ export class SettingsPanel {
       window.electronAPI.openFileDialog();
     });
     this.element.appendChild(openBtn);
+  }
+
+  private createToggleRow(
+    labelText: string,
+    onChange: (checked: boolean) => void,
+  ): { section: HTMLElement; checkbox: HTMLInputElement } {
+    const section = this.createSection('');
+    const row = document.createElement('div');
+    row.className = 'toggle-row';
+    const label = document.createElement('span');
+    label.textContent = labelText;
+    row.appendChild(label);
+    const toggleSwitch = document.createElement('label');
+    toggleSwitch.className = 'toggle-switch';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.addEventListener('change', () => onChange(checkbox.checked));
+    const slider = document.createElement('span');
+    slider.className = 'toggle-slider';
+    toggleSwitch.appendChild(checkbox);
+    toggleSwitch.appendChild(slider);
+    row.appendChild(toggleSwitch);
+    section.appendChild(row);
+    return { section, checkbox };
   }
 
   private createSection(title: string): HTMLElement {
@@ -133,6 +152,15 @@ export class SettingsPanel {
   updateLineNumbers(show: boolean): void {
     if (this.lineNumbersCheckbox) {
       this.lineNumbersCheckbox.checked = show;
+    }
+  }
+
+  updateMouseThrough(enabled: boolean): void {
+    if (this.mouseThroughCheckbox) {
+      this.mouseThroughCheckbox.checked = enabled;
+    }
+    if (enabled) {
+      this.hide();
     }
   }
 

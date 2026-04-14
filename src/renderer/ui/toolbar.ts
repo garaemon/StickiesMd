@@ -33,7 +33,9 @@ export class Toolbar {
   private element: HTMLElement;
   private filenameEl: HTMLElement;
   private pinBtn: HTMLButtonElement;
+  private mouseThroughButton: HTMLButtonElement;
   private isAlwaysOnTop = false;
+  private isMouseThrough = false;
   private isDirty = false;
   private filename = '';
 
@@ -66,6 +68,28 @@ export class Toolbar {
     });
     buttonsDiv.appendChild(this.pinBtn);
 
+    // Mouse Through button
+    this.mouseThroughButton = document.createElement('button');
+    this.mouseThroughButton.className = 'toolbar-btn';
+    this.mouseThroughButton.textContent = '\u{1F5B1}'; // mouse
+    this.mouseThroughButton.title = 'Mouse Through';
+    this.mouseThroughButton.addEventListener('click', () => {
+      window.electronAPI.setMouseThrough(!this.isMouseThrough);
+    });
+    this.mouseThroughButton.addEventListener('mouseenter', () => {
+      if (this.isMouseThrough) {
+        window.electronAPI.pauseMouseThrough();
+      }
+    });
+    // Main process guard prevents re-enabling mouse-through if the user
+    // clicked the button to disable it while hovering (state already false).
+    this.mouseThroughButton.addEventListener('mouseleave', () => {
+      if (this.isMouseThrough) {
+        window.electronAPI.resumeMouseThrough();
+      }
+    });
+    buttonsDiv.appendChild(this.mouseThroughButton);
+
     // Settings button
     const settingsBtn = document.createElement('button');
     settingsBtn.className = 'toolbar-btn';
@@ -91,6 +115,11 @@ export class Toolbar {
   setAlwaysOnTop(onTop: boolean): void {
     this.isAlwaysOnTop = onTop;
     this.pinBtn.classList.toggle('active', onTop);
+  }
+
+  setMouseThrough(enabled: boolean): void {
+    this.isMouseThrough = enabled;
+    this.mouseThroughButton.classList.toggle('active', enabled);
   }
 
   private updateTitle(): void {
