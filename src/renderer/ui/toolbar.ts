@@ -32,7 +32,7 @@ export interface ToolbarCallbacks {
 export class Toolbar {
   private element: HTMLElement;
   private filenameEl: HTMLElement;
-  private pinBtn: HTMLButtonElement;
+  private pinButton: HTMLButtonElement;
   private mouseThroughButton: HTMLButtonElement;
   private isAlwaysOnTop = false;
   private isMouseThrough = false;
@@ -51,22 +51,22 @@ export class Toolbar {
     buttonsDiv.className = 'toolbar-buttons';
 
     // Save button
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'toolbar-btn';
-    saveBtn.textContent = '\u{1F4BE}'; // floppy disk
-    saveBtn.title = 'Save (Cmd+S)';
-    saveBtn.addEventListener('click', callbacks.onSave);
-    buttonsDiv.appendChild(saveBtn);
+    const saveButton = document.createElement('button');
+    saveButton.className = 'toolbar-btn';
+    saveButton.textContent = '\u{1F4BE}'; // floppy disk
+    saveButton.title = 'Save (Cmd+S)';
+    saveButton.addEventListener('click', callbacks.onSave);
+    buttonsDiv.appendChild(saveButton);
 
     // Pin button (always-on-top)
-    this.pinBtn = document.createElement('button');
-    this.pinBtn.className = 'toolbar-btn';
-    this.pinBtn.textContent = '\u{1F4CC}'; // pushpin
-    this.pinBtn.title = 'Always on Top';
-    this.pinBtn.addEventListener('click', () => {
+    this.pinButton = document.createElement('button');
+    this.pinButton.className = 'toolbar-btn';
+    this.pinButton.textContent = '\u{1F4CC}'; // pushpin
+    this.pinButton.title = 'Always on Top';
+    this.pinButton.addEventListener('click', () => {
       window.electronAPI.toggleAlwaysOnTop();
     });
-    buttonsDiv.appendChild(this.pinBtn);
+    buttonsDiv.appendChild(this.pinButton);
 
     // Mouse Through button
     this.mouseThroughButton = document.createElement('button');
@@ -91,13 +91,13 @@ export class Toolbar {
     buttonsDiv.appendChild(this.mouseThroughButton);
 
     // Settings button
-    const settingsBtn = document.createElement('button');
-    settingsBtn.className = 'toolbar-btn';
-    settingsBtn.dataset.testid = 'settings-button';
-    settingsBtn.textContent = '\u2699'; // gear
-    settingsBtn.title = 'Settings';
-    settingsBtn.addEventListener('click', callbacks.onSettingsToggle);
-    buttonsDiv.appendChild(settingsBtn);
+    const settingsButton = document.createElement('button');
+    settingsButton.className = 'toolbar-btn';
+    settingsButton.dataset.testid = 'settings-button';
+    settingsButton.textContent = '\u2699'; // gear
+    settingsButton.title = 'Settings';
+    settingsButton.addEventListener('click', callbacks.onSettingsToggle);
+    buttonsDiv.appendChild(settingsButton);
 
     this.element.appendChild(buttonsDiv);
   }
@@ -114,7 +114,7 @@ export class Toolbar {
 
   setAlwaysOnTop(onTop: boolean): void {
     this.isAlwaysOnTop = onTop;
-    this.pinBtn.classList.toggle('active', onTop);
+    this.pinButton.classList.toggle('active', onTop);
   }
 
   setMouseThrough(enabled: boolean): void {
