@@ -70,47 +70,19 @@ export class SettingsPanel {
     this.element.appendChild(fontColorSection);
 
     // Line Numbers toggle
-    const lineNumberSection = this.createSection('');
-    const lineNumberToggleRow = document.createElement('div');
-    lineNumberToggleRow.className = 'toggle-row';
-    const lineNumberLabel = document.createElement('span');
-    lineNumberLabel.textContent = 'Line Numbers';
-    lineNumberToggleRow.appendChild(lineNumberLabel);
-    const lineNumberToggleSwitch = document.createElement('label');
-    lineNumberToggleSwitch.className = 'toggle-switch';
-    this.lineNumbersCheckbox = document.createElement('input');
-    this.lineNumbersCheckbox.type = 'checkbox';
-    this.lineNumbersCheckbox.addEventListener('change', () => {
-      window.electronAPI.toggleLineNumbers();
-    });
-    const lineNumberSlider = document.createElement('span');
-    lineNumberSlider.className = 'toggle-slider';
-    lineNumberToggleSwitch.appendChild(this.lineNumbersCheckbox);
-    lineNumberToggleSwitch.appendChild(lineNumberSlider);
-    lineNumberToggleRow.appendChild(lineNumberToggleSwitch);
-    lineNumberSection.appendChild(lineNumberToggleRow);
+    const { section: lineNumberSection, checkbox: lineNumberCheckbox } = this.createToggleRow(
+      'Line Numbers',
+      () => window.electronAPI.toggleLineNumbers(),
+    );
+    this.lineNumbersCheckbox = lineNumberCheckbox;
     this.element.appendChild(lineNumberSection);
 
     // Mouse Through toggle
-    const mouseThroughSection = this.createSection('');
-    const mouseThroughToggleRow = document.createElement('div');
-    mouseThroughToggleRow.className = 'toggle-row';
-    const mouseThroughLabel = document.createElement('span');
-    mouseThroughLabel.textContent = 'Mouse Through';
-    mouseThroughToggleRow.appendChild(mouseThroughLabel);
-    const mouseThroughToggleSwitch = document.createElement('label');
-    mouseThroughToggleSwitch.className = 'toggle-switch';
-    this.mouseThroughCheckbox = document.createElement('input');
-    this.mouseThroughCheckbox.type = 'checkbox';
-    this.mouseThroughCheckbox.addEventListener('change', () => {
-      window.electronAPI.setMouseThrough(this.mouseThroughCheckbox!.checked);
-    });
-    const mouseThroughSlider = document.createElement('span');
-    mouseThroughSlider.className = 'toggle-slider';
-    mouseThroughToggleSwitch.appendChild(this.mouseThroughCheckbox);
-    mouseThroughToggleSwitch.appendChild(mouseThroughSlider);
-    mouseThroughToggleRow.appendChild(mouseThroughToggleSwitch);
-    mouseThroughSection.appendChild(mouseThroughToggleRow);
+    const { section: mouseThroughSection, checkbox: mouseThroughCheckbox } = this.createToggleRow(
+      'Mouse Through',
+      (checked) => window.electronAPI.setMouseThrough(checked),
+    );
+    this.mouseThroughCheckbox = mouseThroughCheckbox;
     this.element.appendChild(mouseThroughSection);
 
     // Open Another File button
@@ -121,6 +93,30 @@ export class SettingsPanel {
       window.electronAPI.openFileDialog();
     });
     this.element.appendChild(openBtn);
+  }
+
+  private createToggleRow(
+    labelText: string,
+    onChange: (checked: boolean) => void,
+  ): { section: HTMLElement; checkbox: HTMLInputElement } {
+    const section = this.createSection('');
+    const row = document.createElement('div');
+    row.className = 'toggle-row';
+    const label = document.createElement('span');
+    label.textContent = labelText;
+    row.appendChild(label);
+    const toggleSwitch = document.createElement('label');
+    toggleSwitch.className = 'toggle-switch';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.addEventListener('change', () => onChange(checkbox.checked));
+    const slider = document.createElement('span');
+    slider.className = 'toggle-slider';
+    toggleSwitch.appendChild(checkbox);
+    toggleSwitch.appendChild(slider);
+    row.appendChild(toggleSwitch);
+    section.appendChild(row);
+    return { section, checkbox };
   }
 
   private createSection(title: string): HTMLElement {

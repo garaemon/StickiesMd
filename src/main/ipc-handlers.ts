@@ -1,5 +1,10 @@
 import { ipcMain, shell } from 'electron';
 import * as IPC from '../shared/ipc-channels';
+import {
+  computeSetMouseThrough,
+  shouldPauseMouseThrough,
+  shouldResumeMouseThrough,
+} from './mouse-through';
 import { findManagedWindowByWebContentsId, openFile, updateManagedNote } from './window-manager';
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
@@ -12,6 +17,7 @@ const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
  * - UPDATE_COLOR / UPDATE_FONT_COLOR / UPDATE_OPACITY: appearance settings
  * - TOGGLE_LINE_NUMBERS / TOGGLE_ALWAYS_ON_TOP: per-window toggles
  * - SET_MOUSE_THROUGH: click-through mode
+ * - PAUSE_MOUSE_THROUGH / RESUME_MOUSE_THROUGH: hover-to-click support
  * - OPEN_FILE_DIALOG: show native file picker
  * - OPEN_URL: open URL in system browser
  * - GET_NOTE_SETTINGS: return current note settings (invoke/handle pattern)
@@ -101,18 +107,19 @@ export function registerIpcHandlers(): void {
     if (typeof enabled !== 'boolean') {
       return;
     }
-    managed.isMouseThrough = enabled;
-    if (enabled) {
-      managed.win.setIgnoreMouseEvents(true, { forward: true });
-    } else {
-      managed.win.setIgnoreMouseEvents(false);
+    const result = computeSetMouseThrough(managed, enabled);
+    if (result.shouldUpdate) {
+      managed.win.setIgnoreMouseEvents(result.ignoreMouseEvents, { forward: result.forward });
     }
     event.sender.send(IPC.MOUSE_THROUGH_CHANGED, enabled);
   });
 
+  // When mouse-through is active, the toolbar button needs to remain clickable.
+  // The renderer pauses mouse-through on mouseenter (so the click event fires)
+  // and resumes it on mouseleave.
   ipcMain.on(IPC.PAUSE_MOUSE_THROUGH, (event) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
-    if (!managed || !managed.isMouseThrough) {
+    if (!managed || !shouldPauseMouseThrough(managed)) {
       return;
     }
     managed.win.setIgnoreMouseEvents(false);
@@ -120,7 +127,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.on(IPC.RESUME_MOUSE_THROUGH, (event) => {
     const managed = findManagedWindowByWebContentsId(event.sender.id);
-    if (!managed || !managed.isMouseThrough) {
+    if (!managed || !shouldResumeMouseThrough(managed)) {
       return;
     }
     managed.win.setIgnoreMouseEvents(true, { forward: true });
