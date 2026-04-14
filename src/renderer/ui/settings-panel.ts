@@ -86,13 +86,13 @@ export class SettingsPanel {
     this.element.appendChild(mouseThroughSection);
 
     // Open Another File button
-    const openBtn = document.createElement('button');
-    openBtn.className = 'settings-open-btn';
-    openBtn.textContent = 'Open Another File...';
-    openBtn.addEventListener('click', () => {
+    const openButton = document.createElement('button');
+    openButton.className = 'settings-open-btn';
+    openButton.textContent = 'Open Another File...';
+    openButton.addEventListener('click', () => {
       window.electronAPI.openFileDialog();
     });
-    this.element.appendChild(openBtn);
+    this.element.appendChild(openButton);
   }
 
   private createToggleRow(
