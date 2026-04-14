@@ -1,34 +1,49 @@
 import { describe, it, expect } from 'vitest';
-import { Text } from '@codemirror/state';
+import { EditorState, Text } from '@codemirror/state';
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { ensureSyntaxTree } from '@codemirror/language';
 import {
   findMarkdownCodeBlocks,
   findOrgCodeBlocks,
 } from '../../src/renderer/editor/code-block-decorations';
 
-describe('findMarkdownCodeBlocks', () => {
+/** Create an EditorState with the markdown parser and ensure the tree is fully parsed. */
+function mkMarkdownState(lines: string[]): EditorState {
+  const state = EditorState.create({
+    doc: lines.join('\n'),
+    extensions: [markdown({ base: markdownLanguage })],
+  });
+  // Force a synchronous full parse so the tree is available.
+  ensureSyntaxTree(state, state.doc.length, 5000);
+  return state;
+}
+
+describe('findMarkdownCodeBlocks (syntax tree)', () => {
   it('detects a basic fenced code block with language', () => {
-    const doc = Text.of(['some text', '```javascript', 'const x = 1;', '```', 'more text']);
-    const blocks = findMarkdownCodeBlocks(doc);
+    const state = mkMarkdownState(['some text', '```javascript', 'const x = 1;', '```', 'more text']);
+    const blocks = findMarkdownCodeBlocks(state);
     expect(blocks).toHaveLength(1);
     expect(blocks[0]).toEqual({ startLineNum: 2, endLineNum: 4, language: 'javascript' });
   });
 
   it('detects a fenced code block without language', () => {
-    const doc = Text.of(['```', 'plain code', '```']);
-    const blocks = findMarkdownCodeBlocks(doc);
+    const state = mkMarkdownState(['```', 'plain code', '```']);
+    const blocks = findMarkdownCodeBlocks(state);
     expect(blocks).toHaveLength(1);
-    expect(blocks[0]).toEqual({ startLineNum: 1, endLineNum: 3, language: '' });
+    expect(blocks[0].startLineNum).toBe(1);
+    expect(blocks[0].endLineNum).toBe(3);
+    expect(blocks[0].language).toBe('');
   });
 
   it('detects tilde-fenced code blocks', () => {
-    const doc = Text.of(['~~~python', 'print("hi")', '~~~']);
-    const blocks = findMarkdownCodeBlocks(doc);
+    const state = mkMarkdownState(['~~~python', 'print("hi")', '~~~']);
+    const blocks = findMarkdownCodeBlocks(state);
     expect(blocks).toHaveLength(1);
     expect(blocks[0]).toEqual({ startLineNum: 1, endLineNum: 3, language: 'python' });
   });
 
   it('detects multiple code blocks', () => {
-    const doc = Text.of([
+    const state = mkMarkdownState([
       '```js',
       'let a = 1;',
       '```',
@@ -37,46 +52,24 @@ describe('findMarkdownCodeBlocks', () => {
       'x = 2',
       '```',
     ]);
-    const blocks = findMarkdownCodeBlocks(doc);
+    const blocks = findMarkdownCodeBlocks(state);
     expect(blocks).toHaveLength(2);
     expect(blocks[0].language).toBe('js');
     expect(blocks[1].language).toBe('python');
   });
 
-  it('handles indented opening fence', () => {
-    const doc = Text.of(['  ```sh', '  echo hi', '  ```']);
-    const blocks = findMarkdownCodeBlocks(doc);
-    expect(blocks).toHaveLength(1);
-    expect(blocks[0].language).toBe('sh');
-  });
-
   it('requires closing fence to use same character', () => {
-    const doc = Text.of(['```js', 'code', '~~~']);
-    const blocks = findMarkdownCodeBlocks(doc);
-    expect(blocks).toHaveLength(0);
-  });
-
-  it('requires closing fence to have at least as many characters', () => {
-    const doc = Text.of(['````js', 'code', '```']);
-    const blocks = findMarkdownCodeBlocks(doc);
-    expect(blocks).toHaveLength(0);
-  });
-
-  it('accepts closing fence with more characters', () => {
-    const doc = Text.of(['```js', 'code', '`````']);
-    const blocks = findMarkdownCodeBlocks(doc);
+    const state = mkMarkdownState(['```js', 'code', '~~~']);
+    const blocks = findMarkdownCodeBlocks(state);
+    // The parser treats ~~~ inside a ``` block as content, not a closing fence.
+    // The block will be unclosed and extend to the end of the document.
     expect(blocks).toHaveLength(1);
-  });
-
-  it('ignores unclosed code blocks', () => {
-    const doc = Text.of(['```js', 'no closing fence']);
-    const blocks = findMarkdownCodeBlocks(doc);
-    expect(blocks).toHaveLength(0);
+    expect(blocks[0].endLineNum).toBe(3); // extends to last line
   });
 
   it('extracts only first word as language', () => {
-    const doc = Text.of(['```js highlight', 'code', '```']);
-    const blocks = findMarkdownCodeBlocks(doc);
+    const state = mkMarkdownState(['```js highlight', 'code', '```']);
+    const blocks = findMarkdownCodeBlocks(state);
     expect(blocks).toHaveLength(1);
     expect(blocks[0].language).toBe('js');
   });

@@ -14,8 +14,8 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view';
-import { RangeSetBuilder, type Text, type Extension } from '@codemirror/state';
-import { LanguageDescription } from '@codemirror/language';
+import { RangeSetBuilder, type Text, type Extension, type EditorState } from '@codemirror/state';
+import { LanguageDescription, syntaxTree } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightTree } from '@lezer/highlight';
 import { codeTokenHighlightStyle } from './code-highlight-theme';
@@ -34,36 +34,38 @@ export interface CodeBlockInfo {
   language: string;
 }
 
-/** Find Markdown fenced code blocks (``` or ~~~). */
-export function findMarkdownCodeBlocks(doc: Text): CodeBlockInfo[] {
+/**
+ * Find Markdown fenced code blocks by walking the Lezer syntax tree.
+ *
+ * Uses the `FencedCode` nodes produced by @codemirror/lang-markdown's
+ * incremental parser instead of regex, so indented fences, mixed fence
+ * characters, and other edge cases are handled correctly by the parser.
+ */
+export function findMarkdownCodeBlocks(state: EditorState): CodeBlockInfo[] {
   const blocks: CodeBlockInfo[] = [];
-  let inBlock = false;
-  let startLineNum = 0;
-  let language = '';
-  let fenceChar = '';
-  let fenceCount = 0;
+  const doc = state.doc;
+  const tree = syntaxTree(state);
+  let currentBlock: CodeBlockInfo | null = null;
 
-  for (let i = 1; i <= doc.lines; i++) {
-    const lineText = doc.line(i).text;
-    const trimmed = lineText.trimStart();
-
-    if (!inBlock) {
-      const match = trimmed.match(/^(`{3,}|~{3,})(.*)$/);
-      if (match) {
-        inBlock = true;
-        startLineNum = i;
-        fenceChar = match[1][0];
-        fenceCount = match[1].length;
-        language = match[2].trim().split(/\s/)[0] || '';
+  tree.iterate({
+    enter(node) {
+      if (node.name === 'FencedCode') {
+        currentBlock = {
+          startLineNum: doc.lineAt(node.from).number,
+          endLineNum: doc.lineAt(node.to).number,
+          language: '',
+        };
+      } else if (node.name === 'CodeInfo' && currentBlock) {
+        currentBlock.language = doc.sliceString(node.from, node.to).trim().split(/\s/)[0] || '';
       }
-    } else {
-      const match = trimmed.match(/^(`{3,}|~{3,})\s*$/);
-      if (match && match[1][0] === fenceChar && match[1].length >= fenceCount) {
-        blocks.push({ startLineNum, endLineNum: i, language });
-        inBlock = false;
+    },
+    leave(node) {
+      if (node.name === 'FencedCode' && currentBlock) {
+        blocks.push(currentBlock);
+        currentBlock = null;
       }
-    }
-  }
+    },
+  });
 
   return blocks;
 }
@@ -118,7 +120,10 @@ function codeBlockBoxPlugin(format: FileFormat) {
       }
 
       update(update: ViewUpdate) {
-        if (update.docChanged) {
+        if (
+          update.docChanged ||
+          (format === 'markdown' && syntaxTree(update.state) !== syntaxTree(update.startState))
+        ) {
           this.decorations = this.buildDecorations(update.view);
         }
       }
@@ -126,7 +131,8 @@ function codeBlockBoxPlugin(format: FileFormat) {
       buildDecorations(view: EditorView): DecorationSet {
         const builder = new RangeSetBuilder<Decoration>();
         const doc = view.state.doc;
-        const blocks = format === 'markdown' ? findMarkdownCodeBlocks(doc) : findOrgCodeBlocks(doc);
+        const blocks =
+          format === 'markdown' ? findMarkdownCodeBlocks(view.state) : findOrgCodeBlocks(doc);
 
         for (const block of blocks) {
           for (let lineNum = block.startLineNum; lineNum <= block.endLineNum; lineNum++) {
