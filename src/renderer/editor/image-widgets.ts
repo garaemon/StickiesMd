@@ -30,6 +30,9 @@ export function isImagePath(path: string): boolean {
  * Local paths use the local-image://localhost scheme with encodeURI to
  * handle spaces and special characters.
  */
+// Note: paths containing ".." are intentionally rejected by the protocol
+// handler's isPathAllowed check. Users must use absolute paths or paths
+// relative to the current directory (not parent traversal).
 export function resolveImageUrl(imagePath: string, baseDir: string): string {
   let resolvedPath = imagePath;
   if (!resolvedPath.startsWith('/') && !resolvedPath.startsWith('http')) {

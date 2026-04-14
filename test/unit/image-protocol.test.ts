@@ -85,4 +85,9 @@ describe('isPathAllowed', () => {
     const allowed = ['/Users/garaemon/notes/'];
     expect(isPathAllowed('/Users/garaemon/notes/image.png', allowed)).toBe(true);
   });
+
+  it('allows paths containing spaces', () => {
+    const allowed = ['/Users/garaemon/My Documents'];
+    expect(isPathAllowed('/Users/garaemon/My Documents/image.png', allowed)).toBe(true);
+  });
 });
