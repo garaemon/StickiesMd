@@ -11,10 +11,14 @@ if (process.platform === 'win32') {
 
 // Must be called before app.whenReady(). Without this registration,
 // Chromium will not load <img> resources from the custom protocol.
+// `standard: true` is required so that Chromium uses RFC 3986 URI parsing;
+// without it, the first path component after // is treated as a hostname
+// and lowercased, silently corrupting file paths (e.g. /Users → /users).
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'local-image',
     privileges: {
+      standard: true,
       secure: true,
       supportFetchAPI: true,
       stream: true,
@@ -39,9 +43,10 @@ app.whenReady().then(() => {
   // The renderer cannot access file:// URLs due to Chromium security restrictions,
   // so we serve images through this protocol with path validation.
   protocol.handle('local-image', async (request: Request) => {
-    const filePath = normalize(
-      resolve(decodeURIComponent(request.url.replace('local-image://', ''))),
-    );
+    // Use URL API for robust parsing. With standard: true the pathname
+    // is correctly extracted regardless of slash count or encoding.
+    const parsed = new URL(request.url);
+    const filePath = normalize(resolve(decodeURIComponent(parsed.pathname)));
 
     // Defense-in-depth: reject paths with '..' segments even after normalization,
     // guards against future changes that might introduce double-decoding
