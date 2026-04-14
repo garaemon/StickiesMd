@@ -122,7 +122,7 @@ describe('resolveImageUrl', () => {
     expect(url).toBe('local-image://localhost/other/dir/image.png');
   });
 
-  it('passes through http URLs unchanged', () => {
+  it('passes through https URLs unchanged', () => {
     const url = resolveImageUrl('https://example.com/image.png', '/any/dir');
     expect(url).toBe('https://example.com/image.png');
   });
@@ -145,6 +145,13 @@ describe('resolveImageUrl', () => {
   it('preserves case in path components', () => {
     const url = resolveImageUrl('Image.PNG', '/Users/Garaemon/Notes');
     expect(url).toBe('local-image://localhost/Users/Garaemon/Notes/Image.PNG');
+  });
+
+  it('double-encodes already-percent-encoded characters', () => {
+    // encodeURI encodes the % in %20 to %2520, which is the correct
+    // behavior: the filename literally contains "%20", not a space.
+    const url = resolveImageUrl('image%20name.png', '/Users/garaemon/notes');
+    expect(url).toBe('local-image://localhost/Users/garaemon/notes/image%2520name.png');
   });
 });
 

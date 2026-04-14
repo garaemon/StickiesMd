@@ -46,8 +46,11 @@ app.whenReady().then(() => {
   protocol.handle('local-image', async (request: Request) => {
     // Use URL API for robust parsing. With standard: true the pathname
     // is correctly extracted regardless of slash count or encoding.
+    // Note: pathname is already percent-decoded for standard schemes,
+    // so we do NOT call decodeURIComponent again (that would double-decode
+    // filenames containing literal %20 sequences).
     const parsed = new URL(request.url);
-    const filePath = normalize(resolve(decodeURIComponent(parsed.pathname)));
+    const filePath = normalize(resolve(parsed.pathname));
 
     if (!isPathAllowed(filePath, allowedImageDirs)) {
       return new Response('Forbidden', { status: 403 });

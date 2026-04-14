@@ -3,8 +3,19 @@
  *
  * Extracted from index.ts so they can be unit-tested without
  * pulling in Electron or electron-store dependencies.
+ *
+ * The local-image:// protocol works in three parts:
+ *  1. The scheme is registered with `standard: true` so Chromium uses
+ *     RFC 3986 URI parsing (see index.ts).
+ *  2. The renderer builds URLs as `local-image://localhost/<absolute-path>`
+ *     (see resolveImageUrl in image-widgets.ts). Using `localhost` as the
+ *     host prevents Chromium from consuming the first path component
+ *     (e.g. /Users) as a hostname and lowercasing it.
+ *  3. The protocol handler in index.ts extracts the pathname via
+ *     `new URL(request.url).pathname`, which strips the host and yields
+ *     the original absolute file path.
  */
-import { dirname, normalize } from 'path';
+import { dirname, normalize, sep } from 'path';
 
 /**
  * Check whether a file path is allowed to be served by the local-image:// protocol.
@@ -16,8 +27,9 @@ export function isPathAllowed(filePath: string, allowedDirs: Iterable<string>): 
   }
   const fileDir = dirname(filePath);
   for (const dir of allowedDirs) {
-    const normalizedDir = normalize(dir);
-    if (fileDir === normalizedDir || fileDir.startsWith(normalizedDir + '/')) {
+    // Strip trailing separator so '/notes/' and '/notes' match identically
+    const normalizedDir = normalize(dir).replace(new RegExp(`${sep === '\\' ? '\\\\' : sep}$`), '');
+    if (fileDir === normalizedDir || fileDir.startsWith(normalizedDir + sep)) {
       return true;
     }
   }

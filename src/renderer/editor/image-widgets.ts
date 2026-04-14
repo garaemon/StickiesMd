@@ -31,14 +31,14 @@ export function isImagePath(path: string): boolean {
  * handle spaces and special characters.
  */
 export function resolveImageUrl(imagePath: string, baseDir: string): string {
-  let absolutePath = imagePath;
-  if (!absolutePath.startsWith('/') && !absolutePath.startsWith('http')) {
-    absolutePath = `${baseDir}/${absolutePath}`;
+  let resolvedPath = imagePath;
+  if (!resolvedPath.startsWith('/') && !resolvedPath.startsWith('http')) {
+    resolvedPath = `${baseDir}/${resolvedPath}`;
   }
-  if (absolutePath.startsWith('http')) {
-    return absolutePath;
+  if (resolvedPath.startsWith('http')) {
+    return resolvedPath;
   }
-  return `local-image://localhost${encodeURI(absolutePath)}`;
+  return `local-image://localhost${encodeURI(resolvedPath)}`;
 }
 
 class ImageWidget extends WidgetType {
@@ -83,7 +83,7 @@ interface ImageMatch {
   path: string;
 }
 
-// Find Markdown images: ![alt](path)
+/** Find Markdown images: ![alt](path) */
 export function findMarkdownImages(text: string): ImageMatch[] {
   const matches: ImageMatch[] = [];
   const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
@@ -102,7 +102,7 @@ export function findMarkdownImages(text: string): ImageMatch[] {
   return matches;
 }
 
-// Find Org images: [[file:path]] or [[./path.ext]]
+/** Find Org images: [[file:path]] or [[./path.ext]] */
 export function findOrgImages(text: string): ImageMatch[] {
   const matches: ImageMatch[] = [];
   const regex = /\[\[(?:file:)?([^\]]+?)\]\]/g;

@@ -80,4 +80,9 @@ describe('isPathAllowed', () => {
     const allowed = ['/Users/garaemon/notes'];
     expect(isPathAllowed('/Users/garaemon/notes-evil/image.png', allowed)).toBe(false);
   });
+
+  it('handles allowed directory with trailing slash', () => {
+    const allowed = ['/Users/garaemon/notes/'];
+    expect(isPathAllowed('/Users/garaemon/notes/image.png', allowed)).toBe(true);
+  });
 });
