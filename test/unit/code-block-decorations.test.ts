@@ -5,10 +5,11 @@ import { ensureSyntaxTree } from '@codemirror/language';
 import {
   findMarkdownCodeBlocks,
   findOrgCodeBlocks,
+  codeBlockExtensions,
 } from '../../src/renderer/editor/code-block-decorations';
 
 /** Create an EditorState with the markdown parser and ensure the tree is fully parsed. */
-function mkMarkdownState(lines: string[]): EditorState {
+function createMarkdownState(lines: string[]): EditorState {
   const state = EditorState.create({
     doc: lines.join('\n'),
     extensions: [markdown({ base: markdownLanguage })],
@@ -20,14 +21,20 @@ function mkMarkdownState(lines: string[]): EditorState {
 
 describe('findMarkdownCodeBlocks (syntax tree)', () => {
   it('detects a basic fenced code block with language', () => {
-    const state = mkMarkdownState(['some text', '```javascript', 'const x = 1;', '```', 'more text']);
+    const state = createMarkdownState([
+      'some text',
+      '```javascript',
+      'const x = 1;',
+      '```',
+      'more text',
+    ]);
     const blocks = findMarkdownCodeBlocks(state);
     expect(blocks).toHaveLength(1);
     expect(blocks[0]).toEqual({ startLineNum: 2, endLineNum: 4, language: 'javascript' });
   });
 
   it('detects a fenced code block without language', () => {
-    const state = mkMarkdownState(['```', 'plain code', '```']);
+    const state = createMarkdownState(['```', 'plain code', '```']);
     const blocks = findMarkdownCodeBlocks(state);
     expect(blocks).toHaveLength(1);
     expect(blocks[0].startLineNum).toBe(1);
@@ -36,14 +43,14 @@ describe('findMarkdownCodeBlocks (syntax tree)', () => {
   });
 
   it('detects tilde-fenced code blocks', () => {
-    const state = mkMarkdownState(['~~~python', 'print("hi")', '~~~']);
+    const state = createMarkdownState(['~~~python', 'print("hi")', '~~~']);
     const blocks = findMarkdownCodeBlocks(state);
     expect(blocks).toHaveLength(1);
     expect(blocks[0]).toEqual({ startLineNum: 1, endLineNum: 3, language: 'python' });
   });
 
   it('detects multiple code blocks', () => {
-    const state = mkMarkdownState([
+    const state = createMarkdownState([
       '```js',
       'let a = 1;',
       '```',
@@ -59,7 +66,7 @@ describe('findMarkdownCodeBlocks (syntax tree)', () => {
   });
 
   it('requires closing fence to use same character', () => {
-    const state = mkMarkdownState(['```js', 'code', '~~~']);
+    const state = createMarkdownState(['```js', 'code', '~~~']);
     const blocks = findMarkdownCodeBlocks(state);
     // The parser treats ~~~ inside a ``` block as content, not a closing fence.
     // The block will be unclosed and extend to the end of the document.
@@ -68,10 +75,23 @@ describe('findMarkdownCodeBlocks (syntax tree)', () => {
   });
 
   it('extracts only first word as language', () => {
-    const state = mkMarkdownState(['```js highlight', 'code', '```']);
+    const state = createMarkdownState(['```js highlight', 'code', '```']);
     const blocks = findMarkdownCodeBlocks(state);
     expect(blocks).toHaveLength(1);
     expect(blocks[0].language).toBe('js');
+  });
+
+  it('returns empty array for empty document', () => {
+    const state = createMarkdownState(['']);
+    expect(findMarkdownCodeBlocks(state)).toEqual([]);
+  });
+
+  it('handles adjacent code blocks with no gap', () => {
+    const state = createMarkdownState(['```js', 'a', '```', '```py', 'b', '```']);
+    const blocks = findMarkdownCodeBlocks(state);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].language).toBe('js');
+    expect(blocks[1].language).toBe('py');
   });
 });
 
@@ -123,5 +143,42 @@ describe('findOrgCodeBlocks', () => {
     const doc = Text.of(['#+BEGIN_SRC sh', 'echo', '#+END_SRC extra']);
     const blocks = findOrgCodeBlocks(doc);
     expect(blocks).toHaveLength(1);
+  });
+
+  it('returns empty array for empty document', () => {
+    const doc = Text.of(['']);
+    expect(findOrgCodeBlocks(doc)).toEqual([]);
+  });
+
+  it('handles adjacent code blocks with no gap', () => {
+    const doc = Text.of(['#+BEGIN_SRC js', 'a', '#+END_SRC', '#+BEGIN_SRC py', 'b', '#+END_SRC']);
+    const blocks = findOrgCodeBlocks(doc);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].language).toBe('js');
+    expect(blocks[1].language).toBe('py');
+  });
+
+  it('does not match #+END_SRC with leading whitespace', () => {
+    const doc = Text.of(['#+BEGIN_SRC python', 'code', '  #+END_SRC']);
+    const blocks = findOrgCodeBlocks(doc);
+    expect(blocks).toHaveLength(0);
+  });
+});
+
+describe('codeBlockExtensions', () => {
+  it('returns extensions for markdown format', () => {
+    const extensions = codeBlockExtensions('markdown');
+    expect(extensions.length).toBeGreaterThan(0);
+  });
+
+  it('returns extensions for org format', () => {
+    const extensions = codeBlockExtensions('org');
+    expect(extensions.length).toBeGreaterThan(0);
+  });
+
+  it('returns more extensions for org than markdown (includes highlight plugin)', () => {
+    const markdownExtensions = codeBlockExtensions('markdown');
+    const orgExtensions = codeBlockExtensions('org');
+    expect(orgExtensions.length).toBeGreaterThan(markdownExtensions.length);
   });
 });

@@ -112,7 +112,7 @@ const codeblockSingle = Decoration.line({
 /** ViewPlugin that adds line decorations to code block lines for box styling. */
 function codeBlockBoxPlugin(format: FileFormat) {
   return ViewPlugin.fromClass(
-    class {
+    class CodeBlockBoxDecorator {
       decorations: DecorationSet;
 
       constructor(view: EditorView) {
@@ -120,6 +120,9 @@ function codeBlockBoxPlugin(format: FileFormat) {
       }
 
       update(update: ViewUpdate) {
+        // Markdown uses Lezer incremental parser, which may produce a new tree
+        // asynchronously after the initial parse. Org-mode uses StreamLanguage
+        // which tokenizes synchronously on doc change, so only docChanged is needed.
         if (
           update.docChanged ||
           (format === 'markdown' && syntaxTree(update.state) !== syntaxTree(update.startState))
@@ -165,7 +168,7 @@ function codeBlockBoxPlugin(format: FileFormat) {
 /** ViewPlugin that applies syntax highlighting to Org-mode code block contents. */
 function orgCodeHighlightPlugin() {
   return ViewPlugin.fromClass(
-    class {
+    class OrgCodeHighlighter {
       decorations: DecorationSet;
       private loadingLanguages = new Set<string>();
       private view: EditorView;
@@ -177,7 +180,7 @@ function orgCodeHighlightPlugin() {
       }
 
       update(update: ViewUpdate) {
-        if (update.docChanged || update.viewportChanged) {
+        if (update.docChanged) {
           this.decorations = this.buildDecorations();
         }
       }
@@ -224,12 +227,20 @@ function orgCodeHighlightPlugin() {
           } else if (!this.loadingLanguages.has(block.language)) {
             // Start loading the language; re-render when ready
             this.loadingLanguages.add(block.language);
-            langDesc.load().then(() => {
-              this.loadingLanguages.delete(block.language);
-              if (!this.destroyed) {
-                this.view.dispatch({});
-              }
-            });
+            langDesc
+              .load()
+              .then(() => {
+                this.loadingLanguages.delete(block.language);
+                if (!this.destroyed) {
+                  // Dispatch an empty transaction to trigger plugin re-render
+                  // now that the language grammar has loaded.
+                  this.view.dispatch({});
+                }
+              })
+              .catch(() => {
+                // Remove from loading set so a retry can be attempted on next update.
+                this.loadingLanguages.delete(block.language);
+              });
           }
         }
 
