@@ -19,9 +19,29 @@ import type { Extension } from '@codemirror/state';
 /** Image formats supported by Chromium's <img> tag. */
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'tiff', 'bmp']);
 
-function isImagePath(path: string): boolean {
+export function isImagePath(path: string): boolean {
   const ext = path.split('.').pop()?.toLowerCase() ?? '';
   return IMAGE_EXTENSIONS.has(ext);
+}
+
+/**
+ * Build the src URL for an image path.
+ * Relative paths are resolved against baseDir. HTTP(S) URLs pass through.
+ * Local paths use the local-image://localhost scheme with encodeURI to
+ * handle spaces and special characters.
+ */
+// Note: paths containing ".." are intentionally rejected by the protocol
+// handler's isPathAllowed check. Users must use absolute paths or paths
+// relative to the current directory (not parent traversal).
+export function resolveImageUrl(imagePath: string, baseDir: string): string {
+  let resolvedPath = imagePath;
+  if (!resolvedPath.startsWith('/') && !resolvedPath.startsWith('http')) {
+    resolvedPath = `${baseDir}/${resolvedPath}`;
+  }
+  if (resolvedPath.startsWith('http')) {
+    return resolvedPath;
+  }
+  return `local-image://localhost${encodeURI(resolvedPath)}`;
 }
 
 class ImageWidget extends WidgetType {
@@ -39,13 +59,7 @@ class ImageWidget extends WidgetType {
     const img = document.createElement('img');
     img.className = 'cm-image-widget';
 
-    // Resolve path - if relative, prepend baseDir
-    let src = this.imagePath;
-    if (!src.startsWith('/') && !src.startsWith('http')) {
-      src = `local-image://${this.baseDir}/${src}`;
-    } else if (src.startsWith('/')) {
-      src = `local-image://${src}`;
-    }
+    const src = resolveImageUrl(this.imagePath, this.baseDir);
 
     img.src = src;
     img.alt = this.imagePath;
@@ -72,8 +86,8 @@ interface ImageMatch {
   path: string;
 }
 
-// Find Markdown images: ![alt](path)
-function findMarkdownImages(text: string): ImageMatch[] {
+/** Find Markdown images: ![alt](path) */
+export function findMarkdownImages(text: string): ImageMatch[] {
   const matches: ImageMatch[] = [];
   const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
   let match;
@@ -91,8 +105,8 @@ function findMarkdownImages(text: string): ImageMatch[] {
   return matches;
 }
 
-// Find Org images: [[file:path]] or [[./path.ext]]
-function findOrgImages(text: string): ImageMatch[] {
+/** Find Org images: [[file:path]] or [[./path.ext]] */
+export function findOrgImages(text: string): ImageMatch[] {
   const matches: ImageMatch[] = [];
   const regex = /\[\[(?:file:)?([^\]]+?)\]\]/g;
   let match;
