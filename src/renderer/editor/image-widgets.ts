@@ -39,13 +39,16 @@ class ImageWidget extends WidgetType {
     const img = document.createElement('img');
     img.className = 'cm-image-widget';
 
-    // Resolve path - if relative, prepend baseDir
-    let src = this.imagePath;
-    if (!src.startsWith('/') && !src.startsWith('http')) {
-      src = `local-image://${this.baseDir}/${src}`;
-    } else if (src.startsWith('/')) {
-      src = `local-image://${src}`;
+    // Resolve path - if relative, prepend baseDir.
+    // Use localhost as host to prevent Chromium from consuming the first
+    // path component (e.g. /Users) as a hostname and lowercasing it.
+    let absolutePath = this.imagePath;
+    if (!absolutePath.startsWith('/') && !absolutePath.startsWith('http')) {
+      absolutePath = `${this.baseDir}/${absolutePath}`;
     }
+    const src = absolutePath.startsWith('http')
+      ? absolutePath
+      : `local-image://localhost${encodeURI(absolutePath)}`;
 
     img.src = src;
     img.alt = this.imagePath;
