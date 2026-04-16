@@ -12,6 +12,8 @@ import { markdownExtensions } from './markdown-lang';
 import { orgExtensions } from './org-lang';
 import { linkHandlerExtension } from './link-handler';
 import { imageWidgetExtension } from './image-widgets';
+import { codeTokenHighlightExtension } from './code-highlight-theme';
+import { codeBlockExtensions } from './code-block-decorations';
 import { SAVE_DEBOUNCE_MS } from '../../shared/constants';
 import type { FileFormat } from '../../shared/types';
 
@@ -87,6 +89,8 @@ function languageExtensions(format: FileFormat, fontColor: string, baseDir: stri
 
   exts.push(imageWidgetExtension(baseDir, format));
   exts.push(...linkHandlerExtension());
+  exts.push(codeTokenHighlightExtension());
+  exts.push(...codeBlockExtensions(format));
 
   return exts;
 }

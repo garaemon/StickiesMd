@@ -1,5 +1,6 @@
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { languages } from '@codemirror/language-data';
 import { tags } from '@lezer/highlight';
 import type { Extension } from '@codemirror/state';
 import { FONT_SIZES } from '../../shared/constants';
@@ -29,7 +30,7 @@ function createMarkdownHighlightStyle(fontColor: string): HighlightStyle {
 
 export function markdownExtensions(fontColor: string): Extension[] {
   return [
-    markdown({ base: markdownLanguage }),
+    markdown({ base: markdownLanguage, codeLanguages: languages }),
     syntaxHighlighting(createMarkdownHighlightStyle(fontColor)),
   ];
 }
