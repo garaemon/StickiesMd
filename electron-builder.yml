@@ -9,6 +9,11 @@ mac:
     - zip
   icon: resources/icon.icns
   hardenedRuntime: true
+win:
+  icon: resources/icon.ico
+linux:
+  icon: resources/icon.png
+  category: Utility
 dmg:
   contents:
     - x: 130

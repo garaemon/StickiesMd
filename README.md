@@ -1,6 +1,10 @@
-# StickiesMd
+<p align="center">
+  <img src="resources/icon.png" alt="StickiesMd icon" width="128" height="128" />
+</p>
 
-A file-linked sticky note app for Markdown and Org-mode, built with Electron + TypeScript + CodeMirror 6.
+<h1 align="center">StickiesMd</h1>
+
+<p align="center">A file-linked sticky note app for Markdown and Org-mode, built with Electron + TypeScript + CodeMirror 6.</p>
 
 ## Features
 
