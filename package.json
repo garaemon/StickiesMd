@@ -6,6 +6,7 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
+    "prebuild": "npm run icons",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "test:unit": "vitest run",

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/icon.png" alt="StickiesMd icon" width="128" height="128" />
+  <img src="resources/icon.svg" alt="StickiesMd icon" width="128" height="128" />
 </p>
 
 <h1 align="center">StickiesMd</h1>
@@ -57,15 +57,17 @@ npm run build       # Build for production
 
 ### App Icon
 
-The app icon is authored as a single vector source, `resources/icon.svg`.
-The raster assets used by the app and this README (`icon.png`, `icon.icns`,
-`icon.ico`) are generated from it:
+The app icon is authored as a single vector source, `resources/icon.svg` (the
+only icon file tracked in git). The raster assets used for packaging
+(`icon.png`, `icon.icns`, `icon.ico`) are generated from it and are
+git-ignored:
 
 ```bash
-npm run icons       # Regenerate icon.png / icon.icns / icon.ico from icon.svg
+npm run icons       # Generate icon.png / icon.icns / icon.ico from icon.svg
 ```
 
-Edit `resources/icon.svg`, run the command above, and commit the updated assets.
+`npm run build` regenerates them automatically (via the `prebuild` hook).
+To change the icon, edit `resources/icon.svg` and re-run either command.
 
 ## Tech Stack
 
