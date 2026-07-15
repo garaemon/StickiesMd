@@ -1,48 +1,47 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Sticky note body gradient (classic yellow) -->
-    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFBD8"/>
-      <stop offset="1" stop-color="#FFF08A"/>
-    </linearGradient>
-    <!-- Folded corner shading -->
-    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#F4D96B"/>
-      <stop offset="1" stop-color="#E9C74B"/>
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.22"/>
+    <filter id="stackShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="6" dy="10" stdDeviation="10" flood-color="#000000" flood-opacity="0.20"/>
     </filter>
   </defs>
 
-  <!-- Sticky note with a peeled bottom-right corner -->
-  <g filter="url(#shadow)">
-    <!-- Main body: rounded top-left, square-ish, missing bottom-right (fold) -->
-    <path d="M96 84
-             h288
-             a28 28 0 0 1 28 28
-             v212
-             l-92 92
-             h-224
-             a28 28 0 0 1 -28 -28
-             v-276
-             a28 28 0 0 1 28 -28 z"
-          fill="url(#paper)"/>
-    <!-- The folded-up corner -->
-    <path d="M320 416
-             v-64
-             a28 28 0 0 1 28 -28
-             h64 z"
-          fill="url(#fold)"/>
-  </g>
+  <!-- ink style shared by every note outline -->
+  <g stroke="#20232A" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"
+     filter="url(#stackShadow)">
 
-  <!-- "md" wordmark -->
-  <g fill="#3A3A2A" font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace" font-weight="700">
-    <text x="256" y="292" font-size="150" text-anchor="middle" letter-spacing="-6">md</text>
-  </g>
+    <!-- ===== back: green ===== -->
+    <g transform="translate(322,332) rotate(14)">
+      <path d="M-145,-138 C-40,-146 60,-144 143,-140 C147,-60 146,50 144,142
+               C40,148 -60,146 -143,144 C-148,40 -146,-50 -145,-138 Z" fill="#95D24C"/>
+    </g>
 
-  <!-- Subtle top ruled lines to evoke a note -->
-  <g stroke="#EAD46A" stroke-width="6" stroke-linecap="round" opacity="0.7">
-    <line x1="132" y1="150" x2="376" y2="150"/>
+    <!-- ===== blue ===== -->
+    <g transform="translate(296,310) rotate(9)">
+      <path d="M-145,-138 C-40,-146 60,-144 143,-140 C147,-60 146,50 144,142
+               C40,148 -60,146 -143,144 C-148,40 -146,-50 -145,-138 Z" fill="#5AC8F2"/>
+    </g>
+
+    <!-- ===== pink (holds "org", revealed by the peel) ===== -->
+    <g transform="translate(268,288) rotate(4)">
+      <path d="M-145,-138 C-40,-146 60,-144 143,-140 C147,-60 146,50 144,142
+               C40,148 -60,146 -143,144 C-148,40 -146,-50 -145,-138 Z" fill="#FF6FB2"/>
+      <text x="82" y="98" text-anchor="middle" font-family="'DejaVu Sans', sans-serif"
+            font-weight="700" font-size="56" fill="#20232A" stroke="none">org</text>
+    </g>
+
+    <!-- ===== front: yellow (holds "md") with a peeled bottom-right corner ===== -->
+    <g transform="translate(222,250) rotate(-3)">
+      <!-- shadow the lifted corner drops onto the pink note -->
+      <path d="M44,140 L146,36 L150,150 Z" fill="#20232A" opacity="0.16" stroke="none"/>
+      <!-- note body (bottom-right corner removed at the crease) -->
+      <path d="M-145,-138 C-40,-146 60,-144 143,-140 C147,-70 146,-15 146,38
+               L44,140 C-50,146 -100,145 -143,143 C-148,40 -146,-50 -145,-138 Z"
+            fill="#FFE85C"/>
+      <!-- md wordmark -->
+      <text x="-20" y="0" text-anchor="middle" font-family="'DejaVu Sans', sans-serif"
+            font-weight="700" font-size="104" fill="#20232A" stroke="none">md</text>
+      <!-- the folded-up corner (underside of the yellow sheet) -->
+      <path d="M44,140 L146,38 L58,54 Z" fill="#FFD23F"/>
+    </g>
   </g>
 </svg>
