@@ -1,0 +1,47 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="stackShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="6" dy="10" stdDeviation="10" flood-color="#000000" flood-opacity="0.20"/>
+    </filter>
+  </defs>
+
+  <!-- ink style shared by every note outline -->
+  <g stroke="#20232A" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"
+     filter="url(#stackShadow)">
+
+    <!-- ===== back: green ===== -->
+    <g transform="translate(322,332) rotate(14)">
+      <path d="M-145,-138 C-40,-146 60,-144 143,-140 C147,-60 146,50 144,142
+               C40,148 -60,146 -143,144 C-148,40 -146,-50 -145,-138 Z" fill="#95D24C"/>
+    </g>
+
+    <!-- ===== blue ===== -->
+    <g transform="translate(296,310) rotate(9)">
+      <path d="M-145,-138 C-40,-146 60,-144 143,-140 C147,-60 146,50 144,142
+               C40,148 -60,146 -143,144 C-148,40 -146,-50 -145,-138 Z" fill="#5AC8F2"/>
+    </g>
+
+    <!-- ===== pink (holds "org", revealed by the peel) ===== -->
+    <g transform="translate(268,288) rotate(4)">
+      <path d="M-145,-138 C-40,-146 60,-144 143,-140 C147,-60 146,50 144,142
+               C40,148 -60,146 -143,144 C-148,40 -146,-50 -145,-138 Z" fill="#FF6FB2"/>
+      <text x="82" y="98" text-anchor="middle" font-family="'DejaVu Sans', sans-serif"
+            font-weight="700" font-size="56" fill="#20232A" stroke="none">org</text>
+    </g>
+
+    <!-- ===== front: yellow (holds "md") with a peeled bottom-right corner ===== -->
+    <g transform="translate(222,250) rotate(-3)">
+      <!-- shadow the lifted corner drops onto the pink note -->
+      <path d="M44,140 L146,36 L150,150 Z" fill="#20232A" opacity="0.16" stroke="none"/>
+      <!-- note body (bottom-right corner removed at the crease) -->
+      <path d="M-145,-138 C-40,-146 60,-144 143,-140 C147,-70 146,-15 146,38
+               L44,140 C-50,146 -100,145 -143,143 C-148,40 -146,-50 -145,-138 Z"
+            fill="#FFE85C"/>
+      <!-- md wordmark -->
+      <text x="-20" y="0" text-anchor="middle" font-family="'DejaVu Sans', sans-serif"
+            font-weight="700" font-size="104" fill="#20232A" stroke="none">md</text>
+      <!-- the folded-up corner (underside of the yellow sheet) -->
+      <path d="M44,140 L146,38 L58,54 Z" fill="#FFD23F"/>
+    </g>
+  </g>
+</svg>

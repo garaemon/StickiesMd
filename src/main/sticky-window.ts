@@ -1,7 +1,13 @@
 import { BrowserWindow } from 'electron';
+import { existsSync } from 'fs';
 import { join } from 'path';
 import { MIN_WINDOW_HEIGHT, MIN_WINDOW_WIDTH } from '../shared/constants';
 import type { StickyNote } from '../shared/types';
+
+// App icon lives in resources/ at the project root. On macOS the dock/app
+// icon comes from the packaged bundle (icon.icns), but on Linux/Windows and in
+// development the window icon must be set explicitly.
+const ICON_PATH = join(__dirname, '../../resources/icon.png');
 
 export function createStickyWindow(note: StickyNote): BrowserWindow {
   const win = new BrowserWindow({
@@ -11,6 +17,7 @@ export function createStickyWindow(note: StickyNote): BrowserWindow {
     height: note.frame.height,
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
+    ...(existsSync(ICON_PATH) ? { icon: ICON_PATH } : {}),
     frame: false,
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 10, y: 15 },

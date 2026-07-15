@@ -1,6 +1,10 @@
-# StickiesMd
+<p align="center">
+  <img src="resources/icon.svg" alt="StickiesMd icon" width="128" height="128" />
+</p>
 
-A file-linked sticky note app for Markdown and Org-mode, built with Electron + TypeScript + CodeMirror 6.
+<h1 align="center">StickiesMd</h1>
+
+<p align="center">A file-linked sticky note app for Markdown and Org-mode, built with Electron + TypeScript + CodeMirror 6.</p>
 
 ## Features
 
@@ -50,6 +54,20 @@ npm run test:e2e    # Playwright E2E tests (requires display)
 ```bash
 npm run build       # Build for production
 ```
+
+### App Icon
+
+The app icon is authored as a single vector source, `resources/icon.svg` (the
+only icon file tracked in git). The raster assets used for packaging
+(`icon.png`, `icon.icns`, `icon.ico`) are generated from it and are
+git-ignored:
+
+```bash
+npm run icons       # Generate icon.png / icon.icns / icon.ico from icon.svg
+```
+
+`npm run build` regenerates them automatically (via the `prebuild` hook).
+To change the icon, edit `resources/icon.svg` and re-run either command.
 
 ## Tech Stack
 

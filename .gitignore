@@ -5,3 +5,8 @@ out/
 .DS_Store
 test-results/
 playwright-report/
+
+# Generated from resources/icon.svg via `npm run icons`
+resources/icon.png
+resources/icon.ico
+resources/icon.icns
