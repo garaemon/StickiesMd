@@ -55,6 +55,18 @@ npm run test:e2e    # Playwright E2E tests (requires display)
 npm run build       # Build for production
 ```
 
+### App Icon
+
+The app icon is authored as a single vector source, `resources/icon.svg`.
+The raster assets used by the app and this README (`icon.png`, `icon.icns`,
+`icon.ico`) are generated from it:
+
+```bash
+npm run icons       # Regenerate icon.png / icon.icns / icon.ico from icon.svg
+```
+
+Edit `resources/icon.svg`, run the command above, and commit the updated assets.
+
 ## Tech Stack
 
 | Layer | Technology |

@@ -15,7 +15,8 @@
     "lint": "eslint src/ test/",
     "format": "prettier --write 'src/**/*.{ts,html,css}'",
     "format:check": "prettier --check 'src/**/*.{ts,html,css}'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
@@ -39,7 +40,9 @@
     "electron-vite": "^5.0.0",
     "eslint": "^9.0.0",
     "globals": "^17.4.0",
+    "png-to-ico": "^3.0.2",
     "prettier": "^3.4.0",
+    "sharp": "^0.35.3",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.58.1",
     "vite": "^6.0.0",
