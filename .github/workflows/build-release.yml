@@ -1,0 +1,79 @@
+name: Build & Release
+
+on:
+  # Publish binaries when a version tag is pushed (e.g. v1.0.0).
+  push:
+    tags: ['v*']
+  # Allow building binaries on demand without a release.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Build platform binaries ──────────────────────────────────
+  build:
+    name: Build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: ubuntu-latest
+            platform: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build renderer/main bundles
+        run: npm run build
+
+      - name: Package application (${{ matrix.platform }})
+        # electron-builder reads electron-builder.yml. --publish never keeps it
+        # from trying to upload; the release job attaches artifacts instead.
+        run: npx electron-builder --${{ matrix.platform }} --publish never
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: stickiesmd-${{ matrix.platform }}
+          path: |
+            out/*.dmg
+            out/*.zip
+            out/*.AppImage
+            out/*.deb
+          if-no-files-found: error
+
+  # ─── Attach binaries to the GitHub Release ────────────────────
+  release:
+    name: Publish Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create / update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
