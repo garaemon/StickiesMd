@@ -14,6 +14,10 @@ win:
 linux:
   icon: resources/icon.png
   category: Utility
+  maintainer: garaemon <garaemon@gmail.com>
+  target:
+    - AppImage
+    - deb
 dmg:
   contents:
     - x: 130
