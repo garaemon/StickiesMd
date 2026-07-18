@@ -1,0 +1,80 @@
+name: Scheduled Security Audit
+
+# Runs the dependency security audit on a schedule (independent of pushes/PRs).
+# When a vulnerability is found, an automatic fix is attempted and the result is
+# opened as a Pull Request for review. If the audit cannot be fixed
+# automatically, the job fails so maintainers are notified.
+
+on:
+  schedule:
+    # Every Monday at 09:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual runs from the Actions tab
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  security-audit:
+    name: Security Audit & Auto-fix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        id: audit
+        run: |
+          if npm audit --omit=dev --audit-level=high; then
+            echo "vulnerable=false" >> "$GITHUB_OUTPUT"
+            echo "No high/critical vulnerabilities found in production dependencies."
+          else
+            echo "vulnerable=true" >> "$GITHUB_OUTPUT"
+            echo "Vulnerabilities detected; attempting automatic fix."
+          fi
+
+      - name: Attempt automatic fix
+        if: steps.audit.outputs.vulnerable == 'true'
+        run: npm audit fix --omit=dev || true
+
+      - name: Create Pull Request
+        if: steps.audit.outputs.vulnerable == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: automated/security-audit-fix
+          base: main
+          commit-message: 'chore(security): apply npm audit fix for production dependencies'
+          title: 'chore(security): automated dependency vulnerability fix'
+          labels: |
+            security
+            dependencies
+          body: |
+            ## Automated Security Audit
+
+            The scheduled security audit detected high/critical vulnerabilities
+            in production dependencies. `npm audit fix --omit=dev` was run and its
+            resulting changes are captured in this Pull Request.
+
+            ### Please verify before merging
+            - Review the `package-lock.json` (and `package.json`) diff.
+            - Confirm CI passes (lint, type check, unit & E2E tests).
+            - If some advisories remain unfixed, they require a manual dependency
+              upgrade — see the workflow logs for details.
+
+            _Opened automatically by the Scheduled Security Audit workflow._
+
+      - name: Fail if vulnerabilities remain unresolved
+        if: steps.audit.outputs.vulnerable == 'true'
+        run: |
+          echo "Re-running audit after automatic fix attempt..."
+          npm audit --omit=dev --audit-level=high
