@@ -58,6 +58,8 @@ jobs:
           labels: |
             security
             dependencies
+          reviewers: garaemon
+          assignees: garaemon
           body: |
             ## Automated Security Audit
 
