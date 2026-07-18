@@ -23,7 +23,7 @@
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
-    "@codemirror/commands": "^6.10.3",
+    "@codemirror/commands": "^6.10.4",
     "@codemirror/lang-markdown": "^6.5.1",
     "@codemirror/language": "^6.10.0",
     "@codemirror/language-data": "^6.5.2",
