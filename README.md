@@ -33,6 +33,17 @@ npm install
 npm run dev
 ```
 
+#### Troubleshooting: `Error: Electron uninstall`
+
+This error means the Electron binary is missing from
+`node_modules/electron/dist`. It happens when the `electron` package is
+installed without running its postinstall script (for example, after a
+version bump restored from the npm cache). Download the binary manually:
+
+```bash
+node node_modules/electron/install.js
+```
+
 ### Lint & Format
 
 ```bash
