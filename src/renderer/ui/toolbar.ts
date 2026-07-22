@@ -13,6 +13,8 @@
  * this decision should be revisited.
  */
 
+import { MOUSE_THROUGH_ICON_SVG, TOOLBAR_ICONS } from './toolbar-icons';
+
 /** Extract filename from a POSIX path (renderer has no Node path module). */
 function getBasename(filePath: string): string {
   const lastSlash = filePath.lastIndexOf('/');
@@ -53,7 +55,7 @@ export class Toolbar {
     // Save button
     const saveButton = document.createElement('button');
     saveButton.className = 'toolbar-btn';
-    saveButton.textContent = '\u{1F4BE}'; // floppy disk
+    saveButton.textContent = TOOLBAR_ICONS.save;
     saveButton.title = 'Save (Cmd+S)';
     saveButton.addEventListener('click', callbacks.onSave);
     buttonsDiv.appendChild(saveButton);
@@ -61,7 +63,7 @@ export class Toolbar {
     // Pin button (always-on-top)
     this.pinButton = document.createElement('button');
     this.pinButton.className = 'toolbar-btn';
-    this.pinButton.textContent = '\u{1F4CC}'; // pushpin
+    this.pinButton.textContent = TOOLBAR_ICONS.pin;
     this.pinButton.title = 'Always on Top';
     this.pinButton.addEventListener('click', () => {
       window.electronAPI.toggleAlwaysOnTop();
@@ -71,7 +73,7 @@ export class Toolbar {
     // Mouse Through button
     this.mouseThroughButton = document.createElement('button');
     this.mouseThroughButton.className = 'toolbar-btn';
-    this.mouseThroughButton.textContent = '\u{1F5B1}'; // mouse
+    this.mouseThroughButton.innerHTML = MOUSE_THROUGH_ICON_SVG;
     this.mouseThroughButton.title = 'Mouse Through';
     this.mouseThroughButton.addEventListener('click', () => {
       window.electronAPI.setMouseThrough(!this.isMouseThrough);
@@ -94,7 +96,7 @@ export class Toolbar {
     const settingsButton = document.createElement('button');
     settingsButton.className = 'toolbar-btn';
     settingsButton.dataset.testid = 'settings-button';
-    settingsButton.textContent = '\u2699'; // gear
+    settingsButton.textContent = TOOLBAR_ICONS.settings;
     settingsButton.title = 'Settings';
     settingsButton.addEventListener('click', callbacks.onSettingsToggle);
     buttonsDiv.appendChild(settingsButton);
