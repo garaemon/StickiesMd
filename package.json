@@ -39,7 +39,7 @@
     "@playwright/test": "^1.62.0",
     "@types/node": "^26.1.1",
     "@types/uuid": "^11.0.0",
-    "electron": "^43.1.1",
+    "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "eslint": "^10.8.0",
