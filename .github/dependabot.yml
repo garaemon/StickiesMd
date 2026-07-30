@@ -21,6 +21,12 @@ updates:
     commit-message:
       prefix: 'chore'
       include: 'scope'
+    ignore:
+      # TypeScript 7.0 (native Go compiler) ships without a programmatic API,
+      # so typescript-eslint cannot run against it. The API is planned for 7.1.
+      # Revisit once typescript-eslint widens its peer range beyond <6.1.0.
+      - dependency-name: 'typescript'
+        versions: ['>=7.0.0 <7.1.0']
 
   # GitHub Actions used in workflows
   - package-ecosystem: 'github-actions'
