@@ -1,3 +1,2 @@
-# Node 22.22.0 bundles npm 10.9.4, matching the Node 22 used in CI workflows.
 [tools]
 node = "22.22.0"
