@@ -5,6 +5,7 @@
   "license": "MIT",
   "main": "dist/main/index.js",
   "scripts": {
+    "predev": "node scripts/check-electron.mjs",
     "dev": "electron-vite dev",
     "prebuild": "npm run icons",
     "build": "electron-vite build",
