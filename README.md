@@ -18,14 +18,41 @@
 
 ### Prerequisites
 
-- Node.js 22+
-- npm
+- [mise](https://mise.jdx.dev/) — manages the Node.js version pinned in
+  `mise.toml` (the same version used in CI)
+
+If you have not set up mise yet, install it and activate it in your shell
+(see the [mise getting started guide](https://mise.jdx.dev/getting-started.html)):
+
+```bash
+curl https://mise.run | sh
+```
+
+```bash
+echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+```
+
+(Use `zsh` / `~/.zshrc` instead if you use zsh.)
 
 ### Setup
+
+Install the pinned Node.js toolchain, then the npm dependencies:
+
+```bash
+mise trust
+```
+
+```bash
+mise install
+```
 
 ```bash
 npm install
 ```
+
+With mise activated, `node` and `npm` automatically resolve to the pinned
+version inside this repository. Without shell activation, prefix commands with
+`mise exec --`, e.g. `mise exec -- npm run dev`.
 
 ### Run in development mode
 
@@ -56,7 +83,7 @@ npm run typecheck     # TypeScript strict check
 ### Testing
 
 ```bash
-npm run test:unit   # Vitest unit tests (60 tests)
+npm run test:unit   # Vitest unit tests
 npm run test:e2e    # Playwright E2E tests (requires display)
 ```
 
