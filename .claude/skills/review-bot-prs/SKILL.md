@@ -83,32 +83,43 @@ From the PR title / diff, extract for each updated dependency:
 ### 2.4 Vulnerability (CVE) check — REQUIRED for every version update
 
 Before merging any PR that changes a dependency version, confirm the **new**
-version has no known unfixed vulnerability.
+versions have no known vulnerability. Use the bundled script
+`scripts/check-cve.mjs` (Node 18+, no dependencies). It queries the OSV
+database, which aggregates CVE (NVD) and GHSA (GitHub Advisory Database).
 
-1. **OSV database** (covers CVE + GHSA) for the target version:
-
-   ```bash
-   curl -s https://api.osv.dev/v1/query \
-     -d '{"package":{"name":"<name>","ecosystem":"npm"},"version":"<to>"}'
-   ```
-
-   For GitHub Actions use `"ecosystem":"GitHub Actions"` and the action name
-   (e.g. `actions/checkout`). An empty response (`{}`) means no known
-   advisories. Any `vulns` entry for the target version is a reject unless the
-   advisory is clearly not applicable (document why).
-
-2. **GitHub Advisory Database** (cross-check):
-
-   ```bash
-   gh api -X GET /advisories -f ecosystem=npm -f affects='<name>@<to>' \
-     --jq '.[] | {ghsa_id, cve_id, severity, summary}'
-   ```
-
-3. **Transitive dependencies** via `npm audit` on the PR branch, compared with
-   the base branch:
+1. **All changed versions in the PR, including transitive npm dependencies and
+   GitHub Actions** — run from the repository root:
 
    ```bash
    git fetch origin main <headRefName>
+   node .claude/skills/review-bot-prs/scripts/check-cve.mjs \
+     --git origin/main origin/<headRefName>
+   ```
+
+   It diffs `package-lock.json` and `.github/workflows/*.yml` between the two
+   refs and checks every package version that is new in the PR. For SHA-pinned
+   actions the version is read from the trailing `# vX.Y.Z` comment.
+
+   Exit code `0` = no known vulnerabilities, `1` = vulnerabilities found
+   (advisory IDs, CVE aliases, severity and fixed versions are printed),
+   `2` = error (treat as "not verified" — do not merge). Add `--json` for
+   machine-readable output.
+
+   Exit code `1` is a reject unless the advisory clearly does not apply
+   (document why in the report).
+
+2. **Single package check** (e.g. to verify a fix version manually):
+
+   ```bash
+   node .claude/skills/review-bot-prs/scripts/check-cve.mjs vite@8.3.8
+   node .claude/skills/review-bot-prs/scripts/check-cve.mjs \
+     --ecosystem "GitHub Actions" actions/checkout@4.2.0
+   ```
+
+3. **`npm audit` comparison** (cross-check with the npm registry's advisory
+   data):
+
+   ```bash
    git checkout --detach origin/main && npm ci --ignore-scripts && npm audit --json > /tmp/audit-base.json
    git checkout --detach origin/<headRefName> && npm ci --ignore-scripts && npm audit --json > /tmp/audit-pr.json
    ```
@@ -118,13 +129,14 @@ version has no known unfixed vulnerability.
    should lower it.)
 
 4. If the PR is a Dependabot **security update**, verify that the advisory it
-   claims to fix is actually fixed in `<to>` (check the advisory's
-   `patched_versions` / `fixed` range).
+   claims to fix is actually fixed in the new version (the script prints
+   `fixed in:` for each advisory; check the old version with the single
+   package mode to see it reported, and the new one to see it cleared).
 
-5. Also note the release date of `<to>` (`npm view <name>@<to> time --json` or
-   `npm view <name> time.<to>`). If it was published less than 3 days ago,
-   flag it in the report (supply-chain caution), but it is not an automatic
-   reject.
+5. Also note the release date of the new version
+   (`npm view <name> time.<version>`). If it was published less than 3 days
+   ago, flag it in the report (supply-chain caution), but it is not an
+   automatic reject.
 
 ### 2.5 Local verification
 
